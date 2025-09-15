@@ -1,1 +1,9 @@
+{
+  "name": "ptb-tree-map",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "pg": "^8.12.0"
+  }
+}
 
