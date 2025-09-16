@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// ✅ Dit blok mag maar één keer bestaan
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -22,12 +23,12 @@ export default async (req, context) => {
 
     // pad naar certificaat relatief aan deze file
     const caPath = path.join(__dirname, 'certs', 'ca.pem');
-    const ca = fs.readFileSync(caPath).toString();
+    const ca = fs.readFileSync(caPath, 'utf8');
 
     const client = new Client({
       connectionString: process.env.PG_URL, // bv. postgres://web_ro:***@host:5432/db
       ssl: {
-        ca: ca,
+        ca,
         rejectUnauthorized: true
       }
     });
@@ -51,17 +52,14 @@ export default async (req, context) => {
     const rs = await client.query(sql, params);
     await client.end();
 
-    return new Response(
-      JSON.stringify({ rows: rs.rows }),
-      {
-        headers: {
-          'content-type': 'application/json',
-          'cache-control': 'no-store'
-        }
+    return new Response(JSON.stringify({ rows: rs.rows }), {
+      headers: {
+        'content-type': 'application/json',
+        'cache-control': 'no-store'
       }
-    );
+    });
   } catch (e) {
-    console.error(e);
+    console.error('Database or server error:', e);
     return new Response(
       JSON.stringify({ error: 'server error' }),
       { status: 500 }
