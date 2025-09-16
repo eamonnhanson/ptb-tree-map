@@ -31,11 +31,9 @@ console.log("CA first line:", ca.split("\n")[0]);
     
 const client = new Client({
   connectionString: process.env.PG_URL,
-  ssl: {
-    ca: ca,
-    rejectUnauthorized: true
-  }
+  ssl: { rejectUnauthorized: false }
 });
+
 
 
     await client.connect();
