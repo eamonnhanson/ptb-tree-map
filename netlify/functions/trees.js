@@ -25,13 +25,16 @@ export default async (req, context) => {
     );
     const ca = fs.readFileSync(caPath, 'utf8');
 
-    const client = new Client({
-      connectionString: process.env.PG_URL,
-      ssl: {
-        ca: ca,
-        rejectUnauthorized: true
-      }
-    });
+console.log("CA path:", caPath);
+console.log("CA first line:", ca.split("\n")[0]);
+const client = new Client({
+  connectionString: process.env.PG_URL,
+  ssl: {
+    rejectUnauthorized: true,
+    ca: ca
+  }
+});
+
     await client.connect();
 
     let sql, params;
