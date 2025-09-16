@@ -1,5 +1,8 @@
 // netlify/functions/trees.js
 import { Client } from 'pg';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 export default async (req, context) => {
   try {
@@ -14,9 +17,21 @@ export default async (req, context) => {
       );
     }
 
+    // Load the Aiven CA certificate
+    const caPath = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      'certs',
+      'ca.pem'
+    );
+    const ca = fs.readFileSync(caPath, 'utf8');
+
+    // Connect to PostgreSQL with Aiven CA
     const client = new Client({
-      connectionString: process.env.PG_URL,
-      ssl: { rejectUnauthorized: false }   // 🔑 no CA, just bypass check
+      connectionString: process.env.PG_URL, // e.g. postgres://web_ro:***@host:5432/defaultdb
+      ssl: {
+        ca: ca,
+        rejectUnauthorized: true
+      }
     });
     await client.connect();
 
