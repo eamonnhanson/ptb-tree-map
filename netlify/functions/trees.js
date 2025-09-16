@@ -1,4 +1,3 @@
-// netlify/functions/trees.js
 import { Client } from 'pg';
 import fs from 'fs';
 import path from 'path';
@@ -13,18 +12,17 @@ export default async (req, context) => {
       return new Response(JSON.stringify({ error: 'missing email or user_id' }), { status: 400 });
     }
 
-    // Pad naar je certs/ca.pem bestand
-    const caPath = path.join(process.cwd(), 'netlify', 'functions', 'certs', 'ca.pem');
-    const caCert = fs.readFileSync(caPath).toString();
+    // pad naar je certificaat
+    const caPath = path.resolve('netlify/functions/certs/ca.pem');
+    const ca = fs.readFileSync(caPath).toString();
 
     const client = new Client({
-      connectionString: process.env.PG_URL, // bv. postgres://web_ro:***@host:5432/db
+      connectionString: process.env.PG_URL,
       ssl: {
         rejectUnauthorized: true,
-        ca: caCert
-      }
+        ca: ca,
+      },
     });
-
     await client.connect();
 
     let sql, params;
@@ -46,7 +44,7 @@ export default async (req, context) => {
     await client.end();
 
     return new Response(JSON.stringify({ rows: rs.rows }), {
-      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
+      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
     });
   } catch (e) {
     console.error(e);
