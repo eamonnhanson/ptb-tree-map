@@ -20,12 +20,12 @@ export default async (req, context) => {
       );
     }
 
-    // ✅ correct path (same folder as trees.js)
-    const caPath = path.join(__dirname, 'ca.pem');
+    // ✅ corrected path: go up one folder, then into certs/
+    const caPath = path.join(__dirname, '../certs/ca.pem');
     const ca = fs.readFileSync(caPath).toString();
 
     const client = new Client({
-      connectionString: process.env.PG_URL, // e.g. postgres://user:pw@host:port/db
+      connectionString: process.env.PG_URL, // must include user, pw, host, port, db
       ssl: {
         ca: ca,
         rejectUnauthorized: true
