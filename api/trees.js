@@ -1,30 +1,26 @@
-// netlify/functions/trees.js (now for Render too)
-import { Client } from 'pg';
+// api/trees.js
+import { Client } from "pg";
 
-export default async (req, context) => {
+export default async function treesHandler(req, context) {
   try {
-    const url = new URL(req.url);
-    const email = url.searchParams.get('email');
-    const userId = url.searchParams.get('user_id');
+    // Parse query params
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const email = url.searchParams.get("email");
+    const userId = url.searchParams.get("user_id");
 
     if (!email && !userId) {
       return new Response(
-        JSON.stringify({ error: 'missing email or user_id' }),
+        JSON.stringify({ error: "missing email or user_id" }),
         { status: 400 }
       );
     }
 
-    // Build SSL config based on PGSSLMODE
-    let sslConfig = true; // default
-    if (process.env.PGSSLMODE === 'no-verify') {
-      sslConfig = { rejectUnauthorized: false };
-    } else if (process.env.PGSSLMODE === 'verify-full') {
-      sslConfig = { rejectUnauthorized: true };
-    }
-
+    // Create client using PG_URL and PGSSLMODE
     const client = new Client({
       connectionString: process.env.PG_URL,
-      ssl: sslConfig
+      ssl: process.env.PGSSLMODE === "no-verify" 
+        ? { rejectUnauthorized: false } 
+        : true
     });
 
     await client.connect();
@@ -51,17 +47,16 @@ export default async (req, context) => {
       JSON.stringify({ rows: rs.rows }),
       {
         headers: {
-          'content-type': 'application/json',
-          'cache-control': 'no-store'
+          "content-type": "application/json",
+          "cache-control": "no-store"
         }
       }
     );
-
   } catch (e) {
-    console.error(e);
+    console.error("trees.js error:", e);
     return new Response(
-      JSON.stringify({ error: 'server error' }),
+      JSON.stringify({ error: "server error" }),
       { status: 500 }
     );
   }
-};
+}
