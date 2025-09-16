@@ -1,8 +1,5 @@
 // netlify/functions/trees.js
 import { Client } from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 export default async (req, context) => {
   try {
@@ -17,25 +14,10 @@ export default async (req, context) => {
       );
     }
 
-    // bepaal pad naar ca.pem direct
-    const caPath = path.join(
-      path.dirname(fileURLToPath(import.meta.url)),
-      'certs',
-      'ca.pem'
-    );
-    const ca = fs.readFileSync(caPath, 'utf8');
-
-console.log("CA path:", caPath);
-console.log("CA first line:", ca.split("\n")[0]);
-
-    
-const client = new Client({
-  connectionString: process.env.PG_URL,
-  ssl: { rejectUnauthorized: false }
-});
-
-
-
+    const client = new Client({
+      connectionString: process.env.PG_URL,
+      ssl: { rejectUnauthorized: false }   // 🔑 no CA, just bypass check
+    });
     await client.connect();
 
     let sql, params;
