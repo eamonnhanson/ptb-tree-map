@@ -4,9 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// bepaal dirname zonder __filename te redeclareren
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 export default async (req, context) => {
   try {
     const url = new URL(req.url);
@@ -20,12 +17,16 @@ export default async (req, context) => {
       );
     }
 
-    // pad naar certificaat relatief aan deze file
-    const caPath = path.join(__dirname, 'certs', 'ca.pem');
-    const ca = fs.readFileSync(caPath).toString();
+    // bepaal pad naar ca.pem direct
+    const caPath = path.join(
+      path.dirname(fileURLToPath(import.meta.url)),
+      'certs',
+      'ca.pem'
+    );
+    const ca = fs.readFileSync(caPath, 'utf8');
 
     const client = new Client({
-      connectionString: process.env.PG_URL, // bv. postgres://web_ro:***@host:5432/db
+      connectionString: process.env.PG_URL,
       ssl: {
         ca: ca,
         rejectUnauthorized: true
