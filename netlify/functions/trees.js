@@ -1,6 +1,11 @@
+// netlify/functions/trees.js
 import { Client } from 'pg';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default async (req, context) => {
   try {
@@ -9,19 +14,22 @@ export default async (req, context) => {
     const userId = url.searchParams.get('user_id');
 
     if (!email && !userId) {
-      return new Response(JSON.stringify({ error: 'missing email or user_id' }), { status: 400 });
+      return new Response(
+        JSON.stringify({ error: 'missing email or user_id' }),
+        { status: 400 }
+      );
     }
 
-    // pad naar je certificaat
-    const caPath = path.resolve('netlify/functions/certs/ca.pem');
+    // pad naar certificaat relatief aan deze file
+    const caPath = path.join(__dirname, 'certs', 'ca.pem');
     const ca = fs.readFileSync(caPath).toString();
 
     const client = new Client({
-      connectionString: process.env.PG_URL,
+      connectionString: process.env.PG_URL, // bv. postgres://web_ro:***@host:5432/db
       ssl: {
-        rejectUnauthorized: true,
         ca: ca,
-      },
+        rejectUnauthorized: true
+      }
     });
     await client.connect();
 
@@ -43,11 +51,20 @@ export default async (req, context) => {
     const rs = await client.query(sql, params);
     await client.end();
 
-    return new Response(JSON.stringify({ rows: rs.rows }), {
-      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
-    });
+    return new Response(
+      JSON.stringify({ rows: rs.rows }),
+      {
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store'
+        }
+      }
+    );
   } catch (e) {
     console.error(e);
-    return new Response(JSON.stringify({ error: 'server error' }), { status: 500 });
+    return new Response(
+      JSON.stringify({ error: 'server error' }),
+      { status: 500 }
+    );
   }
 };
