@@ -26,13 +26,14 @@ export default async (req, context) => {
     const ca = fs.readFileSync(caPath, 'utf8');
 
     // Connect to PostgreSQL with Aiven CA
-    const client = new Client({
-      connectionString: process.env.PG_URL, // e.g. postgres://web_ro:***@host:5432/defaultdb
-      ssl: {
-        ca: ca,
-        rejectUnauthorized: true
-      }
-    });
+   const client = new Client({
+  connectionString: process.env.PG_URL,
+  ssl: {
+    ca: fs.readFileSync(path.join(__dirname, 'certs', 'ca.pem')).toString(),
+    rejectUnauthorized: true
+  }
+});
+
     await client.connect();
 
     let sql, params;
