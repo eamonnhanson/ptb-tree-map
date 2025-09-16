@@ -27,13 +27,16 @@ export default async (req, context) => {
 
 console.log("CA path:", caPath);
 console.log("CA first line:", ca.split("\n")[0]);
+
+    
 const client = new Client({
   connectionString: process.env.PG_URL,
   ssl: {
-    rejectUnauthorized: false,
-    ca: ca
+    ca: ca,
+    rejectUnauthorized: true
   }
 });
+
 
     await client.connect();
 
