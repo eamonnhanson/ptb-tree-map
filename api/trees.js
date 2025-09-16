@@ -1,32 +1,30 @@
-// api/trees.js
+// netlify/functions/trees.js (now for Render too)
 import { Client } from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export default async function handler(req, res) {
+export default async (req, context) => {
   try {
-    const url = new URL(req.url, `http://${req.headers.host}`);
+    const url = new URL(req.url);
     const email = url.searchParams.get('email');
     const userId = url.searchParams.get('user_id');
 
     if (!email && !userId) {
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      return res.end(JSON.stringify({ error: 'missing email or user_id' }));
+      return new Response(
+        JSON.stringify({ error: 'missing email or user_id' }),
+        { status: 400 }
+      );
     }
 
-    const caPath = path.join(__dirname, '../certs/ca.pem');
-    const ca = fs.readFileSync(caPath).toString();
+    // Build SSL config based on PGSSLMODE
+    let sslConfig = true; // default
+    if (process.env.PGSSLMODE === 'no-verify') {
+      sslConfig = { rejectUnauthorized: false };
+    } else if (process.env.PGSSLMODE === 'verify-full') {
+      sslConfig = { rejectUnauthorized: true };
+    }
 
     const client = new Client({
       connectionString: process.env.PG_URL,
-      ssl: {
-        ca,
-        rejectUnauthorized: true
-      }
+      ssl: sslConfig
     });
 
     await client.connect();
@@ -49,11 +47,21 @@ export default async function handler(req, res) {
     const rs = await client.query(sql, params);
     await client.end();
 
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ rows: rs.rows }));
-  } catch (err) {
-    console.error(err);
-    res.writeHead(500, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'server error' }));
+    return new Response(
+      JSON.stringify({ rows: rs.rows }),
+      {
+        headers: {
+          'content-type': 'application/json',
+          'cache-control': 'no-store'
+        }
+      }
+    );
+
+  } catch (e) {
+    console.error(e);
+    return new Response(
+      JSON.stringify({ error: 'server error' }),
+      { status: 500 }
+    );
   }
-}
+};
