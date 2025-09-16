@@ -4,6 +4,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export default async (req, context) => {
   try {
     const url = new URL(req.url);
@@ -17,22 +20,17 @@ export default async (req, context) => {
       );
     }
 
-    // Load the Aiven CA certificate
-    const caPath = path.join(
-      path.dirname(fileURLToPath(import.meta.url)),
-      'certs',
-      'ca.pem'
-    );
-    const ca = fs.readFileSync(caPath, 'utf8');
+    // ✅ correct path (same folder as trees.js)
+    const caPath = path.join(__dirname, 'ca.pem');
+    const ca = fs.readFileSync(caPath).toString();
 
-    // Connect to PostgreSQL with Aiven CA
-   const client = new Client({
-  connectionString: process.env.PG_URL,
-  ssl: {
-    ca: fs.readFileSync(path.join(__dirname, 'certs', 'ca.pem')).toString(),
-    rejectUnauthorized: true
-  }
-});
+    const client = new Client({
+      connectionString: process.env.PG_URL, // e.g. postgres://user:pw@host:port/db
+      ssl: {
+        ca: ca,
+        rejectUnauthorized: true
+      }
+    });
 
     await client.connect();
 
@@ -66,7 +64,7 @@ export default async (req, context) => {
   } catch (e) {
     console.error(e);
     return new Response(
-      JSON.stringify({ error: 'server error', details: e.message }),
+      JSON.stringify({ error: 'server error' }),
       { status: 500 }
     );
   }
