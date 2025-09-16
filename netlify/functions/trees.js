@@ -30,7 +30,7 @@ console.log("CA first line:", ca.split("\n")[0]);
 const client = new Client({
   connectionString: process.env.PG_URL,
   ssl: {
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
     ca: ca
   }
 });
