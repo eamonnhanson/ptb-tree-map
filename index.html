@@ -34,58 +34,65 @@
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
 
-  <script>
-    const map = L.map('map').setView([8.5, -13.2], 7); // Sierra Leone start
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap'
-    }).addTo(map);
+<script>
+  const map = L.map('map').setView([8.5, -13.2], 7); // Sierra Leone start
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
 
-    const markers = L.layerGroup().addTo(map);
-    const msg = document.getElementById('msg');
+  const markers = L.layerGroup().addTo(map);
+  const msg = document.getElementById('msg');
 
-    async function fetchTrees(query) {
-      const url = new URL('/.netlify/functions/trees', window.location.origin);
-      // Laat gebruiker zoeken op e-mail of user_id met 1 veld
-      if (query.includes('@')) url.searchParams.set('email', query.trim());
-      else url.searchParams.set('user_id', query.trim());
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!res.ok) throw new Error('serverfout ' + res.status);
-      return res.json();
+  async function fetchTrees(query) {
+    // 👇 Replace with your Render URL
+    const baseUrl = "https://ptb-tree-map .onrender.com/api/trees";
+    const url = new URL(baseUrl);
+
+    if (query.includes('@')) {
+      url.searchParams.set('email', query.trim());
+    } else {
+      url.searchParams.set('user_id', query.trim());
     }
 
-    function renderTrees(rows) {
-      markers.clearLayers();
-      if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
-      const bounds = [];
-      rows.forEach(r => {
-        if (typeof r.lat !== 'number' || typeof r.long !== 'number') return;
-        const m = L.marker([r.lat, r.long]).bindPopup(
-          `<strong>${r.tree_code || 'boom'}</strong><br>` +
-          `${r.tree_type || ''}<br>` +
-          `${r.area || ''}<br>` +
-          `${r.planted_at ? new Date(r.planted_at).toLocaleDateString() : ''}`
-        );
-        markers.addLayer(m);
-        bounds.push([r.lat, r.long]);
-      });
-      if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
-      msg.textContent = `${rows.length} bomen`;
-    }
+    const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error('serverfout ' + res.status);
+    return res.json();
+  }
 
-    document.getElementById('finder').addEventListener('submit', async e => {
-      e.preventDefault();
-      const q = document.getElementById('email').value.trim();
-      if (!q) { msg.textContent = 'voer e-mail of user_id in'; return; }
-      msg.textContent = 'laden…';
-      try {
-        const data = await fetchTrees(q);
-        renderTrees(data.rows || []);
-      } catch (err) {
-        console.error(err);
-        msg.textContent = 'kan bomen niet laden';
-      }
+  function renderTrees(rows) {
+    markers.clearLayers();
+    if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
+    const bounds = [];
+    rows.forEach(r => {
+      if (typeof r.lat !== 'number' || typeof r.long !== 'number') return;
+      const m = L.marker([r.lat, r.long]).bindPopup(
+        `<strong>${r.tree_code || 'boom'}</strong><br>` +
+        `${r.tree_type || ''}<br>` +
+        `${r.area || ''}<br>` +
+        `${r.planted_at ? new Date(r.planted_at).toLocaleDateString() : ''}`
+      );
+      markers.addLayer(m);
+      bounds.push([r.lat, r.long]);
     });
-  </script>
+    if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
+    msg.textContent = `${rows.length} bomen`;
+  }
+
+  document.getElementById('finder').addEventListener('submit', async e => {
+    e.preventDefault();
+    const q = document.getElementById('email').value.trim();
+    if (!q) { msg.textContent = 'voer e-mail of user_id in'; return; }
+    msg.textContent = 'laden…';
+    try {
+      const data = await fetchTrees(q);
+      renderTrees(data.rows || []);
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'kan bomen niet laden';
+    }
+  });
+</script>
+
 </body>
 </html>
