@@ -3,7 +3,7 @@ const { Client } = pkg;
 
 export default async function treesHandler(req, context) {
   try {
-    const url = new URL(req.url);
+    const url = new URL(req.url, `http://${req.headers.host}`);
     const email = url.searchParams.get("email");
     const userId = url.searchParams.get("user_id");
 
