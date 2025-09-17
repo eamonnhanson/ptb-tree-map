@@ -38,13 +38,13 @@ export default async function treesHandler(req, context) {
       sql = `SELECT tree_code, tree_type, lat, long, area, planted_date
              FROM public.v_user_trees
              WHERE lower(email) = lower($1)
-             ORDER BY planted_at NULLS LAST, tree_code`;
+             ORDER BY planted_date NULLS LAST, tree_code`;
       params = [email];
     } else {
       sql = `SELECT tree_code, tree_type, lat, long, area, planted_date
              FROM public.v_user_trees
              WHERE user_id = $1
-             ORDER BY planted_at NULLS LAST, tree_code`;
+             ORDER BY planted_date NULLS LAST, tree_code`;
       params = [userId];
     }
 
