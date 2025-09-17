@@ -6,8 +6,27 @@ import treesHandler from "./api/trees.js";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Enable CORS for all routes
-app.use(cors());
+// Allowed origins (extend later, e.g. add your Shopify domain)
+const allowedOrigins = [
+  "https://ptb-tree-map.onrender.com", // Render app
+  // "https://yourshop.myshopify.com"   // add later when embedding in Shopify
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like same-origin or curl)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+};
+
+// Enable CORS
+app.use(cors(corsOptions));
 
 // Root health check
 app.get("/", (req, res) => {
