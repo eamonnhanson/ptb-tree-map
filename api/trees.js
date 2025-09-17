@@ -7,7 +7,7 @@ export default async function treesHandler(req, context) {
     const client = new Client({
       connectionString: process.env.PG_URL,
       ssl: {
-        rejectUnauthorized: false,  // <— skip CA verification
+        rejectUnauthorized: false   // 👈 bypass validation
       },
     });
 
