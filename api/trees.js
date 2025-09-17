@@ -1,13 +1,26 @@
 // api/trees.js
 import pkg from "pg";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
 const { Client } = pkg;
+
+// __dirname replacement for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default async function treesHandler(req, context) {
   try {
+    // point to /certs/ca.pem (relative to repo root)
+    const caPath = path.join(__dirname, "..", "certs", "ca.pem");
+    const caCert = fs.readFileSync(caPath).toString();
+
     const client = new Client({
       connectionString: process.env.PG_URL,
       ssl: {
-        rejectUnauthorized: false   // 👈 bypass validation
+        ca: caCert,
+        rejectUnauthorized: true,
       },
     });
 
