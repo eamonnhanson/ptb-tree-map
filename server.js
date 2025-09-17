@@ -1,16 +1,21 @@
 // server.js
 import express from "express";
+import cors from "cors";
 import treesHandler from "./api/trees.js";
 
 const app = express();
+const PORT = process.env.PORT || 10000;
 
-// simple health check
+// Enable CORS for all routes
+app.use(cors());
+
+// Root health check
 app.get("/", (req, res) => {
   res.json({ ok: true, msg: "Server running" });
 });
 
-// wire trees.js
-app.get("/trees", async (req, res) => {
+// Wire trees.js
+app.get("/api/trees", async (req, res) => {
   try {
     const response = await treesHandler(req, {});
     const text = await response.text();
@@ -24,7 +29,6 @@ app.get("/trees", async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 10000;
-app.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
