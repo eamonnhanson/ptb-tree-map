@@ -6,6 +6,14 @@ import treesHandler from "./api/trees.js";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// CORS fix: allow GitHub Pages + localhost
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "https://eamonnhanson.github.io");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  next();
+});
+
 // Allowed origins (extend later, e.g. add your Shopify domain)
 const allowedOrigins = [
   "https://ptb-tree-map.onrender.com", // Render app
