@@ -70,7 +70,7 @@
         `<strong>${r.tree_code || 'boom'}</strong><br>` +
         `${r.tree_type || ''}<br>` +
         `${r.area || ''}<br>` +
-        `${r.planted_at ? new Date(r.planted_at).toLocaleDateString() : ''}`
+        `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
       );
       markers.addLayer(m);
       bounds.push([r.lat, r.long]);
