@@ -4,14 +4,20 @@ const { Client } = pkg;
 
 export default async function treesHandler(req, context) {
   try {
-    const client = new Client({
-      connectionString: process.env.PG_URL,
-      ssl: {
-        ca: process.env.PG_CA_CERT,
-        rejectUnauthorized: true,
-      },
-    });
 
+
+
+const client = new Client({
+  connectionString: process.env.PG_URL,
+  ssl: {
+    ca: process.env.PG_CA_CERT.replace(/\\n/g, "\n"), // 🔑 fix for Render env vars
+    rejectUnauthorized: true,
+  },
+});
+
+
+
+    
     await client.connect();
     const result = await client.query("SELECT 1 as test");
     await client.end();
