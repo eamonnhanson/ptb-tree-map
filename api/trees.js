@@ -7,13 +7,11 @@ export default async function treesHandler(req, context) {
     const client = new Client({
       connectionString: process.env.PG_URL,
       ssl: {
-        rejectUnauthorized: false,
+        rejectUnauthorized: false,  // <— skip CA verification
       },
     });
 
     await client.connect();
-
-    // simple test query
     const result = await client.query("SELECT 1 as test");
     await client.end();
 
