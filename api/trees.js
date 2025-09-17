@@ -1,8 +1,13 @@
+// api/trees.js
 import pkg from "pg";
+import fs from "fs";
+import path from "path";
+
 const { Client } = pkg;
 
 export default async function treesHandler(req, context) {
   try {
+    // ✅ Fix URL parsing for Express/Render
     const url = new URL(req.url, `http://${req.headers.host}`);
     const email = url.searchParams.get("email");
     const userId = url.searchParams.get("user_id");
@@ -14,8 +19,16 @@ export default async function treesHandler(req, context) {
       );
     }
 
+    // ✅ Load CA file directly from disk
+    const caPath = path.join(process.cwd(), "certs", "ca.pem");
+    const ca = fs.readFileSync(caPath).toString();
+
     const client = new Client({
       connectionString: process.env.PG_URL,
+      ssl: {
+        rejectUnauthorized: true, // enforce validation
+        ca, // trust Aiven’s CA
+      },
     });
 
     await client.connect();
@@ -39,7 +52,10 @@ export default async function treesHandler(req, context) {
     await client.end();
 
     return new Response(JSON.stringify({ rows: rs.rows }), {
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "cache-control": "no-store",
+      },
     });
   } catch (err) {
     console.error("DB connection failed:", err);
