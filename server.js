@@ -1,33 +1,30 @@
+// server.js
 import express from "express";
-import treesHandler from "./api/trees.js"; // adjust if path is different
+import treesHandler from "./api/trees.js";
 
 const app = express();
-const PORT = process.env.PORT || 10000;
 
-// Root check
+// simple health check
 app.get("/", (req, res) => {
-  res.send("🌳 Tree API is live on Render");
+  res.json({ ok: true, msg: "Server running" });
 });
 
-// Trees API
+// wire trees.js
 app.get("/trees", async (req, res) => {
   try {
-    // Call the handler from trees.js
     const response = await treesHandler(req, {});
-
-    // If trees.js returns a Response object (like in Netlify style)
     const text = await response.text();
     res
       .status(response.status)
-      .set("content-type", response.headers.get("content-type") || "application/json")
+      .set(Object.fromEntries(response.headers))
       .send(text);
   } catch (err) {
-    console.error("Error in /trees:", err);
-    res.status(500).json({ error: "server error" });
+    console.error("Handler failed:", err);
+    res.status(500).json({ error: "server crash", details: err.message });
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+const port = process.env.PORT || 10000;
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
 });
