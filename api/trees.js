@@ -1,31 +1,32 @@
 // api/trees.js
-import { Client } from "pg";
+import pkg from "pg";
+const { Client } = pkg;
 
 export default async function treesHandler(req, context) {
   try {
     const client = new Client({
       connectionString: process.env.PG_URL,
-      ssl: process.env.PGSSLMODE === "no-verify" 
-        ? { rejectUnauthorized: false } 
-        : true
+      ssl: {
+        rejectUnauthorized: false,
+      },
     });
 
     await client.connect();
 
-    // 🔍 Test query
-    const rs = await client.query("SELECT 1 AS test_value");
+    // simple test query
+    const result = await client.query("SELECT 1 as test");
     await client.end();
 
     return new Response(
-      JSON.stringify({ success: true, result: rs.rows }),
+      JSON.stringify({ ok: true, db: result.rows }),
       {
-        headers: { "content-type": "application/json" }
+        headers: { "content-type": "application/json" },
       }
     );
-  } catch (e) {
-    console.error("DB connection test error:", e);
+  } catch (err) {
+    console.error("DB connection failed:", err);
     return new Response(
-      JSON.stringify({ error: "DB connection failed", details: e.message }),
+      JSON.stringify({ error: "db error", details: err.message }),
       { status: 500 }
     );
   }
