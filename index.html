@@ -69,7 +69,7 @@ function renderTrees(rows) {
     const lat = parseFloat(r.lat);
     const lng = parseFloat(r.long);
 
-    if (isNaN(lat) || isNaN(lng)) return;
+    if (isNaN(lat) || isNaN(lng)) return; // skip invalid coords
 
     const m = L.marker([lat, lng]).bindPopup(
       `<strong>${r.tree_code || 'boom'}</strong><br>` +
@@ -84,6 +84,7 @@ function renderTrees(rows) {
   if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
   msg.textContent = `${rows.length} bomen`;
 }
+
 
   document.getElementById('finder').addEventListener('submit', async e => {
     e.preventDefault();
