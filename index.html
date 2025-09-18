@@ -59,33 +59,36 @@
     return res.json();
   }
 
-function renderTrees(rows) {
-  markers.clearLayers();
-  if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
+  function renderTrees(rows) {
+    markers.clearLayers();
+    if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
 
-  const bounds = [];
-  rows.forEach(r => {
-    const lat = parseFloat(r.lat);
-    const lng = parseFloat(r.long);
+    const bounds = [];
+    rows.forEach(r => {
+      // Explicit conversion
+      const lat = parseFloat(r.lat);
+      const lng = parseFloat(r.long ?? r.lng); // support both keys
 
-    if (isNaN(lat) || isNaN(lng)) {
-      console.warn("Skipping invalid coords:", r);
-      return;
-    }
+      if (isNaN(lat) || isNaN(lng)) {
+        console.warn("Skipping invalid coords:", r);
+        return;
+      }
 
-    const m = L.marker([lat, lng]).bindPopup(
-      `<strong>${r.tree_code || 'boom'}</strong><br>` +
-      `${r.tree_type || ''}<br>` +
-      `${r.area || ''}<br>` +
-      `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
-    );
-    markers.addLayer(m);
-    bounds.push([lat, lng]);
-  });
+      console.log("Adding marker:", lat, lng, r.tree_code);
 
-  if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
-  msg.textContent = `${rows.length} bomen`;
-}
+      const m = L.marker([lat, lng]).bindPopup(
+        `<strong>${r.tree_code || 'boom'}</strong><br>` +
+        `${r.tree_type || ''}<br>` +
+        `${r.area || ''}<br>` +
+        `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
+      );
+      markers.addLayer(m);
+      bounds.push([lat, lng]);
+    });
+
+    if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
+    msg.textContent = `${rows.length} bomen`;
+  }
 
   document.getElementById('finder').addEventListener('submit', async e => {
     e.preventDefault();
@@ -94,7 +97,7 @@ function renderTrees(rows) {
     msg.textContent = 'laden…';
     try {
       const data = await fetchTrees(q);
-      console.log("API response:", data); // 👈 log to check structure
+      console.log("API response:", data); // log structure
       renderTrees(data.rows || []);
     } catch (err) {
       console.error(err);
