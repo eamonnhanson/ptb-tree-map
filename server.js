@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import cors from "cors";
 import treesHandler from "./api/trees.js";
@@ -6,13 +5,12 @@ import treesHandler from "./api/trees.js";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// CORS fix: allow GitHub Pages + localhost
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "https://eamonnhanson.github.io");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  next();
-});
+// Allowed origins
+const allowedOrigins = [
+  "http://localhost:3000",               // local dev
+  "http://127.0.0.1:5500",              // local dev (e.g. VSCode Live Server)
+  "https://eamonnhanson.github.io",     // ✅ your GitHub Pages frontend
+];
 
 // Allowed origins (extend later, e.g. add your Shopify domain)
 const allowedOrigins = [
@@ -20,21 +18,19 @@ const allowedOrigins = [
   // "https://yourshop.myshopify.com"   // add later when embedding in Shopify
 ];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like same-origin or curl)
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-};
-
-// Enable CORS
-app.use(cors(corsOptions));
+// Dynamic CORS options
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.log("❌ Blocked by CORS:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  })
+);
 
 // Root health check
 app.get("/", (req, res) => {
