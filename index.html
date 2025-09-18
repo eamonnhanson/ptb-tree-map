@@ -60,35 +60,43 @@
   }
 
   function renderTrees(rows) {
-    markers.clearLayers();
-    if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
-
-    const bounds = [];
-    rows.forEach(r => {
-      // Explicit conversion
-      const lat = parseFloat(r.lat);
-      const lng = parseFloat(r.long ?? r.lng); // support both keys
-
-      if (isNaN(lat) || isNaN(lng)) {
-        console.warn("Skipping invalid coords:", r);
-        return;
-      }
-
-      console.log("Adding marker:", lat, lng, r.tree_code);
-
-      const m = L.marker([lat, lng]).bindPopup(
-        `<strong>${r.tree_code || 'boom'}</strong><br>` +
-        `${r.tree_type || ''}<br>` +
-        `${r.area || ''}<br>` +
-        `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
-      );
-      markers.addLayer(m);
-      bounds.push([lat, lng]);
-    });
-
-    if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
-    msg.textContent = `${rows.length} bomen`;
+  markers.clearLayers();
+  if (!rows.length) { 
+    msg.textContent = '0 bomen gevonden'; 
+    return; 
   }
+
+  const bounds = [];
+  rows.forEach(r => {
+    const lat = parseFloat(r.lat);
+    const lng = parseFloat(r.long);
+
+    console.log("Row:", r); // 👈 log the whole row
+    console.log("Parsed coords:", lat, lng); // 👈 log parsed coords
+
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn("Skipping invalid coords:", r);
+      return;
+    }
+
+    const m = L.marker([lat, lng]).bindPopup(
+      `<strong>${r.tree_code || 'boom'}</strong><br>` +
+      `${r.tree_type || ''}<br>` +
+      `${r.area || ''}<br>` +
+      `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
+    );
+    markers.addLayer(m);
+    bounds.push([lat, lng]);
+  });
+
+  if (bounds.length) {
+    map.fitBounds(bounds, { padding: [20,20] });
+    console.log("Fitted map to bounds:", bounds); // 👈 log bounds
+  }
+
+  msg.textContent = `${rows.length} bomen`;
+}
+
 
   document.getElementById('finder').addEventListener('submit', async e => {
     e.preventDefault();
