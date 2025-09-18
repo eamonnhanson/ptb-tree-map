@@ -5,20 +5,14 @@ import treesHandler from "./api/trees.js";
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Allowed origins
+// ✅ Allowed origins (declare only once)
 const allowedOrigins = [
-  "http://localhost:3000",               // local dev
-  "http://127.0.0.1:5500",              // local dev (e.g. VSCode Live Server)
-  "https://eamonnhanson.github.io",     // ✅ your GitHub Pages frontend
+  "http://localhost:3000",           // local dev
+  "http://127.0.0.1:5500",           // VSCode live server etc.
+  "https://eamonnhanson.github.io",  // ✅ GitHub Pages
 ];
 
-// Allowed origins (extend later, e.g. add your Shopify domain)
-const allowedOrigins = [
-  "https://ptb-tree-map.onrender.com", // Render app
-  // "https://yourshop.myshopify.com"   // add later when embedding in Shopify
-];
-
-// Dynamic CORS options
+// ✅ Apply CORS
 app.use(
   cors({
     origin: function (origin, callback) {
