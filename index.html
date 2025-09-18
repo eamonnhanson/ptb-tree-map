@@ -59,33 +59,33 @@
     return res.json();
   }
 
-  function renderTrees(rows) {
-    markers.clearLayers();
-    if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
+function renderTrees(rows) {
+  markers.clearLayers();
+  if (!rows.length) { msg.textContent = '0 bomen gevonden'; return; }
 
-    const bounds = [];
-    rows.forEach(r => {
-      const lat = Number(r.lat);
-      const lng = Number(r.long);
+  const bounds = [];
+  rows.forEach(r => {
+    const lat = parseFloat(r.lat);
+    const lng = parseFloat(r.long);
 
-      if (isNaN(lat) || isNaN(lng)) {
-        console.warn("Skipping invalid coords:", r);
-        return;
-      }
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn("Skipping invalid coords:", r);
+      return;
+    }
 
-      const m = L.marker([lat, lng]).bindPopup(
-        `<strong>${r.tree_code || 'boom'}</strong><br>` +
-        `${r.tree_type || ''}<br>` +
-        `${r.area || ''}<br>` +
-        `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
-      );
-      markers.addLayer(m);
-      bounds.push([lat, lng]);
-    });
+    const m = L.marker([lat, lng]).bindPopup(
+      `<strong>${r.tree_code || 'boom'}</strong><br>` +
+      `${r.tree_type || ''}<br>` +
+      `${r.area || ''}<br>` +
+      `${r.planted_date ? new Date(r.planted_date).toLocaleDateString() : ''}`
+    );
+    markers.addLayer(m);
+    bounds.push([lat, lng]);
+  });
 
-    if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
-    msg.textContent = `${rows.length} bomen`;
-  }
+  if (bounds.length) map.fitBounds(bounds, { padding: [20,20] });
+  msg.textContent = `${rows.length} bomen`;
+}
 
   document.getElementById('finder').addEventListener('submit', async e => {
     e.preventDefault();
