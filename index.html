@@ -97,21 +97,25 @@
   msg.textContent = `${rows.length} bomen`;
 }
 
+document.getElementById('finder').addEventListener('submit', async e => {
+  e.preventDefault();
+  const q = document.getElementById('email').value.trim();
+  if (!q) { msg.textContent = 'voer e-mail of user_id in'; return; }
+  msg.textContent = 'laden…';
+  try {
+    const data = await fetchTrees(q);
+    console.log("API response:", data);
 
-  document.getElementById('finder').addEventListener('submit', async e => {
-    e.preventDefault();
-    const q = document.getElementById('email').value.trim();
-    if (!q) { msg.textContent = 'voer e-mail of user_id in'; return; }
-    msg.textContent = 'laden…';
-    try {
-      const data = await fetchTrees(q);
-      console.log("API response:", data); // log structure
-      renderTrees(data.rows || []);
-    } catch (err) {
-      console.error(err);
-      msg.textContent = 'kan bomen niet laden';
-    }
-  });
+    // ✅ handle both `data.rows` and plain array
+    const rows = Array.isArray(data) ? data : (data.rows || []);
+    renderTrees(rows);
+
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'kan bomen niet laden';
+  }
+});
+
 </script>
 
 </body>
