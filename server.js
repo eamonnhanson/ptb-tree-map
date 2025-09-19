@@ -10,7 +10,7 @@ const allowedOrigins = [
   "http://localhost:3000",
   "http://127.0.0.1:5500",
   "https://eamonnhanson.github.io",
-  "https://courageous-centaur-f7d1ea.netlify.app"
+  "https://courageous-centaur-f7d1ea.netlify.app",
 ];
 
 // Apply CORS
@@ -32,16 +32,8 @@ app.get("/", (req, res) => {
   res.json({ ok: true, msg: "Server running" });
 });
 
-// Trees API
-app.get("/api/trees", async (req, res) => {
-  try {
-    const data = await treesHandler(req, {}); // must return JSON
-    res.json(data);
-  } catch (err) {
-    console.error("Handler failed:", err);
-    res.status(500).json({ error: "server crash", details: err.message });
-  }
-});
+// ✅ Trees API — pass req,res directly
+app.get("/api/trees", treesHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
