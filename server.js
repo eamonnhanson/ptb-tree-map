@@ -1,6 +1,6 @@
-const express = require("express");
-const cors = require("cors");
-const treesHandler = require("./api/trees.js");
+import express from "express";
+import cors from "cors";
+import treesHandler from "./api/trees.js";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -16,7 +16,7 @@ const allowedOrigins = [
 // Apply CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -35,7 +35,7 @@ app.get("/", (req, res) => {
 // Trees API
 app.get("/api/trees", async (req, res) => {
   try {
-    const data = await treesHandler(req, {}); // assume handler returns { rows: [...] }
+    const data = await treesHandler(req, {}); // must return JSON
     res.json(data);
   } catch (err) {
     console.error("Handler failed:", err);
