@@ -1,15 +1,16 @@
-import express from "express";
-import cors from "cors";
-import treesHandler from "./api/trees.js";
+const express = require("express");
+const cors = require("cors");
+const treesHandler = require("./api/trees.js"); // adjust if you export differently
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// ✅ Allowed origins (declare only once)
+// ✅ Allowed origins (add your live frontends here)
 const allowedOrigins = [
-  "http://localhost:3000",           // local dev
-  "http://127.0.0.1:5500",           // VSCode live server etc.
-  "https://eamonnhanson.github.io",  // ✅ GitHub Pages
+  "http://localhost:3000",                        // local dev
+  "http://127.0.0.1:5500",                        // VSCode live server etc.
+  "https://eamonnhanson.github.io",               // GitHub Pages
+  "https://courageous-centaur-f7d1ea.netlify.app" // Netlify frontend
 ];
 
 // ✅ Apply CORS
@@ -31,7 +32,7 @@ app.get("/", (req, res) => {
   res.json({ ok: true, msg: "Server running" });
 });
 
-// Wire trees.js
+// Trees API
 app.get("/api/trees", async (req, res) => {
   try {
     const response = await treesHandler(req, {});
