@@ -11,8 +11,7 @@ const allowedOrigins = [
   "http://127.0.0.1:5500",
   "https://eamonnhanson.github.io",
   "https://courageous-centaur-f7d1ea.netlify.app",
-  "https://map.planteenboom.nu",
-  "https://map.planteenboom.nu/en/",
+  "https://map.planteenboom.nu"
 ];
 
 // Apply CORS
@@ -28,6 +27,7 @@ app.use(
     },
   })
 );
+
 
 // Root health check
 app.get("/", (req, res) => {
