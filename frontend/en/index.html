@@ -86,7 +86,7 @@
     msg.textContent = 'laden…';
     try {
       const data = await fetchTrees(q);
-      renderTrees(data.rows || []);
+      renderTrees(data);
     } catch (err) {
       console.error(err);
       msg.textContent = 'cannot load trees';
