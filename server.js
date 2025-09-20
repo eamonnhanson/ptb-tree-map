@@ -12,7 +12,6 @@ const allowedOrigins = [
   "https://eamonnhanson.github.io",
   "https://courageous-centaur-f7d1ea.netlify.app",
   "https://map.planteenboom.nu"
-  /\.netlify\.app$/   // ✅ allow all Netlify deploy previews,
 ];
 
 // Apply CORS
