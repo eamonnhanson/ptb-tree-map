@@ -21,7 +21,7 @@ app.use(
       if (!origin) return callback(null, true); // allow server-side / curl
       if (
         allowedOrigins.includes(origin) ||
-        /\.netlify\.app$/.test(origin)     // ✅ match Netlify preview URLs
+        /\.netlify\.app$/.test(origin)
       ) {
         callback(null, true);
       } else {
