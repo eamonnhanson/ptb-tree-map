@@ -12,13 +12,18 @@ const allowedOrigins = [
   "https://eamonnhanson.github.io",
   "https://courageous-centaur-f7d1ea.netlify.app",
   "https://map.planteenboom.nu"
+  /\.netlify\.app$/   // ✅ allow all Netlify deploy previews,
 ];
 
 // Apply CORS
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true); // allow server-side / curl
+      if (
+        allowedOrigins.includes(origin) ||
+        /\.netlify\.app$/.test(origin)     // ✅ match Netlify preview URLs
+      ) {
         callback(null, true);
       } else {
         console.log("❌ Blocked by CORS:", origin);
