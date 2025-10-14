@@ -1,9 +1,44 @@
-// 🌍 Init map 
-const map = L.map('map').setView([8.5, -13.2], 7); // Sierra Leone default view
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+// 🌍 Init map
+const map = L.map('map').setView([8.5, -13.2], 7);
+
+// 🧱 basemaps
+const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '&copy; OpenStreetMap contributors'
 }).addTo(map);
+
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  {
+    maxZoom: 19,
+    attribution: 'Tiles &copy; Esri'
+  }
+);
+
+// 🧭 layers control (rechtsboven)
+L.control.layers(
+  { 'Kaart (OSM)': osm, 'Satelliet (Esri)': esriSat },
+  {}, // overlays heb je al via markers-laag
+  { position: 'topright', collapsed: true }
+).addTo(map);
+
+// 📏 schaalbalk (linksonder)
+L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
+
+// 🟩 logo als Leaflet control (linksonder)
+const LogoControl = L.Control.extend({
+  options: { position: 'bottomleft' },
+  onAdd() {
+    const img = L.DomUtil.create('img', 'map-logo');
+    img.src = 'https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=140';
+    img.alt = 'Plant N Boom';
+    img.title = 'Plant N Boom';
+    img.style.cursor = 'pointer';
+    img.addEventListener('click', () => window.open('https://www.planteenboom.nu/', '_blank'));
+    return img;
+  }
+});
+new LogoControl().addTo(map);
 
 // 📍 Marker layer
 const markers = L.layerGroup().addTo(map);
