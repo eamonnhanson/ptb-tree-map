@@ -9,21 +9,25 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const markers = L.layerGroup().addTo(map);
 const msg = document.getElementById('msg');
 
-// 🧠 helper voor invoerinterpretatie
-function detectQueryType(raw) {
-  const q = raw.trim();
-  if (q.includes('@')) return { key: 'email', value: q };
-  if (/^\d+$/.test(q)) return { key: 'user_id', value: q };
-  return { key: 'tree_code', value: q.toLowerCase() };
-}
-
-// 🔎 Fetch trees by email, user_id of tree_code
-async function fetchTrees(query) {
-  const baseUrl = "https://ptb-tree-map.onrender.com/api/trees"; // 👈 API op Render
+// 🔎 Fetch trees via email/user_id of tree_code
+async function fetchTrees({ identity, treeCode }) {
+  const baseUrl = "https://ptb-tree-map.onrender.com/api/trees";
   const url = new URL(baseUrl);
 
-  const { key, value } = detectQueryType(query);
-  url.searchParams.set(key, value);
+  const emailOrUser = (identity || "").trim();
+  const code = (treeCode || "").trim().toLowerCase();
+
+  if (code) {
+    url.searchParams.set('tree_code', code);
+  } else if (emailOrUser.includes('@')) {
+    url.searchParams.set('email', emailOrUser);
+  } else if (/^\d+$/.test(emailOrUser)) {
+    url.searchParams.set('user_id', emailOrUser);
+  } else {
+    throw new Error('ongeldige invoer');
+  }
+
+  console.log('[finder] url:', url.toString());
 
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error('serverfout ' + res.status);
@@ -74,24 +78,27 @@ function renderTrees(rows) {
 // 🎛️ Form submit listener
 document.getElementById('finder').addEventListener('submit', async e => {
   e.preventDefault();
-  const q = document.getElementById('email').value.trim();
 
-  if (!q) {
-    msg.textContent = 'voer e-mail, user_id of tree_code in';
+  const identity = document.getElementById('email')?.value?.trim() || '';
+  const treeCode = document.getElementById('tree_code')?.value?.trim() || '';
+
+  if (!identity && !treeCode) {
+    msg.textContent = 'vul e-mail of user_id in, of vul tree_code in';
     return;
   }
 
   msg.textContent = 'laden…';
 
   try {
-    const data = await fetchTrees(q);
-
-    // ✅ Werkt met zowel {rows:[...]} als met een array
+    const data = await fetchTrees({ identity, treeCode });
     const rows = Array.isArray(data) ? data : (data.rows || []);
     renderTrees(rows);
-
   } catch (err) {
     console.error("API error:", err);
-    msg.textContent = 'kan bomen niet laden';
+    if (String(err.message).includes('ongeldige invoer')) {
+      msg.textContent = 'ongeldige invoer. gebruik e-mail, numerieke user_id of tree_code';
+    } else {
+      msg.textContent = 'kan bomen niet laden';
+    }
   }
 });
