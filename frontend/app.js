@@ -25,7 +25,7 @@ const redIcon = L.icon({
   shadowSize: [41, 41]
 });
 
-// 🔎 Fetch trees by email or user_id (ongewijzigd)
+// 🔎 Fetch trees by email or user_id
 async function fetchTrees(query) {
   const baseUrl = "https://ptb-tree-map.onrender.com/api/trees"; // 👈 API op Render
   const url = new URL(baseUrl);
@@ -47,7 +47,7 @@ function renderTrees(rows) {
   markers.clearLayers();
   markersByCode.clear();
   clearSelection();
-  ensureCodePanel(); // maak of toon de panel
+  ensureCodePanel(); // alleen DOM-element maken, geen CSS injectie
 
   if (!rows.length) {
     msg.textContent = '0 bomen gevonden';
@@ -77,25 +77,17 @@ function renderTrees(rows) {
       `${planted}`
     );
 
-    // klik op marker → selecteer in lijst en kleur rood
     m.on('click', () => selectByMarker(m, code));
 
     markers.addLayer(m);
     bounds.push([lat, lng]);
 
-    if (code) {
-      // map op lowercase zodat klikken ongevoelig is voor hoofdletters
-      markersByCode.set(code.toLowerCase(), m);
-    }
+    if (code) markersByCode.set(code.toLowerCase(), m);
   });
 
-  if (bounds.length) {
-    map.fitBounds(bounds, { padding: [20, 20] });
-  }
+  if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
 
   msg.textContent = `${rows.length} bomen`;
-
-  // lijst vullen
   renderCodeList(rows);
 }
 
@@ -117,12 +109,10 @@ function selectByMarker(marker, codeText) {
   selectedMarker = marker;
   marker.setIcon(redIcon).openPopup();
   if (codeText) {
-    // markeer bijbehorende item in lijst
     const item = document.querySelector(`[data-tree-code="${cssEscape(codeText.toLowerCase())}"]`);
     if (item) {
       item.classList.add('active');
       selectedItemEl = item;
-      // scroll item in zicht
       item.scrollIntoView({ block: 'nearest' });
     }
   }
@@ -149,58 +139,6 @@ function selectByCode(codeText) {
 // 🧩 lijstpaneel maken als die nog niet bestaat
 function ensureCodePanel() {
   if (document.getElementById('code-panel')) return;
-
-  const style = document.createElement('style');
-  style.textContent = `
-    #code-panel {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      width: 280px;
-      max-height: 40vh;
-      overflow: auto;
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.1);
-      border-radius: 10px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-      font: 14px/1.3 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      z-index: 800; /* boven de kaart */
-    }
-    #code-panel header {
-      position: sticky;
-      top: 0;
-      background: #fff;
-      padding: 8px 12px;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      font-weight: 600;
-    }
-    #code-list {
-      list-style: none;
-      margin: 0;
-      padding: 8px;
-    }
-    #code-list li {
-      margin: 0;
-      padding: 0;
-    }
-    #code-list button {
-      width: 100%;
-      text-align: left;
-      padding: 8px 10px;
-      border: 0;
-      background: transparent;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-    #code-list button:hover { background: #f2f4f7; }
-    #code-list button.active {
-      background: #e6f0ff;
-      outline: 2px solid #99bfff;
-    }
-    #code-panel .empty { padding: 10px 12px; color: #666; }
-  `;
-  document.head.appendChild(style);
-
   const panel = document.createElement('div');
   panel.id = 'code-panel';
   panel.innerHTML = `
@@ -219,7 +157,6 @@ function renderCodeList(rows) {
   ul.innerHTML = '';
   clearSelection();
 
-  // verzamel unieke codes
   const codes = [];
   const seen = new Set();
   rows.forEach(r => {
@@ -235,10 +172,8 @@ function renderCodeList(rows) {
     return;
   }
 
-  // sorteer alfabetisch
   codes.sort((a, b) => a.localeCompare(b, 'nl'));
 
-  // bouw items
   const frag = document.createDocumentFragment();
   codes.forEach(code => {
     const li = document.createElement('li');
@@ -258,14 +193,14 @@ function cssEscape(s) {
   return s.replace(/["\\]/g, '\\$&');
 }
 
-// 🎛️ Form submit listener (ongewijzigd behalve kleine tekst)
+// 🎛️ Form submit listener
 document.getElementById('finder').addEventListener('submit', async e => {
   e.preventDefault();
   const q = document.getElementById('email').value.trim();
 
   if (!q) {
     msg.textContent = 'voer e-mail of user_id in';
-    renderCodeList([]); // leegmaken als niets gezocht wordt
+    renderCodeList([]); 
     markers.clearLayers();
     return;
   }
