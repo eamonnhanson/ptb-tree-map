@@ -2,41 +2,52 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plant N Boom • Mijn bomen</title>
+
+  <!-- basis-styles -->
   <link rel="stylesheet" href="styles.css">
+
+  <!-- leaflet styles -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
-  <style>
-    body { margin:0; font:16px system-ui, -apple-system, Segoe UI, Roboto; }
-    header { padding:12px 16px; border-bottom:1px solid #eee; }
-    form { display:flex; gap:8px; flex-wrap:wrap; }
-    input[type="text"]{ padding:8px 10px; min-width:260px; border:1px solid #ccc; border-radius:8px; }
-    button{ padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; color:white; cursor:pointer; }
-    #map { height: calc(100vh - 70px); }
-    #msg { padding:8px 16px; color:#555; }
-  </style>
+
+  <!-- favicon en social share -->
+  <link rel="icon" type="image/png" sizes="32x32"
+        href="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=64">
+  <meta property="og:title" content="Plant N Boom • Mijn bomen">
+  <meta property="og:image" content="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=600">
+  <meta property="og:url" content="https://map.planteenboom.nu/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0a7b66">
 </head>
 <body>
   <header>
-    <form id="finder">
-      <input id="email" type="text" placeholder="jouw e-mail, user_id of tree_code" />
+    <img id="brand-logo"
+         src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=160"
+         alt="Plant N Boom">
+    <form id="finder" autocomplete="off">
+      <label for="email" class="sr-only">e-mail of user_id</label>
+      <input id="email" type="text" placeholder="jouw e-mail of user_id" inputmode="text" />
       <button type="submit">toon mijn bomen</button>
-      <span id="msg"></span>
+      <span id="msg" aria-live="polite"></span>
     </form>
   </header>
-  <div id="map"></div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  <div id="map" role="application" aria-label="kaart met boomlocaties"></div>
+
+  <!-- leaflet js -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""></script>
+    crossorigin="">
+  </script>
 
-  <!-- Your main app code -->
+  <!-- app code -->
   <script src="app.js"></script>
 </body>
 </html>
