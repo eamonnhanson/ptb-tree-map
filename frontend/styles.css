@@ -1,3 +1,4 @@
+/* bestaande styles */
 body { margin:0; font:16px system-ui, -apple-system, Segoe UI, Roboto; }
 header { padding:12px 16px; border-bottom:1px solid #eee; }
 form { display:flex; gap:8px; flex-wrap:wrap; }
@@ -5,3 +6,59 @@ input[type="text"] { padding:8px 10px; min-width:260px; border:1px solid #ccc; b
 button { padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; color:white; cursor:pointer; }
 #map { height: calc(100vh - 70px); }
 #msg { padding:8px 16px; color:#555; }
+
+/* paneel rechtsonder met boomcodes */
+#code-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  max-height: 42vh;
+  overflow: auto;
+  background: #ffffff;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.12);
+  z-index: 800;
+  font: 14px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+#code-panel header {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;   /* lichtgrijze header */
+  color: #0a7b66;         /* PNB-groen */
+  padding: 10px 12px;
+  border-bottom: 1px solid #e3e8ef;
+  font-weight: 700;
+}
+
+#code-list {
+  list-style: none;
+  margin: 0;
+  padding: 8px;
+}
+
+#code-list li { margin: 0; padding: 0; }
+
+#code-list button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 8px;
+  color: #0f172a;         /* bijna zwart */
+}
+
+#code-list button:hover { background: #edf6f4; }   /* heel licht groen */
+#code-list button.active {
+  background: #e6f4f1;
+  outline: 2px solid #0a7b66;
+}
+
+/* nette scrollbar in het paneel */
+#code-panel::-webkit-scrollbar { width: 10px; }
+#code-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+#code-panel::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
