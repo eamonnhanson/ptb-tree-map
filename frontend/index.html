@@ -24,13 +24,12 @@
 <body>
   <header>
     <form id="finder">
-      <input id="email" type="text" placeholder="jouw e-mail, user_id of tree_code" />
-      <button type="submit">toon mijn bomen</button>
-      <span id="msg"></span>
+  <input id="email_or_user" placeholder="e-mail of user_id">
+  <input id="tree_code" placeholder="tree_code">
+  <button type="submit">Zoek</button>
     </form>
   </header>
-  <div id="map"></div>
-
+ 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
