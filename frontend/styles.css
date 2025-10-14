@@ -62,3 +62,35 @@ button { padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; colo
 #code-panel::-webkit-scrollbar { width: 10px; }
 #code-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
 #code-panel::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* popups */
+.leaflet-popup-content .popup { min-width: 200px; }
+.popup-title { font-weight: 700; margin-bottom: 4px; }
+.popup-sub { color:#475569; font-size:14px; margin-bottom: 6px; }
+.popup-meta { color:#64748b; font-size:13px; margin-bottom: 8px; }
+.popup-actions { display:flex; gap:10px; }
+.btn-link { background:transparent; border:0; color:#0a7b66; cursor:pointer; padding:0; }
+.btn-link:hover { text-decoration: underline; }
+
+/* code-panel zoekveld */
+#code-panel header { display:flex; align-items:center; gap:8px; }
+#code-panel header input {
+  margin-left:auto;
+  padding:6px 8px;
+  border:1px solid #e3e8ef;
+  border-radius:6px;
+  font-size:13px;
+  width: 120px;
+}
+
+/* lijstregels rijker maken */
+#code-list button {
+  display:flex;
+  justify-content: space-between;
+  align-items:center;
+}
+#code-list button::after {
+  content: attr(data-type);
+  color:#64748b;
+  font-size:12px;
+}
