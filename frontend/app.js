@@ -1,4 +1,4 @@
-// 🌍 Init map
+// 🌍 Init map 
 const map = L.map('map').setView([8.5, -13.2], 7); // Sierra Leone default view
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
@@ -9,16 +9,21 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const markers = L.layerGroup().addTo(map);
 const msg = document.getElementById('msg');
 
-// 🔎 Fetch trees by email or user_id
+// 🧠 helper voor invoerinterpretatie
+function detectQueryType(raw) {
+  const q = raw.trim();
+  if (q.includes('@')) return { key: 'email', value: q };
+  if (/^\d+$/.test(q)) return { key: 'user_id', value: q };
+  return { key: 'tree_code', value: q.toLowerCase() };
+}
+
+// 🔎 Fetch trees by email, user_id of tree_code
 async function fetchTrees(query) {
-  const baseUrl = "https://ptb-tree-map.onrender.com/api/trees"; // 👈 API on Render
+  const baseUrl = "https://ptb-tree-map.onrender.com/api/trees"; // 👈 API op Render
   const url = new URL(baseUrl);
 
-  if (query.includes('@')) {
-    url.searchParams.set('email', query.trim());
-  } else {
-    url.searchParams.set('user_id', query.trim());
-  }
+  const { key, value } = detectQueryType(query);
+  url.searchParams.set(key, value);
 
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error('serverfout ' + res.status);
@@ -72,7 +77,7 @@ document.getElementById('finder').addEventListener('submit', async e => {
   const q = document.getElementById('email').value.trim();
 
   if (!q) {
-    msg.textContent = 'voer e-mail of user_id in';
+    msg.textContent = 'voer e-mail, user_id of tree_code in';
     return;
   }
 
@@ -81,7 +86,7 @@ document.getElementById('finder').addEventListener('submit', async e => {
   try {
     const data = await fetchTrees(q);
 
-    // ✅ Works whether API returns {rows:[...]} or just an array
+    // ✅ Werkt met zowel {rows:[...]} als met een array
     const rows = Array.isArray(data) ? data : (data.rows || []);
     renderTrees(rows);
 
