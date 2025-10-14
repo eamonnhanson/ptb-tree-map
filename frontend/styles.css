@@ -94,3 +94,46 @@ button { padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; colo
   color:#64748b;
   font-size:12px;
 }
+
+/* =====================
+   themakleuren en polish
+   ===================== */
+:root{
+  --brand-brown: #916735;      /* site-basisbruin (optioneel te gebruiken) */
+  --brand-green: #0a7b66;
+  --brand-green-weak: #e6f4f1;
+  --ink-900: #0f172a;
+  --ink-600: #475569;
+  --line: #e3e8ef;
+}
+
+/* header met logo */
+header { display:flex; align-items:center; gap:12px; }
+#brand-logo { height:34px; width:auto; display:block; }
+
+/* inputs iets netter */
+input[type="text"] { border-color:#cbd5e1; }
+input[type="text"]::placeholder { color:#94a3b8; }
+
+/* button hover */
+button:hover { filter: brightness(0.92); }
+
+/* berichtkleur naar thema */
+#msg { color: var(--ink-600); }
+
+/* leaflet controls in merkstijl */
+.leaflet-control-zoom a{
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--ink-900);
+}
+.leaflet-control-zoom a:hover{ background:#f1f5f9; }
+
+/* logo op de kaart (Leaflet control) */
+.map-logo{
+  box-shadow: 0 6px 20px rgba(2,6,23,.15);
+  border-radius: 8px;
+  background: #fff;
+  padding: 6px;
+  height: 36px;
+}
