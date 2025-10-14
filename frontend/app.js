@@ -9,7 +9,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const markers = L.layerGroup().addTo(map);
 const msg = document.getElementById('msg');
 
-// 📦 state voor selectie en mapping
+// 📦 state
 const markersByCode = new Map();
 let selectedMarker = null;
 let selectedItemEl = null;
@@ -27,7 +27,7 @@ const redIcon = L.icon({
 
 // 🔎 Fetch trees by email or user_id
 async function fetchTrees(query) {
-  const baseUrl = "https://ptb-tree-map.onrender.com/api/trees"; // 👈 API op Render
+  const baseUrl = "https://ptb-tree-map.onrender.com/api/trees";
   const url = new URL(baseUrl);
 
   if (query.includes('@')) {
@@ -38,7 +38,6 @@ async function fetchTrees(query) {
 
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error('serverfout ' + res.status);
-
   return res.json();
 }
 
@@ -47,11 +46,11 @@ function renderTrees(rows) {
   markers.clearLayers();
   markersByCode.clear();
   clearSelection();
-  ensureCodePanel(); // alleen DOM-element maken, geen CSS injectie
+  ensureCodePanel();
 
   if (!rows.length) {
     msg.textContent = '0 bomen gevonden';
-    renderCodeList([]); // leegmaken
+    renderCodeList([]);
     return;
   }
 
@@ -59,7 +58,6 @@ function renderTrees(rows) {
   rows.forEach(r => {
     const lat = parseFloat(r.lat);
     const lng = parseFloat(r.long);
-
     if (isNaN(lat) || isNaN(lng)) {
       console.warn("Skipping invalid coords:", r);
       return;
@@ -68,14 +66,22 @@ function renderTrees(rows) {
     const code = (r.tree_code || '').trim();
     const type = r.tree_type || '';
     const area = r.area || '';
-    const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString() : '';
+    const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString('nl-NL') : '';
+    const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
 
-    const m = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(
-      `<strong>${code || 'boom'}</strong><br>` +
-      `${type}<br>` +
-      `${area}<br>` +
-      `${planted}`
-    );
+    // nette popup met knoppen
+    const popup =
+      `<div class="popup">
+         <div class="popup-title">${code || 'boom'}</div>
+         <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
+         <div class="popup-meta">${planted}</div>
+         <div class="popup-actions">
+           <button class="btn-link" onclick="navigator.clipboard.writeText('${code || ''}')">kopieer code</button>
+           <a class="btn-link" href="${gmaps}" target="_blank" rel="noopener">open in maps</a>
+         </div>
+       </div>`;
+
+    const m = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popup);
 
     m.on('click', () => selectByMarker(m, code));
 
@@ -136,16 +142,28 @@ function selectByCode(codeText) {
   }
 }
 
-// 🧩 lijstpaneel maken als die nog niet bestaat
+// 🧩 lijstpaneel + filter
 function ensureCodePanel() {
   if (document.getElementById('code-panel')) return;
   const panel = document.createElement('div');
   panel.id = 'code-panel';
   panel.innerHTML = `
-    <header>Boomcodes</header>
+    <header>
+      Boomcodes
+      <input id="code-filter" placeholder="filter">
+    </header>
     <ul id="code-list"></ul>
   `;
   document.body.appendChild(panel);
+  document.getElementById('code-filter').addEventListener('input', onFilterCodes);
+}
+
+function onFilterCodes(e) {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('#code-list button').forEach(btn => {
+    const match = btn.textContent.toLowerCase().includes(q);
+    btn.parentElement.style.display = match ? '' : 'none';
+  });
 }
 
 // 🗂️ lijst vullen
@@ -200,7 +218,7 @@ document.getElementById('finder').addEventListener('submit', async e => {
 
   if (!q) {
     msg.textContent = 'voer e-mail of user_id in';
-    renderCodeList([]); 
+    renderCodeList([]);
     markers.clearLayers();
     return;
   }
