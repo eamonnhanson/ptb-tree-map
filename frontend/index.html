@@ -18,9 +18,9 @@
 
   <!-- favicon en social share -->
   <link rel="icon" type="image/png" sizes="32x32"
-        href="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=64">
+        href="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=64">
   <meta property="og:title" content="Plant N Boom • Mijn bomen">
-  <meta property="og:image" content="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=600">
+  <meta property="og:image" content="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=600">
   <meta property="og:url" content="https://map.planteenboom.nu/">
   <meta property="og:type" content="website">
   <meta name="theme-color" content="#0a7b66">
@@ -28,12 +28,18 @@
 <body>
   <header>
     <img id="brand-logo"
-         src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=160"
+         src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160"
          alt="Plant N Boom">
     <form id="finder" autocomplete="off">
       <label for="email" class="sr-only">e-mail of user_id</label>
       <input id="email" type="text" placeholder="jouw e-mail of user_id" inputmode="text" />
       <button type="submit">toon mijn bomen</button>
+      
+      <!-- Forest Heroes knop hier toevoegen -->
+      <button type="button" id="show-heroes" class="heroes-btn">
+        toon forest heroes
+      </button>
+      
       <span id="msg" aria-live="polite"></span>
     </form>
   </header>
