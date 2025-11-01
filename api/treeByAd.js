@@ -1,5 +1,5 @@
 // GET /api/trees/:id
-export default async function treeByIdHandler(req, res) {
+export default async function treeByAdHandler(req, res) {
   try {
     const { id } = req.params;
     if (!id) return res.status(400).json({ ok: false, error: "id ontbreekt" });
