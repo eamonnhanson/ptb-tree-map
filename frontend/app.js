@@ -76,6 +76,14 @@ async function fetchTrees(query) {
   return res.json();
 }
 
+// 🔎 Fetch alle Forest Heroes (abonnees) – nieuw
+async function fetchForestHeroes() {
+  const url = "https://ptb-tree-map.onrender.com/api/forest-heroes"; // server-endpoint vereist
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error('serverfout ' + res.status);
+  return res.json();
+}
+
 // 🖼️ Render markers on map
 function renderTrees(rows) {
   markers.clearLayers();
@@ -99,15 +107,19 @@ function renderTrees(rows) {
     }
 
     const code = (r.tree_code || '').trim();
+    const name = (r.tree_name || '').trim();   // ⬅️ boomnaam meenemen
     const type = r.tree_type || '';
     const area = r.area || '';
     const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString('nl-NL') : '';
     const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
 
+    const nameRow = name ? `<div class="popup-line"><strong>Naam:</strong> ${name}</div>` : '';
+
     // nette popup met knoppen
     const popup =
       `<div class="popup">
          <div class="popup-title">${code || 'boom'}</div>
+         ${nameRow}
          <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
          <div class="popup-meta">${planted}</div>
          <div class="popup-actions">
@@ -150,7 +162,9 @@ function selectByMarker(marker, codeText) {
   selectedMarker = marker;
   marker.setIcon(redIcon).openPopup();
   if (codeText) {
-    const item = document.querySelector(`[data-tree-code="${cssEscape(codeText.toLowerCase())}"]`);
+    const item = document.querySelector(
+      `[data-tree-code="${cssEscape(codeText.toLowerCase())}"]`
+    );
     if (item) {
       item.classList.add('active');
       selectedItemEl = item;
@@ -193,15 +207,16 @@ function ensureCodePanel() {
   document.getElementById('code-filter').addEventListener('input', onFilterCodes);
 }
 
+// 🔎 filter werkt nu op code + naam
 function onFilterCodes(e) {
   const q = e.target.value.toLowerCase();
-  document.querySelectorAll('#code-list button').forEach(btn => {
-    const match = btn.textContent.toLowerCase().includes(q);
-    btn.parentElement.style.display = match ? '' : 'none';
+  document.querySelectorAll('#code-list li').forEach(li => {
+    const hay = (li.getAttribute('data-haystack') || '').toLowerCase();
+    li.style.display = hay.includes(q) ? '' : 'none';
   });
 }
 
-// 🗂️ lijst vullen
+// 🗂️ lijst vullen — met code — naam (naam optioneel)
 function renderCodeList(rows) {
   ensureCodePanel();
   const ul = document.getElementById('code-list');
@@ -210,31 +225,38 @@ function renderCodeList(rows) {
   ul.innerHTML = '';
   clearSelection();
 
-  const codes = [];
+  const items = [];
   const seen = new Set();
   rows.forEach(r => {
-    const c = (r.tree_code || '').trim();
-    if (c && !seen.has(c.toLowerCase())) {
-      seen.add(c.toLowerCase());
-      codes.push(c);
-    }
+    const code = (r.tree_code || '').trim();
+    if (!code) return;
+    const key = code.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const name = (r.tree_name || '').trim(); // kan leeg zijn
+    items.push({ code, name });
   });
 
-  if (!codes.length) {
+  if (!items.length) {
     ul.innerHTML = `<div class="empty">Geen boomcodes</div>`;
     return;
   }
 
-  codes.sort((a, b) => a.localeCompare(b, 'nl'));
+  items.sort((a, b) => a.code.localeCompare(b.code, 'nl'));
 
   const frag = document.createDocumentFragment();
-  codes.forEach(code => {
+  items.forEach(({ code, name }) => {
     const li = document.createElement('li');
+    // haystack = waar de filter op zoekt (code + naam)
+    li.setAttribute('data-haystack', `${code} ${name}`);
+
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = code;
+    btn.textContent = name ? `${code} — ${name}` : code;
     btn.setAttribute('data-tree-code', code.toLowerCase());
     btn.addEventListener('click', () => selectByCode(code));
+
     li.appendChild(btn);
     frag.appendChild(li);
   });
@@ -246,7 +268,7 @@ function cssEscape(s) {
   return s.replace(/["\\]/g, '\\$&');
 }
 
-// 🎛️ Form submit listener
+// 🎛️ Form submit listener (e-mail of user_id)
 document.getElementById('finder').addEventListener('submit', async e => {
   e.preventDefault();
   const q = document.getElementById('email').value.trim();
@@ -271,6 +293,25 @@ document.getElementById('finder').addEventListener('submit', async e => {
     markers.clearLayers();
   }
 });
+
+// 🆕 Knop: toon alle Forest Heroes
+const heroesBtn = document.getElementById('show-heroes');
+if (heroesBtn) {
+  heroesBtn.addEventListener('click', async () => {
+    msg.textContent = 'laden…';
+    try {
+      const data = await fetchForestHeroes();
+      const rows = Array.isArray(data) ? data : (data.rows || []);
+      renderTrees(rows);
+    } catch (err) {
+      console.error(err);
+      msg.textContent = 'kan Forest Heroes niet laden';
+      renderCodeList([]);
+      markers.clearLayers();
+    }
+  });
+}
+
 // 🔗 Deep-link support: /forest?id=3354  (of ?email=.. / ?q=..)
 window.addEventListener('DOMContentLoaded', () => {
   try {
