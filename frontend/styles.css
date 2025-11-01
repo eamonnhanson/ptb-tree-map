@@ -137,3 +137,25 @@ button:hover { filter: brightness(0.92); }
   padding: 6px;
   height: 36px;
 }
+.heroes-btn {
+  background: #2d5016;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.heroes-btn:hover {
+  background: #3a641e;
+}
+
+/* Voor mobiele weergave */
+@media (max-width: 768px) {
+  .heroes-btn {
+    margin-left: 0;
+    margin-top: 10px;
+    width: 100%;
+  }
+}
