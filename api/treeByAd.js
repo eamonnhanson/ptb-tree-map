@@ -16,7 +16,7 @@ export default async function treeByIdHandler(req, res) {
 
     res.json({ ok: true, item });
   } catch (err) {
-    console.error("treeById error:", err);
+    console.error("treeByAd error:", err);
     res.status(500).json({ ok: false, error: "internal error" });
   }
 }
