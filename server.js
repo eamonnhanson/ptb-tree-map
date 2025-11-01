@@ -4,7 +4,7 @@ import cors from "cors";
 import treesHandler from "./api/trees.js";
 // 🔹 nieuwe handlers (maak deze bestanden aan)
 import treesByCodesHandler from "./api/treesByCodes.js"; // GET /api/trees/by-codes?codes=ABC123,DEF456
-import treeByIdHandler from "./api/treeById.js";         // GET /api/trees/:id
+import treeByIdHandler from "./api/treeByAd.js";         // GET /api/trees/:id
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -51,7 +51,7 @@ app.get("/api/trees/by-codes", treesByCodesHandler);
 
 // ✅ nieuw: 1 tree ophalen op id
 // voorbeeld: GET /api/trees/42
-app.get("/api/trees/:id", treeByIdHandler);
+app.get("/api/trees/:id", treeByAdHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
