@@ -271,3 +271,33 @@ document.getElementById('finder').addEventListener('submit', async e => {
     markers.clearLayers();
   }
 });
+// 🔗 Deep-link support: /forest?id=3354  (of ?email=.. / ?q=..)
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+
+    // accepteer id, email of q als queryparam
+    const deepLinkValue =
+      params.get('id') ||
+      params.get('email') ||
+      params.get('q');
+
+    if (deepLinkValue) {
+      const input = document.querySelector('#email');
+      const form  = document.querySelector('#finder');
+
+      if (input && form) {
+        input.value = deepLinkValue.trim();
+
+        // netjes submitten (requestSubmit waar beschikbaar)
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Deep-link parse failed:', e);
+  }
+});
