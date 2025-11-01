@@ -4,7 +4,7 @@ import cors from "cors";
 import treesHandler from "./api/trees.js";
 // 🔹 nieuwe handlers (maak deze bestanden aan)
 import treesByCodesHandler from "./api/treesByCodes.js"; // GET /api/trees/by-codes?codes=ABC123,DEF456
-import treeByIdHandler from "./api/treeByAd.js";         // GET /api/trees/:id
+import treeByAdHandler from "./api/treeByAd.js";         // GET /api/trees/:id
 
 const app = express();
 const PORT = process.env.PORT || 10000;
