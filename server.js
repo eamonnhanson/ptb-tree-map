@@ -6,6 +6,9 @@ import treesHandler from "./api/trees.js";
 import treesByCodesHandler from "./api/treesByCodes.js"; // GET /api/trees/by-codes?codes=ABC123,DEF456
 import treeByAdHandler from "./api/treeByAd.js";         // GET /api/trees/:id
 
+import forestHeroes from "./api/forestHeroes.js";
+app.use("/api/forest-heroes", forestHeroes);
+
 const app = express();
 const PORT = process.env.PORT || 10000;
 
