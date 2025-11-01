@@ -2,12 +2,10 @@ import express from "express";
 import cors from "cors";
 
 import treesHandler from "./api/trees.js";
-// 🔹 nieuwe handlers (maak deze bestanden aan)
+// nieuwe handlers
 import treesByCodesHandler from "./api/treesByCodes.js"; // GET /api/trees/by-codes?codes=ABC123,DEF456
 import treeByAdHandler from "./api/treeByAd.js";         // GET /api/trees/:id
-
-import forestHeroes from "./api/forestHeroes.js";
-app.use("/api/forest-heroes", forestHeroes);
+import forestHeroes from "./api/forestHeroes.js";        // GET /api/forest-heroes
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -29,7 +27,7 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // allow server-side / curl
+      if (!origin) return callback(null, true); // server-side of curl
       if (allowedOrigins.includes(origin) || /\.netlify\.app$/.test(origin)) {
         callback(null, true);
       } else {
@@ -45,16 +43,19 @@ app.get("/", (req, res) => {
   res.json({ ok: true, msg: "Server running" });
 });
 
-// ✅ Trees API — bestaande endpoint
+// Trees API — bestaande endpoint
 app.get("/api/trees", treesHandler);
 
-// ✅ nieuw: compacte info op basis van meerdere codes
+// nieuw: compacte info op basis van meerdere codes
 // voorbeeld: GET /api/trees/by-codes?codes=SL1234,SL5678
 app.get("/api/trees/by-codes", treesByCodesHandler);
 
-// ✅ nieuw: 1 tree ophalen op id
+// nieuw: 1 tree ophalen op id
 // voorbeeld: GET /api/trees/42
 app.get("/api/trees/:id", treeByAdHandler);
+
+// nieuw: forest heroes endpoint
+app.use("/api/forest-heroes", forestHeroes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
