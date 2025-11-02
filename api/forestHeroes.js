@@ -1,20 +1,9 @@
 // api/forestHeroes.js
 import { Router } from "express";
-import pkg from "pg";
-const { Pool } = pkg;
-
-// zelfde DB-config als je andere handlers gebruiken
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
-});
+import { pool } from "./db.js";
 
 const router = Router();
 
-/**
- * Bomen van users met een abonnement.
- * Optionele filters: ?limit=200&area=Makombeh&type=cashew
- */
 router.get("/", async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit || "500", 10) || 500, 2000);
   const params = [];
