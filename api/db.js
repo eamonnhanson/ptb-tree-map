@@ -1,4 +1,3 @@
-// api/db.js
 import pkg from "pg";
 const { Pool } = pkg;
 
@@ -9,7 +8,8 @@ export const pool = new Pool({
   ssl: NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
 });
 
-// log 1x bij start
-pool.connect()
-  .then(c => { c.release(); console.log("✅ DB pool ready"); })
-  .catch(err => console.error("❌ DB connect error:", err?.code, err?.message));
+// korte log zodat je ziet waar hij heen wil
+try {
+  const u = new URL(DATABASE_URL);
+  console.log("DB host:", u.hostname, "DB name:", u.pathname.replace("/",""));
+} catch {}
