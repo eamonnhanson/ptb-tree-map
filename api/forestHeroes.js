@@ -1,17 +1,27 @@
 // api/forestHeroes.js
 import { Router } from "express";
-import { pool } from "./db.js";
+import { pool } from "./db.js"; // jouw gedeelde Pool
 
 const router = Router();
 
 router.get("/", async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || "500", 10) || 500, 2000);
+  const limit = Math.min(parseInt(req.query.limit || "50", 10) || 50, 2000);
   const params = [];
   const where = [
     "u.subscription_type IS NOT NULL",
     "t.lat IS NOT NULL",
     "t.long IS NOT NULL",
   ];
+
+  if (req.query.user_id) {
+    params.push(parseInt(req.query.user_id, 10));
+    where.push(`u.id = $${params.length}`);
+  }
+
+  if (req.query.email) {
+    params.push(req.query.email);
+    where.push(`LOWER(u.email) = LOWER($${params.length})`);
+  }
 
   if (req.query.area) {
     params.push(req.query.area);
