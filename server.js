@@ -8,7 +8,7 @@ import treesHandler from "./api/trees.js";
 import treesByCodesHandler from "./api/treesByCodes.js";
 import treeByAdHandler from "./api/treeByAd.js";
 import forestHeroes from "./api/forestHeroes.js";
-import { pool } from "./api/db.js"; // <-- bovenaan importeren
+import { pool } from "./api/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,34 +48,105 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 // ===== API routes (altijd vóór static) =====
 app.get("/api/trees", treesHandler);
-app.get("/api/trees/by-codes", treesByCodesHandler); // ?codes=A,B
+app.get("/api/trees/by-codes", treesByCodesHandler);
 app.get("/api/trees/:id", treeByAdHandler);
-app.use("/api/forest-heroes", forestHeroes); // levert boomrecords met lat/long terug
+app.use("/api/forest-heroes", forestHeroes);
 
-// diag endpoint vóór de /api 404-guard zetten
-app.get("/api/diag/db", async (_req, res) => {
+// ===== diagnose endpoints =====
+
+// 1) basis DB-info
+app.get("/api/diag/info", (_req, res) => {
   try {
-    const ping = await pool.query("SELECT 1 as ok");
-    const cols = await pool.query(`
-      SELECT table_name, column_name
-      FROM information_schema.columns
-      WHERE table_schema = 'public'
-        AND table_name IN ('users1','trees1')
-      ORDER BY table_name, ordinal_position
-    `);
-    res.json({ ping: ping.rows[0], columns: cols.rows });
-  } catch (e) {
-    console.error("diag error:", e.code, e.message);
-    res.status(500).json({ error: "db diag failed" });
+    const u = new URL(process.env.DATABASE_URL);
+    res.json({
+      ok: true,
+      host: u.hostname,
+      db: u.pathname.slice(1),
+      ssl: process.env.NODE_ENV === "production"
+    });
+  } catch {
+    res.status(500).json({ ok: false, error: "DATABASE_URL ongeldig of ontbreekt" });
   }
 });
 
-// 404 guard voor overige /api paths (voorkomt SPA-fallback)
+// 2) ping en kolommen users1/trees1
+app.get("/api/diag/db", async (_req, res) => {
+  try {
+    const ping = await pool.query("select now() as now");
+    const cols = await pool.query(`
+      select table_schema, table_name, column_name
+      from information_schema.columns
+      where table_name in ('users1','trees1')
+      order by table_schema, table_name, ordinal_position
+    `);
+    res.json({ ok: true, now: ping.rows[0].now, columns: cols.rows });
+  } catch (e) {
+    console.error("diag db error:", {
+      code: e.code, message: e.message, detail: e.detail, errno: e.errno, address: e.address, port: e.port
+    });
+    res.status(500).json({
+      ok: false,
+      code: e.code || null,
+      message: e.message || null,
+      detail: e.detail || null,
+      errno: e.errno || null,
+      address: e.address || null,
+      port: e.port || null
+    });
+  }
+});
+
+// 3) minimale heroes-check op 1 gebruiker of mail, met preview
+app.get("/api/diag/heroes", async (req, res) => {
+  const params = [];
+  const where = [
+    "u.subscription_type IS NOT NULL",
+    "t.lat IS NOT NULL",
+    "t.long IS NOT NULL"
+  ];
+
+  if (req.query.user_id && /^\d+$/.test(req.query.user_id)) {
+    params.push(parseInt(req.query.user_id, 10));
+    where.push(`u.id = $${params.length}`);
+  }
+  if (req.query.email) {
+    params.push(req.query.email.trim());
+    where.push(`LOWER(u.email) = LOWER($${params.length})`);
+  }
+
+  const sqlCount = `
+    select count(*)::int as n
+    from public.trees1 t
+    join public.users1 u on u.id = t.user_id
+    where ${where.join(" and ")}
+  `;
+  const sqlPreview = `
+    select t.id, t.lat, t.long, t.tree_code, t.tree_type, t.tree_name, u.id as user_id, u.email
+    from public.trees1 t
+    join public.users1 u on u.id = t.user_id
+    where ${where.join(" and ")}
+    order by t.id asc
+    limit 1
+  `;
+
+  try {
+    const [{ rows: [cnt] }, { rows: prev }] = await Promise.all([
+      pool.query(sqlCount, params),
+      pool.query(sqlPreview, params)
+    ]);
+    res.json({ ok: true, count: cnt?.n ?? 0, preview: prev?.[0] ?? null });
+  } catch (e) {
+    console.error("diag heroes error:", { code: e.code, message: e.message, detail: e.detail });
+    res.status(500).json({ ok: false, code: e.code || null, message: e.message || null, detail: e.detail || null });
+  }
+});
+
+// 404 guard voor overige /api paths
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "not found" });
 });
 
-// ===== Static frontend daarna pas =====
+// ===== static frontend daarna pas =====
 const feDir = path.join(__dirname, "frontend", "en");
 app.use(express.static(feDir));
 app.get("/map", (_req, res) => res.sendFile(path.join(feDir, "index.html")));
