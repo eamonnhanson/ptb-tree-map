@@ -64,3 +64,24 @@ app.get("/map", (_req, res) => res.sendFile(path.join(feDir, "index.html")));
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+
+// heel kleine diag late weghalen
+import { pool } from "./api/db.js";
+
+app.get("/api/diag/db", async (_req, res) => {
+  try {
+    const ping = await pool.query("SELECT 1 as ok");
+    const cols = await pool.query(`
+      SELECT table_name, column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name IN ('users1','trees1')
+      ORDER BY table_name, ordinal_position
+    `);
+    res.json({ ping: ping.rows[0], columns: cols.rows });
+  } catch (e) {
+    console.error("diag error:", e.code, e.message);
+    res.status(500).json({ error: "db diag failed" });
+  }
+});
+
