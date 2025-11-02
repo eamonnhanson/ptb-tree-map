@@ -5,10 +5,12 @@ import treesHandler from "./api/trees.js";
 // nieuwe handlers
 import treesByCodesHandler from "./api/treesByCodes.js"; // GET /api/trees/by-codes?codes=ABC123,DEF456
 import treeByAdHandler from "./api/treeByAd.js";         // GET /api/trees/:id
-import forestHeroes from "./api/forestHeroes.js";        // GET /api/forest-heroes
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+import forestHeroes from "./api/forestHeroes.js";
+app.use("/api/forest-heroes", forestHeroes);
+
 
 // body parsers
 app.use(express.json());
