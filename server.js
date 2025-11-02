@@ -27,6 +27,7 @@ const allowedOrigins = [
   "https://courageous-centaur-f7d1ea.netlify.app",
   "https://map.planteenboom.nu"
 ];
+
 app.use(
   cors({
     origin: (origin, cb) => {
@@ -44,13 +45,18 @@ app.use(
 app.get("/", (_req, res) => res.json({ ok: true, msg: "Server running" }));
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
-// api
+// ===== API routes (altijd vóór static) =====
 app.get("/api/trees", treesHandler);
-app.get("/api/trees/by-codes", treesByCodesHandler);
+app.get("/api/trees/by-codes", treesByCodesHandler); // ?codes=A,B
 app.get("/api/trees/:id", treeByAdHandler);
 app.use("/api/forest-heroes", forestHeroes); // levert boomrecords met lat/long terug
 
-// static frontend (frontend/en)
+// 404 guard voor overige /api paths (voorkomt SPA-fallback)
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "not found" });
+});
+
+// ===== Static frontend daarna pas =====
 const feDir = path.join(__dirname, "frontend", "en");
 app.use(express.static(feDir));
 app.get("/map", (_req, res) => res.sendFile(path.join(feDir, "index.html")));
