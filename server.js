@@ -8,6 +8,7 @@ import treesHandler from "./api/trees.js";
 import treesByCodesHandler from "./api/treesByCodes.js";
 import treeByAdHandler from "./api/treeByAd.js";
 import forestHeroes from "./api/forestHeroes.js";
+import { pool } from "./api/db.js"; // <-- bovenaan importeren
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -51,23 +52,7 @@ app.get("/api/trees/by-codes", treesByCodesHandler); // ?codes=A,B
 app.get("/api/trees/:id", treeByAdHandler);
 app.use("/api/forest-heroes", forestHeroes); // levert boomrecords met lat/long terug
 
-// 404 guard voor overige /api paths (voorkomt SPA-fallback)
-app.use("/api", (_req, res) => {
-  res.status(404).json({ error: "not found" });
-});
-
-// ===== Static frontend daarna pas =====
-const feDir = path.join(__dirname, "frontend", "en");
-app.use(express.static(feDir));
-app.get("/map", (_req, res) => res.sendFile(path.join(feDir, "index.html")));
-
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
-
-// heel kleine diag late weghalen
-import { pool } from "./api/db.js";
-
+// diag endpoint vóór de /api 404-guard zetten
 app.get("/api/diag/db", async (_req, res) => {
   try {
     const ping = await pool.query("SELECT 1 as ok");
@@ -85,3 +70,16 @@ app.get("/api/diag/db", async (_req, res) => {
   }
 });
 
+// 404 guard voor overige /api paths (voorkomt SPA-fallback)
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "not found" });
+});
+
+// ===== Static frontend daarna pas =====
+const feDir = path.join(__dirname, "frontend", "en");
+app.use(express.static(feDir));
+app.get("/map", (_req, res) => res.sendFile(path.join(feDir, "index.html")));
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
