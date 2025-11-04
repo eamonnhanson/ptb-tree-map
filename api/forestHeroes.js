@@ -5,10 +5,18 @@ import { pool } from "./db.js";
 const router = Router();
 
 router.get("/", async (req, res) => {
-  const limit = Math.min(parseInt(req.query.limit || "50", 10) || 50, 2000);
+  // hogere default en ruime cap
+  const limit = Math.min(parseInt(req.query.limit || "500", 10) || 500, 10000);
+  const afterId = req.query.after_id ? parseInt(req.query.after_id, 10) : null;
 
   const params = [];
-  const where = ["u.subscription_type IS NOT NULL"]; // alleen deze verplicht
+  const where = ["u.subscription_type IS NOT NULL"];
+
+  // keyset filter
+  if (!Number.isNaN(afterId) && afterId > 0) {
+    params.push(afterId);
+    where.push(`t.id > $${params.length}`);
+  }
 
   // optionele filters
   if (req.query.user_id && /^\d+$/.test(req.query.user_id)) {
@@ -19,6 +27,9 @@ router.get("/", async (req, res) => {
     params.push(req.query.email.trim());
     where.push(`LOWER(u.email) = LOWER($${params.length})`);
   }
+
+  // limit als parameter toevoegen
+  params.push(limit);
 
   const sql = `
     SELECT
@@ -37,12 +48,13 @@ router.get("/", async (req, res) => {
     JOIN public.users1 u ON u.id = t.user_id
     WHERE ${where.join(" AND ")}
     ORDER BY t.id ASC
-    LIMIT ${limit};
+    LIMIT $${params.length};
   `;
 
   try {
     const { rows } = await pool.query(sql, params);
-    res.json(rows);
+    const next_after_id = rows.length ? rows[rows.length - 1].id : null;
+    res.json({ rows, next_after_id });
   } catch (e) {
     console.error("ForestHeroes query error:", {
       code: e.code,
