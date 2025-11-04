@@ -279,44 +279,86 @@ document.getElementById('finder').addEventListener('submit', async e => {
   }
 });
 
-// ——— Forest Heroes: simpele 1-batch variant (debug) ———
-const API_BASE = "https://ptb-tree-map.onrender.com";
+// ——— Forest Heroes: batching met after_id ———
+async function fetchForestHeroesBatch(limit = 500, afterId = null) {
+  const qs = new URLSearchParams({ limit: String(limit) });
+  if (afterId) qs.set('after_id', String(afterId));
 
-async function fetchForestHeroesOnce(limit = 200) {
-  const url = `${API_BASE}/api/forest-heroes?limit=${encodeURIComponent(limit)}`;
-  console.log("[heroes] fetch", url);
-
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`serverfout ${res.status} ${txt}`);
-  }
-
-  const data = await res.json();
-  console.log("[heroes] response", data);
-
-  // server geeft { rows, next_after_id } terug
-  const rows = Array.isArray(data) ? data : (data.rows || []);
-  return rows;
+  const res = await fetch(`https://ptb-tree-map.onrender.com/api/forest-heroes?${qs}`, {
+    headers: { Accept: 'application/json' }
+  });
+  if (!res.ok) throw new Error('serverfout ' + res.status);
+  return res.json(); // { rows, next_after_id }
 }
 
+async function loadAllForestHeroes(limit = 500) {
+  // reset
+  markers.clearLayers();
+  markersByCode.clear();
+  clearSelection();
+  ensureCodePanel();
+
+  let after = null;
+  let total = 0;
+  const allRows = [];
+  const bounds = [];
+
+  for (;;) {
+    const { rows, next_after_id } = await fetchForestHeroesBatch(limit, after);
+    if (!rows || !rows.length) break;
+
+    // markers toevoegen per batch
+    rows.forEach(r => {
+      const lat = parseFloat(r.lat);
+      const lng = parseFloat(r.long);
+      if (isNaN(lat) || isNaN(lng)) return;
+
+      const code = (r.tree_code || '').trim();
+      const type = r.tree_type || '';
+      const area = r.area || '';
+      const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString('nl-NL') : '';
+      const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
+
+      const popup =
+        `<div class="popup">
+           <div class="popup-title">${code || 'boom'}</div>
+           <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
+           <div class="popup-meta">${planted}</div>
+           <div class="popup-actions">
+             <button class="btn-link" onclick="navigator.clipboard.writeText('${code || ''}')">kopieer code</button>
+             <a class="btn-link" href="${gmaps}" target="_blank" rel="noopener">open in maps</a>
+           </div>
+         </div>`;
+
+      const m = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popup);
+      m.on('click', () => selectByMarker(m, code));
+      markers.addLayer(m);
+      bounds.push([lat, lng]);
+      if (code) markersByCode.set(code.toLowerCase(), m);
+    });
+
+    allRows.push(...rows);
+    total += rows.length;
+    if (msg) msg.textContent = `${total} bomen geladen…`;
+
+    if (!next_after_id || rows.length < limit) break;
+    after = next_after_id; // volgende pagina
+  }
+
+  if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
+  renderCodeList(allRows);
+  msg.textContent = `${allRows.length} bomen totaal`;
+}
+
+// 🔘 knop: toon forest heroes
 const heroesBtn = document.getElementById('show-heroes');
 if (heroesBtn) {
   heroesBtn.addEventListener('click', async () => {
-    msg.textContent = 'laden…';
-
-    // reset weergave
-    markers.clearLayers();
-    markersByCode.clear();
-    clearSelection();
-    ensureCodePanel();
-
     try {
-      const rows = await fetchForestHeroesOnce(200); // begin met 200
-      renderTrees(rows);
-      msg.textContent = `${rows.length} bomen`;
+      msg.textContent = 'laden…';
+      await loadAllForestHeroes(500); // batches van 500
     } catch (err) {
-      console.error('[heroes] fout:', err);
+      console.error('kan Forest Heroes niet laden:', err);
       msg.textContent = 'kan Forest Heroes niet laden';
       renderCodeList([]);
       markers.clearLayers();
