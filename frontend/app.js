@@ -48,20 +48,19 @@ let selectedItemEl = null;
 
 // 🎨 iconen
 const treeIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/ConceptCodes/assets/main/icons/tree-green-24.png',
-  iconRetinaUrl: 'https://raw.githubusercontent.com/ConceptCodes/assets/main/icons/tree-green-48.png',
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/logoboom_32.png?v=1762456736', // lichtgroen
+  iconSize: [32, 32],
+  iconAnchor: [16, 28],
+  popupAnchor: [0, -24],
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  iconSize: [24, 24],
-  iconAnchor: [12, 22],
-  popupAnchor: [0, -18],
   shadowSize: [41, 41]
 });
 
-const redIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
+const treeIconSelected = L.icon({
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_dark_32.png?v=1762457017', // donkerder versie
+  iconSize: [32, 32],
+  iconAnchor: [16, 28],
+  popupAnchor: [0, -24],
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   shadowSize: [41, 41]
 });
