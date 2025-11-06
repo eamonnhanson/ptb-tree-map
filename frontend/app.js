@@ -48,7 +48,7 @@ let selectedItemEl = null;
 
 // 🎨 iconen
 const treeIcon = L.icon({
-  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/logoboom_32.png?v=1762456736', // lichtgroen
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/logoboom_32.png?v=1762456736', // standaard lichtgroen
   iconSize: [32, 32],
   iconAnchor: [16, 28],
   popupAnchor: [0, -24],
@@ -56,8 +56,19 @@ const treeIcon = L.icon({
   shadowSize: [41, 41]
 });
 
+// donkerder variant kun je bewaren voor hover of toekomstige states
+const treeIconDark = L.icon({
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_dark_32.png?v=1762457017',
+  iconSize: [32, 32],
+  iconAnchor: [16, 28],
+  popupAnchor: [0, -24],
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  shadowSize: [41, 41]
+});
+
+// nieuwe rode versie voor geselecteerde bomen
 const treeIconSelected = L.icon({
-  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_dark_32.png?v=1762457017', // donkerder versie
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_red_32.png?v=1762457875', // upload rode versie
   iconSize: [32, 32],
   iconAnchor: [16, 28],
   popupAnchor: [0, -24],
