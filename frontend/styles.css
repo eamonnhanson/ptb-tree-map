@@ -33,6 +33,38 @@ button { padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; colo
   font-weight: 700;
 }
 
+/* --- wegklapbare versie van code-paneel --- */
+#code-panel {
+  transition: transform .25s ease;
+  will-change: transform;
+}
+
+#code-panel.collapsed {
+  transform: translateX(calc(100% - 28px));
+}
+
+/* toggle-knop links in de header */
+#code-toggle {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: #f2f5f2;
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 28px;
+  text-align: center;
+  flex: 0 0 28px;
+}
+
+/* verberg lijst en zoekveld als paneel is ingeklapt */
+#code-panel.collapsed #code-list,
+#code-panel.collapsed header input {
+  display: none;
+}
+
+
 #code-list {
   list-style: none;
   margin: 0;
