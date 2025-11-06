@@ -47,7 +47,16 @@ let selectedMarker = null;
 let selectedItemEl = null;
 
 // 🎨 iconen
-const defaultIcon = new L.Icon.Default();
+const treeIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/ConceptCodes/assets/main/icons/tree-green-24.png',
+  iconRetinaUrl: 'https://raw.githubusercontent.com/ConceptCodes/assets/main/icons/tree-green-48.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [24, 24],
+  iconAnchor: [12, 22],
+  popupAnchor: [0, -18],
+  shadowSize: [41, 41]
+});
+
 const redIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   iconSize: [25, 41],
@@ -116,7 +125,7 @@ function renderTrees(rows) {
          </div>
        </div>`;
 
-    const m = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popup);
+    const m = L.marker([lat, lng], { icon: treeIcon }).bindPopup(popup);
     m.on('click', () => selectByMarker(m, code));
     markers.addLayer(m);
     bounds.push([lat, lng]);
@@ -133,7 +142,8 @@ function renderTrees(rows) {
 // 🧼 selectie wissen
 function clearSelection() {
   if (selectedMarker) {
-    selectedMarker.setIcon(defaultIcon);
+    // terug naar boom-icoon i.p.v. default druppel
+    selectedMarker.setIcon(treeIcon);
     selectedMarker = null;
   }
   if (selectedItemEl) {
@@ -177,20 +187,58 @@ function selectByCode(codeText) {
   }
 }
 
-// 🧩 lijstpaneel + filter
+// 🧩 lijstpaneel + filter (nu wegklapbaar + inject CSS)
 function ensureCodePanel() {
   if (document.getElementById('code-panel')) return;
+
+  // inject minimal CSS voor paneel
+  if (!document.getElementById('code-panel-css')) {
+    const css = `
+#code-panel{
+  position:absolute;right:0;top:0;width:320px;max-width:75vw;height:100%;
+  background:#fff;box-shadow:-2px 0 10px rgba(0,0,0,.1);
+  display:grid;grid-template-rows:auto 1fr;transition:transform .25s ease;z-index:500
+}
+#code-panel.collapsed{ transform:translateX(calc(100% - 28px)); }
+#code-panel header{
+  display:grid;grid-template-columns:32px 1fr;gap:8px;align-items:center;
+  padding:8px;border-bottom:1px solid #eee
+}
+#code-toggle{ width:28px;height:28px;border:0;border-radius:6px;background:#f2f5f2;cursor:pointer;font-size:14px }
+#code-list{ margin:0;padding:8px;overflow:auto;list-style:none }
+#code-panel.collapsed #code-list, #code-panel.collapsed #code-filter{ display:none }
+#code-list li{ margin:0 0 6px 0 }
+#code-list li button{ width:100%; text-align:left; border:0; background:#f6f8f6; padding:8px 10px; border-radius:8px; cursor:pointer }
+#code-list li button.active{ outline:2px solid #1f7a3f }
+    `.trim();
+    const style = document.createElement('style');
+    style.id = 'code-panel-css';
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
   const panel = document.createElement('div');
   panel.id = 'code-panel';
   panel.innerHTML = `
     <header>
-      Boomcodes
+      <button id="code-toggle" type="button" aria-expanded="true" title="paneel inklappen">⟨</button>
+      <div>boomcodes</div>
       <input id="code-filter" placeholder="filter">
     </header>
     <ul id="code-list"></ul>
   `;
   document.body.appendChild(panel);
+
   document.getElementById('code-filter').addEventListener('input', onFilterCodes);
+
+  // toggle gedrag
+  const toggle = document.getElementById('code-toggle');
+  toggle.addEventListener('click', () => {
+    panel.classList.toggle('collapsed');
+    const isOpen = !panel.classList.contains('collapsed');
+    toggle.setAttribute('aria-expanded', String(isOpen));
+    toggle.textContent = isOpen ? '⟨' : '⟩';
+  });
 }
 
 // 🔎 filter werkt nu op code + naam
@@ -238,7 +286,9 @@ function renderCodeList(rows) {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = name ? `${code} — ${name}` : code;
+    // altijd code — naam als naam bestaat
+    const display = name ? `${code} — ${name}` : code;
+    btn.textContent = display;
     btn.setAttribute('data-tree-code', code.toLowerCase());
     btn.addEventListener('click', () => selectByCode(code));
 
@@ -314,14 +364,18 @@ async function loadAllForestHeroes(limit = 500) {
       if (isNaN(lat) || isNaN(lng)) return;
 
       const code = (r.tree_code || '').trim();
+      const name = (r.tree_name || '').trim();
       const type = r.tree_type || '';
       const area = r.area || '';
       const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString('nl-NL') : '';
       const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
 
+      const nameRow = name ? `<div class="popup-line"><strong>Naam:</strong> ${name}</div>` : '';
+
       const popup =
         `<div class="popup">
            <div class="popup-title">${code || 'boom'}</div>
+           ${nameRow}
            <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
            <div class="popup-meta">${planted}</div>
            <div class="popup-actions">
@@ -330,7 +384,7 @@ async function loadAllForestHeroes(limit = 500) {
            </div>
          </div>`;
 
-      const m = L.marker([lat, lng], { icon: defaultIcon }).bindPopup(popup);
+      const m = L.marker([lat, lng], { icon: treeIcon }).bindPopup(popup);
       m.on('click', () => selectByMarker(m, code));
       markers.addLayer(m);
       bounds.push([lat, lng]);
