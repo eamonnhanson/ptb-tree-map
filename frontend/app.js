@@ -22,20 +22,46 @@ L.control.layers(
 // 📏 schaalbalk (linksonder)
 L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
 
-// 🟩 logo als Leaflet control (linksonder)
+// 🟩 logo als Leaflet control (LINKSboven, klik naar homepage)
 const LogoControl = L.Control.extend({
-  options: { position: 'bottomleft' },
+  options: { position: 'topleft' },
   onAdd() {
     const img = L.DomUtil.create('img', 'map-logo');
     img.src = 'https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=140';
     img.alt = 'Plant N Boom';
     img.title = 'Plant N Boom';
     img.style.cursor = 'pointer';
-    img.addEventListener('click', () => window.open('https://www.planteenboom.nu/', '_blank'));
+    img.addEventListener('click', () => {
+      window.location.href = 'https://www.planteenboom.nu/';
+    });
     return img;
   }
 });
 new LogoControl().addTo(map);
+
+// 💚 doneren-knop rechtsboven
+const DonateControl = L.Control.extend({
+  options: { position: 'topright' },
+  onAdd() {
+    const btn = L.DomUtil.create('button', 'donate-btn');
+    btn.type = 'button';
+    btn.textContent = 'doneren';
+    btn.style.background = '#45b910';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '999px';
+    btn.style.padding = '6px 14px';
+    btn.style.marginLeft = '8px';
+    btn.style.cursor = 'pointer';
+    btn.style.fontWeight = '700';
+    L.DomEvent.disableClickPropagation(btn);
+    btn.addEventListener('click', () => {
+      window.location.href = 'https://www.planteenboom.nu/pages/particulier';
+    });
+    return btn;
+  }
+});
+new DonateControl().addTo(map);
 
 // 📍 Marker layer
 const markers = L.layerGroup().addTo(map);
@@ -48,7 +74,7 @@ let selectedItemEl = null;
 
 // 🎨 iconen
 const treeIcon = L.icon({
-  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/logoboom_32.png?v=1762456736', // standaard lichtgroen
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/logoboom_32.png?v=1762456736',
   iconSize: [32, 32],
   iconAnchor: [16, 28],
   popupAnchor: [0, -24],
@@ -56,7 +82,6 @@ const treeIcon = L.icon({
   shadowSize: [41, 41]
 });
 
-// donkerder variant kun je bewaren voor hover of toekomstige states
 const treeIconDark = L.icon({
   iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_dark_32.png?v=1762457017',
   iconSize: [32, 32],
@@ -66,9 +91,9 @@ const treeIconDark = L.icon({
   shadowSize: [41, 41]
 });
 
-// nieuwe rode versie voor geselecteerde bomen
+// geselecteerde variant
 const treeIconSelected = L.icon({
-  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_red_32.png?v=1762457875', // upload rode versie
+  iconUrl: 'https://cdn.shopify.com/s/files/1/0555/9966/1149/files/pnb_boomicoon_red_32.png?v=1762457875',
   iconSize: [32, 32],
   iconAnchor: [16, 28],
   popupAnchor: [0, -24],
@@ -146,13 +171,13 @@ function renderTrees(rows) {
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
 
   msg.textContent = `${rows.length} bomen`;
+  renderTrees.rows = rows;
   renderCodeList(rows);
 }
 
 // 🧼 selectie wissen
 function clearSelection() {
   if (selectedMarker) {
-    // terug naar boom-icoon i.p.v. default druppel
     selectedMarker.setIcon(treeIcon);
     selectedMarker = null;
   }
@@ -166,7 +191,7 @@ function clearSelection() {
 function selectByMarker(marker, codeText) {
   clearSelection();
   selectedMarker = marker;
-  marker.setIcon(redIcon).openPopup();
+  marker.setIcon(treeIconSelected).openPopup();
   if (codeText) {
     const item = document.querySelector(
       `[data-tree-code="${cssEscape(codeText.toLowerCase())}"]`
@@ -187,7 +212,7 @@ function selectByCode(codeText) {
 
   clearSelection();
   selectedMarker = m;
-  m.setIcon(redIcon).openPopup();
+  m.setIcon(treeIconSelected).openPopup();
   map.panTo(m.getLatLng());
 
   const item = document.querySelector(`[data-tree-code="${cssEscape(key)}"]`);
@@ -197,11 +222,10 @@ function selectByCode(codeText) {
   }
 }
 
-// 🧩 lijstpaneel + filter (nu wegklapbaar + inject CSS)
+// 🧩 lijstpaneel + filter
 function ensureCodePanel() {
   if (document.getElementById('code-panel')) return;
 
-  // inject minimal CSS voor paneel
   if (!document.getElementById('code-panel-css')) {
     const css = `
 #code-panel{
@@ -241,7 +265,6 @@ function ensureCodePanel() {
 
   document.getElementById('code-filter').addEventListener('input', onFilterCodes);
 
-  // toggle gedrag
   const toggle = document.getElementById('code-toggle');
   toggle.addEventListener('click', () => {
     panel.classList.toggle('collapsed');
@@ -251,7 +274,6 @@ function ensureCodePanel() {
   });
 }
 
-// 🔎 filter werkt nu op code + naam
 function onFilterCodes(e) {
   const q = e.target.value.toLowerCase();
   document.querySelectorAll('#code-list li').forEach(li => {
@@ -260,7 +282,6 @@ function onFilterCodes(e) {
   });
 }
 
-// 🗂️ lijst vullen — met code — naam (naam optioneel)
 function renderCodeList(rows) {
   ensureCodePanel();
   const ul = document.getElementById('code-list');
@@ -296,7 +317,6 @@ function renderCodeList(rows) {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    // altijd code — naam als naam bestaat
     const display = name ? `${code} — ${name}` : code;
     btn.textContent = display;
     btn.setAttribute('data-tree-code', code.toLowerCase());
@@ -308,12 +328,11 @@ function renderCodeList(rows) {
   ul.appendChild(frag);
 }
 
-// veilige selector escape
 function cssEscape(s) {
   return s.replace(/["\\]/g, '\\$&');
 }
 
-// 🎛️ Form submit listener (e-mail of user_id)
+// 🎛️ Form submit listener
 document.getElementById('finder').addEventListener('submit', async e => {
   e.preventDefault();
   const q = document.getElementById('email').value.trim();
@@ -348,11 +367,10 @@ async function fetchForestHeroesBatch(limit = 500, afterId = null) {
     headers: { Accept: 'application/json' }
   });
   if (!res.ok) throw new Error('serverfout ' + res.status);
-  return res.json(); // { rows, next_after_id }
+  return res.json();
 }
 
 async function loadAllForestHeroes(limit = 500) {
-  // reset
   markers.clearLayers();
   markersByCode.clear();
   clearSelection();
@@ -367,7 +385,6 @@ async function loadAllForestHeroes(limit = 500) {
     const { rows, next_after_id } = await fetchForestHeroesBatch(limit, after);
     if (!rows || !rows.length) break;
 
-    // markers toevoegen per batch
     rows.forEach(r => {
       const lat = parseFloat(r.lat);
       const lng = parseFloat(r.long);
@@ -406,7 +423,7 @@ async function loadAllForestHeroes(limit = 500) {
     if (msg) msg.textContent = `${total} bomen geladen…`;
 
     if (!next_after_id || rows.length < limit) break;
-    after = next_after_id; // volgende pagina
+    after = next_after_id;
   }
 
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
@@ -420,7 +437,7 @@ if (heroesBtn) {
   heroesBtn.addEventListener('click', async () => {
     try {
       msg.textContent = 'laden…';
-      await loadAllForestHeroes(500); // batches van 500
+      await loadAllForestHeroes(500);
     } catch (err) {
       console.error('kan Forest Heroes niet laden:', err);
       msg.textContent = 'kan Forest Heroes niet laden';
@@ -430,12 +447,13 @@ if (heroesBtn) {
   });
 }
 
-// 🔗 Deep-link support
+// 🔗 Deep-link support (nu ook ?user_id=)
 window.addEventListener('DOMContentLoaded', () => {
   try {
     const params = new URLSearchParams(window.location.search);
 
     const deepLinkValue =
+      params.get('user_id') ||
       params.get('id') ||
       params.get('email') ||
       params.get('q');
