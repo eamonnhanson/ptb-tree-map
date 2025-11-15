@@ -22,47 +22,6 @@ L.control.layers(
 // 📏 schaalbalk (linksonder)
 L.control.scale({ imperial: false, maxWidth: 120 }).addTo(map);
 
-// 🟩 logo als Leaflet control (LINKSboven, klik naar homepage)
-const LogoControl = L.Control.extend({
-  options: { position: 'topleft' },
-  onAdd() {
-    const img = L.DomUtil.create('img', 'map-logo');
-    img.src = 'https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947367&width=140';
-    img.alt = 'Plant N Boom';
-    img.title = 'Plant N Boom';
-    img.style.cursor = 'pointer';
-    img.addEventListener('click', () => {
-      window.location.href = 'https://www.planteenboom.nu/';
-    });
-    return img;
-  }
-});
-new LogoControl().addTo(map);
-
-// 💚 doneren-knop rechtsboven
-const DonateControl = L.Control.extend({
-  options: { position: 'topright' },
-  onAdd() {
-    const btn = L.DomUtil.create('button', 'donate-btn');
-    btn.type = 'button';
-    btn.textContent = 'doneren';
-    btn.style.background = '#45b910';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
-    btn.style.borderRadius = '999px';
-    btn.style.padding = '6px 14px';
-    btn.style.marginLeft = '8px';
-    btn.style.cursor = 'pointer';
-    btn.style.fontWeight = '700';
-    L.DomEvent.disableClickPropagation(btn);
-    btn.addEventListener('click', () => {
-      window.location.href = 'https://www.planteenboom.nu/pages/particulier';
-    });
-    return btn;
-  }
-});
-new DonateControl().addTo(map);
-
 // 📍 Marker layer
 const markers = L.layerGroup().addTo(map);
 const msg = document.getElementById('msg');
@@ -256,8 +215,8 @@ function ensureCodePanel() {
   panel.innerHTML = `
     <header>
       <button id="code-toggle" type="button" aria-expanded="true" title="paneel inklappen">⟨</button>
-      <div>boomcodes</div>
-      <input id="code-filter" placeholder="filter">
+      <div>boomcodes • boomnamen</div>
+      <input id="code-filter" placeholder="filter op code of naam">
     </header>
     <ul id="code-list"></ul>
   `;
@@ -447,9 +406,71 @@ if (heroesBtn) {
   });
 }
 
-// 🔗 Deep-link support (nu ook ?user_id=)
+// 🔗 Deep-link support + doneren-knop in bovenbalk + klikbaar header-logo
 window.addEventListener('DOMContentLoaded', () => {
   try {
+    // 1) doneren-knop naast "toon forest heroes"
+    if (heroesBtn && !document.getElementById('donate-inline')) {
+      if (!document.getElementById('donate-inline-css')) {
+        const style = document.createElement('style');
+        style.id = 'donate-inline-css';
+        style.textContent = `
+.donate-inline-btn{
+  background:#45b910;
+  color:#fff;
+  border:none;
+  border-radius:999px;
+  padding:8px 16px;
+  margin-left:8px;
+  cursor:pointer;
+  font-weight:700;
+  font-size:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  animation:donate-wiggle 3s ease-in-out infinite;
+}
+.donate-inline-btn:hover{ filter:brightness(1.05); }
+@keyframes donate-wiggle{
+  0%,100%{ transform:translateX(0); }
+  3% { transform:translateX(-1px); }
+  6% { transform:translateX(1px); }
+  9% { transform:translateX(-1px); }
+  12%{ transform:translateX(0); }
+}
+@media (prefers-reduced-motion: reduce){
+  .donate-inline-btn{ animation:none; }
+}
+        `.trim();
+        document.head.appendChild(style);
+      }
+
+      const donateBtn = document.createElement('button');
+      donateBtn.id = 'donate-inline';
+      donateBtn.type = 'button';
+      donateBtn.className = 'donate-inline-btn';
+      donateBtn.textContent = 'doneren';
+
+      heroesBtn.insertAdjacentElement('afterend', donateBtn);
+
+      donateBtn.addEventListener('click', () => {
+        window.location.href = 'https://www.planteenboom.nu/pages/particulier';
+      });
+    }
+
+    // 2) header-logo in bovenbalk klikbaar maken
+    const headerLogo =
+      document.querySelector('img[alt="Plant N Boom"]:not(.map-logo)') ||
+      document.querySelector('.top-logo, .header-logo, .brand-logo');
+
+    if (headerLogo) {
+      headerLogo.style.cursor = 'pointer';
+      headerLogo.addEventListener('click', () => {
+        window.location.href = 'https://www.planteenboom.nu/';
+      });
+    }
+
+    // 3) deep-link: ?user_id= / ?id= / ?email= / ?q=
     const params = new URLSearchParams(window.location.search);
 
     const deepLinkValue =
@@ -472,6 +493,6 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     }
   } catch (e) {
-    console.warn('Deep-link parse failed:', e);
+    console.warn('Init (deep-link / donate / logo) failed:', e);
   }
 });
