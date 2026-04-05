@@ -50,6 +50,7 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 app.get("/api/trees", treesHandler);
 app.get("/api/trees/by-codes", treesByCodesHandler);
 app.get("/api/trees/:id", treeByAdHandler);
+app.get("/api/forest-hero-search", forestHeroSearch);
 app.use("/api/forest-heroes", forestHeroes);
 
 // ===== diagnose endpoints =====
