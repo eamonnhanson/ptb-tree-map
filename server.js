@@ -8,6 +8,7 @@ import treesHandler from "./api/trees.js";
 import treesByCodesHandler from "./api/treesByCodes.js";
 import treeByAdHandler from "./api/treeByAd.js";
 import forestHeroes from "./api/forestHeroes.js";
+import forestHeroSearch from "./api/forestHeroSearch.js";
 import { pool } from "./api/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
