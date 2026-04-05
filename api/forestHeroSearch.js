@@ -18,7 +18,7 @@ export default async function forestHeroSearch(req, res) {
         u.subscription_type,
         t.tree_type,
         t.area,
-        t.planted_date,
+        to_char(t.planted_date, 'YYYY-MM-DD') AS planted_date,
         t.tree_code
       FROM public.users1 u
       JOIN public.trees1 t
@@ -49,7 +49,7 @@ export default async function forestHeroSearch(req, res) {
         row.area || "",
         row.planted_date || "",
         row.tree_code || ""
-      ].filter(Boolean).join(" | ")
+        ].filter(Boolean).join(" | ")
     }));
 
     return res.json(results);
