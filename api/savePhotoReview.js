@@ -6,6 +6,8 @@ export default async function savePhotoReview(req, res) {
   }
 
   try {
+    console.log("savePhotoReview called", req.body);
+
     const {
       category,
       file_url,
@@ -52,6 +54,8 @@ export default async function savePhotoReview(req, res) {
     ];
 
     const result = await pool.query(query, values);
+
+    console.log("savePhotoReview inserted id", result.rows[0].id);
 
     return res.json({
       success: true,
