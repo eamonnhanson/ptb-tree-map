@@ -1,6 +1,6 @@
-const db = require("./db");
+import { pool } from "./db.js";
 
-module.exports = async (req, res) => {
+export default async function savePhotoReview(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
@@ -51,7 +51,7 @@ module.exports = async (req, res) => {
       uploader_email || null
     ];
 
-    const result = await db.query(query, values);
+    const result = await pool.query(query, values);
 
     return res.json({
       success: true,
@@ -62,4 +62,4 @@ module.exports = async (req, res) => {
     console.error("savePhotoReview error:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
-};
+}
