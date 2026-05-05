@@ -1,0 +1,91 @@
+import { pool } from "./db.js";
+
+export default async function getPhotoReviewGallery(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ ok: false, error: "Method not allowed" });
+  }
+
+  try {
+    const category = normalize(req.query.category);
+    const date_from = normalize(req.query.date_from);
+    const date_to = normalize(req.query.date_to);
+    const search = normalize(req.query.search);
+
+    const conditions = [];
+    const values = [];
+
+    if (category && category !== "all") {
+      values.push(category);
+      conditions.push(`category = $${values.length}`);
+    }
+
+    if (date_from) {
+      values.push(date_from);
+      conditions.push(`created_at_utc >= $${values.length}::date`);
+    }
+
+    if (date_to) {
+      values.push(date_to);
+      conditions.push(`created_at_utc < ($${values.length}::date + interval '1 day')`);
+    }
+
+    if (search) {
+      values.push(`%${search}%`);
+      conditions.push(`(
+        category ILIKE $${values.length}
+        OR linked_entity_name ILIKE $${values.length}
+        OR uploader_name ILIKE $${values.length}
+        OR caption ILIKE $${values.length}
+        OR ai_description ILIKE $${values.length}
+      )`);
+    }
+
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
+    const query = `
+      SELECT
+        id,
+        category,
+        linked_entity_type,
+        linked_entity_name,
+        cropped_file_url,
+        original_file_url,
+        original_file_size_bytes,
+        cropped_file_size_bytes,
+        ROUND(original_file_size_bytes / 1024.0, 1) AS original_kb,
+        ROUND(cropped_file_size_bytes / 1024.0, 1) AS cropped_kb,
+        review_status,
+        caption,
+        ai_description,
+        created_at_utc
+      FROM photo_uploads_review
+      ${whereClause}
+      ORDER BY created_at_utc DESC
+      LIMIT 200;
+    `;
+
+    const result = await pool.query(query, values);
+
+    return res.status(200).json({
+      ok: true,
+      photos: result.rows
+    });
+
+  } catch (err) {
+    console.error("getPhotoReviewGallery error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: "Internal server error",
+      details: err.message
+    });
+  }
+}
+
+function normalize(value) {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  return trimmed === "" ? null : trimmed;
+}
