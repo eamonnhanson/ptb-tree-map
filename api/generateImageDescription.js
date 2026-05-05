@@ -25,7 +25,18 @@ export async function generateImageDescription(imageUrl) {
     })
   });
 
-  const data = await res.json();
+const data = await res.json();
 
-  return data.output?.[0]?.content?.[0]?.text || null;
+if (!res.ok) {
+  console.log("OpenAI error:", data);
+  return null;
+}
+
+const text =
+  data.output_text ||
+  data.output?.[0]?.content?.find(c => c.type === "output_text")?.text ||
+  data.output?.[0]?.content?.[0]?.text ||
+  null;
+
+return text;
 }
