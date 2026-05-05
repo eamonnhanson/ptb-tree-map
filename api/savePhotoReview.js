@@ -21,6 +21,9 @@ export default async function savePhotoReview(req, res) {
     const user_id = normalizeNumber(body.user_id);
     const tree_id = normalizeNumber(body.tree_id);
 
+    const original_file_size_bytes = normalizeNumber(body.original_file_size_bytes);
+    const cropped_file_size_bytes = normalizeNumber(body.cropped_file_size_bytes);
+
     if (!cropped_file_url) {
       return res.status(400).json({
         ok: false,
@@ -53,11 +56,13 @@ export default async function savePhotoReview(req, res) {
         tree_id,
         cropped_file_url,
         original_file_url,
+        original_file_size_bytes,
+        cropped_file_size_bytes,
         uploader_name,
         uploader_email,
         review_status
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending')
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending')
       RETURNING id;
     `;
 
@@ -69,6 +74,8 @@ export default async function savePhotoReview(req, res) {
       tree_id,
       cropped_file_url,
       original_file_url,
+      original_file_size_bytes,
+      cropped_file_size_bytes,
       uploader_name,
       uploader_email
     ];
