@@ -1,5 +1,3 @@
-import fetch from "node-fetch";
-
 export async function generateImageDescription(imageUrl) {
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
