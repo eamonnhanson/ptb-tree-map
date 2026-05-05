@@ -34,5 +34,9 @@ export async function generateImageDescription(imageUrl) {
     return null;
   }
 
-  return data.output_text || null;
+ return (
+  data.output_text ||
+  data.output?.[0]?.content?.[0]?.text ||
+  null
+);
 }
