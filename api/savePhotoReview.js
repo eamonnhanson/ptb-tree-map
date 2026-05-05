@@ -1,3 +1,6 @@
+import { pool } from "./db.js";
+import { generateImageDescription } from "./generateImageDescription.js";
+
 export default async function savePhotoReview(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
