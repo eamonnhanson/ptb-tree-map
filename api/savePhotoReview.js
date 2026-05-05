@@ -1,4 +1,5 @@
 import { pool } from "./db.js";
+import { generateImageDescription } from "./generateImageDescription.js";
 
 export default async function savePhotoReview(req, res) {
   if (req.method !== "POST") {
@@ -47,6 +48,15 @@ export default async function savePhotoReview(req, res) {
       }
     }
 
+    let ai_description = null;
+
+    try {
+      ai_description = await generateImageDescription(cropped_file_url);
+      console.log("AI description:", ai_description);
+    } catch (err) {
+      console.log("AI failed:", err.message);
+    }
+
     const query = `
       INSERT INTO photo_uploads_review (
         category,
@@ -60,9 +70,10 @@ export default async function savePhotoReview(req, res) {
         cropped_file_size_bytes,
         uploader_name,
         uploader_email,
-        review_status
+        review_status,
+        ai_description
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending')
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)
       RETURNING id;
     `;
 
@@ -77,15 +88,14 @@ export default async function savePhotoReview(req, res) {
       original_file_size_bytes,
       cropped_file_size_bytes,
       uploader_name,
-      uploader_email
+      uploader_email,
+      ai_description
     ];
 
     console.log("savePhotoReview query values =", values);
 
     const result = await pool.query(query, values);
     const reviewId = result.rows[0]?.id;
-
-    console.log("savePhotoReview inserted id =", reviewId);
 
     return res.status(200).json({
       ok: true,
