@@ -28,7 +28,6 @@ export default async function savePhotoReview(req, res) {
     const original_file_size_bytes = normalizeNumber(body.original_file_size_bytes);
     const cropped_file_size_bytes = normalizeNumber(body.cropped_file_size_bytes);
 
-    // Academy onboarding fields
     const academy_whatsapp = normalize(body.academy_whatsapp);
     const academy_track = normalize(body.academy_track);
     const upload_type = normalize(body.upload_type);
@@ -233,4 +232,3 @@ function normalizeBoolean(value) {
 
   return false;
 }
-```
