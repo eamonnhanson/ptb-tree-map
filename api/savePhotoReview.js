@@ -1,16 +1,3 @@
-```sql
-ALTER TABLE photo_uploads_review
-ADD COLUMN IF NOT EXISTS academy_whatsapp TEXT,
-ADD COLUMN IF NOT EXISTS academy_track TEXT,
-ADD COLUMN IF NOT EXISTS upload_type TEXT,
-ADD COLUMN IF NOT EXISTS consent_given BOOLEAN DEFAULT false,
-ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'pending',
-ADD COLUMN IF NOT EXISTS ai_status TEXT DEFAULT 'not_checked',
-ADD COLUMN IF NOT EXISTS ai_confidence NUMERIC,
-ADD COLUMN IF NOT EXISTS upload_context TEXT;
-```
-
-```js
 import { pool } from "./db.js";
 import { generateImageDescription } from "./generateImageDescription.js";
 
