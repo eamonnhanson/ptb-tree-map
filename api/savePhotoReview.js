@@ -1,3 +1,20 @@
+Vervang je hele `save-photo-review.js` door deze versie.
+
+Vooraf moet je database deze extra kolommen hebben:
+
+```sql
+ALTER TABLE photo_uploads_review
+ADD COLUMN IF NOT EXISTS academy_whatsapp TEXT,
+ADD COLUMN IF NOT EXISTS academy_track TEXT,
+ADD COLUMN IF NOT EXISTS upload_type TEXT,
+ADD COLUMN IF NOT EXISTS consent_given BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'pending',
+ADD COLUMN IF NOT EXISTS ai_status TEXT DEFAULT 'not_checked',
+ADD COLUMN IF NOT EXISTS ai_confidence NUMERIC,
+ADD COLUMN IF NOT EXISTS upload_context TEXT;
+```
+
+```js
 import { pool } from "./db.js";
 import { generateImageDescription } from "./generateImageDescription.js";
 
@@ -12,7 +29,10 @@ export default async function savePhotoReview(req, res) {
     const body = req.body || {};
 
     const category = normalize(body.category);
-    const cropped_file_url = normalize(body.cropped_file_url) || normalize(body.file_url);
+    const cropped_file_url =
+      normalize(body.cropped_file_url) ||
+      normalize(body.file_url);
+
     const original_file_url = normalize(body.original_file_url);
     const linked_entity_type = normalize(body.linked_entity_type);
     const linked_entity_name = normalize(body.linked_entity_name);
@@ -24,6 +44,22 @@ export default async function savePhotoReview(req, res) {
 
     const original_file_size_bytes = normalizeNumber(body.original_file_size_bytes);
     const cropped_file_size_bytes = normalizeNumber(body.cropped_file_size_bytes);
+
+    // Academy onboarding fields
+    const academy_whatsapp = normalize(body.academy_whatsapp);
+    const academy_track = normalize(body.academy_track);
+    const upload_type = normalize(body.upload_type);
+    const consent_given = normalizeBoolean(body.consent_given);
+
+    const verification_status =
+      normalize(body.verification_status) || "pending";
+
+    let ai_status =
+      normalize(body.ai_status) || "not_checked";
+
+    const upload_context =
+      normalize(body.upload_context) ||
+      (category === "academy_onboarding" ? "academy_onboarding" : "photo_review");
 
     if (!cropped_file_url) {
       return res.status(400).json({
@@ -48,12 +84,61 @@ export default async function savePhotoReview(req, res) {
       }
     }
 
+    if (category === "academy_onboarding") {
+      if (!uploader_name) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_onboarding requires uploader_name"
+        });
+      }
+
+      if (!uploader_email) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_onboarding requires uploader_email"
+        });
+      }
+
+      if (!academy_whatsapp) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_onboarding requires academy_whatsapp"
+        });
+      }
+
+      if (!academy_track) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_onboarding requires academy_track"
+        });
+      }
+
+      if (!upload_type) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_onboarding requires upload_type"
+        });
+      }
+
+      if (!consent_given) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_onboarding requires consent_given"
+        });
+      }
+    }
+
     let ai_description = null;
+    let ai_confidence = null;
 
     try {
+      ai_status = "checking";
       ai_description = await generateImageDescription(cropped_file_url);
+      ai_status = "checked";
+
       console.log("AI description:", ai_description);
     } catch (err) {
+      ai_status = "failed";
       console.log("AI failed:", err.message);
     }
 
@@ -71,9 +156,23 @@ export default async function savePhotoReview(req, res) {
         uploader_name,
         uploader_email,
         review_status,
-        ai_description
+        ai_description,
+        ai_status,
+        ai_confidence,
+        academy_whatsapp,
+        academy_track,
+        upload_type,
+        consent_given,
+        verification_status,
+        upload_context
       )
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pending',$12)
+      VALUES (
+        $1,$2,$3,$4,$5,
+        $6,$7,$8,$9,$10,
+        $11,'pending',$12,$13,$14,
+        $15,$16,$17,$18,$19,
+        $20
+      )
       RETURNING id;
     `;
 
@@ -89,7 +188,15 @@ export default async function savePhotoReview(req, res) {
       cropped_file_size_bytes,
       uploader_name,
       uploader_email,
-      ai_description
+      ai_description,
+      ai_status,
+      ai_confidence,
+      academy_whatsapp,
+      academy_track,
+      upload_type,
+      consent_given,
+      verification_status,
+      upload_context
     ];
 
     console.log("savePhotoReview query values =", values);
@@ -102,6 +209,7 @@ export default async function savePhotoReview(req, res) {
       success: true,
       review_id: reviewId
     });
+
   } catch (err) {
     console.error("savePhotoReview error:", err);
 
@@ -125,3 +233,21 @@ function normalizeNumber(value) {
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
 }
+
+function normalizeBoolean(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "y", "on"].includes(normalized)) return true;
+    if (["false", "0", "no", "n", "off"].includes(normalized)) return false;
+  }
+
+  if (typeof value === "number") {
+    return value === 1;
+  }
+
+  return false;
+}
+```
