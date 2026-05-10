@@ -1,7 +1,3 @@
-Vervang je hele `save-photo-review.js` door deze versie.
-
-Vooraf moet je database deze extra kolommen hebben:
-
 ```sql
 ALTER TABLE photo_uploads_review
 ADD COLUMN IF NOT EXISTS academy_whatsapp TEXT,
