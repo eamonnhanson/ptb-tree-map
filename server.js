@@ -148,6 +148,67 @@ app.get("/api/diag/heroes", async (req, res) => {
   }
 });
 
+// KETSO Academy student lookup by upload token
+app.get("/api/academy-student", async (req, res) => {
+  const token = String(req.query.token || "").trim();
+
+  if (!token) {
+    return res.status(400).json({
+      ok: false,
+      error: "Missing token"
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        zoho_contact_id,
+        ketso_student_id,
+        full_name,
+        first_name,
+        last_name,
+        email,
+        whatsapp,
+        track,
+        primary_stream,
+        cohort,
+        status,
+        upload_token
+      FROM public.academy_students
+      WHERE upload_token = $1
+      LIMIT 1
+      `,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        ok: false,
+        error: "Student not found"
+      });
+    }
+
+    return res.json({
+      ok: true,
+      student: result.rows[0]
+    });
+  } catch (e) {
+    console.error("academy-student error:", {
+      code: e.code,
+      message: e.message,
+      detail: e.detail
+    });
+
+    return res.status(500).json({
+      ok: false,
+      error: "Server error",
+      code: e.code || null,
+      message: e.message || null
+    });
+  }
+});
 // 404 guard voor overige /api paths
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "not found" });
