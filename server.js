@@ -52,6 +52,55 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 // ===== API routes (altijd vóór static) =====
 app.get("/api/trees", treesHandler);
+app.get("/api/academy-upload-review", async (req, res) => {
+  try {
+    const reviewId = req.query.review_id;
+
+    if (!reviewId) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing review_id"
+      });
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        uploader_name,
+        uploader_email,
+        academy_track,
+        academy_cohort,
+        file_url,
+        verification_status
+      FROM photo_uploads_review
+      WHERE id = $1
+      LIMIT 1
+      `,
+      [reviewId]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        error: "Upload not found"
+      });
+    }
+
+    res.json({
+      ok: true,
+      upload: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error("academy-upload-review error:", err);
+
+    res.status(500).json({
+      ok: false,
+      error: "Server error"
+    });
+  }
+});
 app.get("/api/trees/by-codes", treesByCodesHandler);
 app.get("/api/trees/:id", treeByAdHandler);
 app.get("/api/forest-hero-search", forestHeroSearch);
