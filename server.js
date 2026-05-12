@@ -78,6 +78,29 @@ app.get("/health", (_req, res) => {
 // =====================================================
 // API routes
 // =====================================================
+function requireAdmin(req, res) {
+  const key =
+    req.headers["x-admin-key"] ||
+    req.query.admin_key;
+
+  if (!process.env.ADMIN_GALLERY_KEY) {
+    res.status(500).json({
+      ok: false,
+      error: "ADMIN_GALLERY_KEY is not configured"
+    });
+    return false;
+  }
+
+  if (!key || key !== process.env.ADMIN_GALLERY_KEY) {
+    res.status(401).json({
+      ok: false,
+      error: "Unauthorized"
+    });
+    return false;
+  }
+
+  return true;
+}
 
 app.get("/api/trees", treesHandler);
 
@@ -94,6 +117,38 @@ app.post("/api/save-photo-review", savePhotoReview);
 
 app.use("/api/forest-heroes", forestHeroes);
 
+async function notifyApproval(upload) {
+  if (!process.env.ZAPIER_APPROVAL_WEBHOOK_URL) {
+    console.warn("ZAPIER_APPROVAL_WEBHOOK_URL is not configured");
+    return;
+  }
+
+  try {
+    const response = await fetch(process.env.ZAPIER_APPROVAL_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        event: "academy_upload_approved",
+        review_id: upload.id,
+        name: upload.uploader_name,
+        email: upload.uploader_email,
+        academy_track: upload.academy_track,
+        academy_cohort: upload.academy_cohort,
+        gallery_url: "https://ketso-uploader.pages.dev/student-gallery/",
+        approved_at: new Date().toISOString()
+      })
+    });
+
+    if (!response.ok) {
+      console.error("Zapier webhook failed:", response.status, await response.text());
+    }
+
+  } catch (err) {
+    console.error("Zapier approval notification failed:", err);
+  }
+}
 // =====================================================
 // academy upload review
 // =====================================================
@@ -406,6 +461,8 @@ app.get("/api/diag/heroes", async (req, res) => {
   }
 });
 app.post("/api/academy-approve-upload", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
   try {
     const { review_id, reviewed_by } = req.body;
 
@@ -422,6 +479,120 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       SET
         verification_status = 'approved',
         public_gallery_status = 'public',
+        reviewed_at_utc = NOW(),
+        reviewed_by = $2
+      WHERE id = $1
+      RETURNING
+        id,
+        uploader_name,
+        uploader_email,
+        academy_track,
+        academy_cohort,
+        verification_status,
+        public_gallery_status,
+        cropped_file_url
+      `,
+      [review_id, reviewed_by || "eamonn"]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        error: "Upload not found"
+      });
+    }
+
+    const upload = result.rows[0];
+
+    await notifyApproval(upload);
+
+    res.json({
+      ok: true,
+      upload
+    });
+
+  } catch (err) {
+    console.error("academy-approve-upload error:", err);
+    res.status(500).json({
+      ok: false,
+      error: err.message
+    });
+  }
+});
+app.get("/api/academy-moderation-queue", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const status = String(req.query.status || "submitted_for_review").trim();
+
+    const values = [];
+    const conditions = [`category = 'academy_onboarding'`];
+
+    if (status !== "all") {
+      values.push(status);
+      conditions.push(`verification_status = $${values.length}`);
+    }
+
+    const query = `
+      SELECT
+        id,
+        uploader_name,
+        uploader_email,
+        academy_student_id,
+        academy_track,
+        academy_cohort,
+        cropped_file_url,
+        original_file_url,
+        verification_status,
+        public_gallery_status,
+        created_at_utc,
+        student_confirmed_at,
+        reviewed_at_utc,
+        reviewed_by,
+        caption,
+        ai_description
+      FROM photo_uploads_review
+      WHERE ${conditions.join(" AND ")}
+      ORDER BY
+        student_confirmed_at DESC NULLS LAST,
+        created_at_utc DESC
+      LIMIT 300;
+    `;
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      ok: true,
+      uploads: result.rows
+    });
+
+  } catch (err) {
+    console.error("academy-moderation-queue error:", err);
+    res.status(500).json({
+      ok: false,
+      error: err.message
+    });
+  }
+});
+app.post("/api/academy-reject-upload", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { review_id, reviewed_by } = req.body;
+
+    if (!review_id) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing review_id"
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE photo_uploads_review
+      SET
+        verification_status = 'rejected',
+        public_gallery_status = 'private',
         reviewed_at_utc = NOW(),
         reviewed_by = $2
       WHERE id = $1
@@ -443,7 +614,7 @@ app.post("/api/academy-approve-upload", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("academy-approve-upload error:", err);
+    console.error("academy-reject-upload error:", err);
     res.status(500).json({
       ok: false,
       error: err.message
