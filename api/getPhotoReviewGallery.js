@@ -10,18 +10,29 @@ export default async function getPhotoReviewGallery(req, res) {
     const date_from = normalize(req.query.date_from);
     const date_to = normalize(req.query.date_to);
     const search = normalize(req.query.search);
+    const verification_status = normalize(req.query.verification_status);
+    const public_gallery_status = normalize(req.query.public_gallery_status);
 
     const conditions = [];
     const values = [];
 
-    // Public student gallery safety filter:
-    // only approved/public uploads are shown.
-    conditions.push(`verification_status = 'approved'`);
-    conditions.push(`public_gallery_status = 'public'`);
+    // Staff gallery:
+    // No automatic approval filter here.
+    // This endpoint should show all uploads unless filters are explicitly used.
 
     if (category && category !== "all") {
       values.push(category);
       conditions.push(`category = $${values.length}`);
+    }
+
+    if (verification_status && verification_status !== "all") {
+      values.push(verification_status);
+      conditions.push(`verification_status = $${values.length}`);
+    }
+
+    if (public_gallery_status && public_gallery_status !== "all") {
+      values.push(public_gallery_status);
+      conditions.push(`public_gallery_status = $${values.length}`);
     }
 
     if (date_from) {
@@ -40,14 +51,19 @@ export default async function getPhotoReviewGallery(req, res) {
         category ILIKE $${values.length}
         OR linked_entity_name ILIKE $${values.length}
         OR uploader_name ILIKE $${values.length}
+        OR uploader_email ILIKE $${values.length}
         OR caption ILIKE $${values.length}
         OR ai_description ILIKE $${values.length}
         OR academy_track ILIKE $${values.length}
         OR academy_cohort ILIKE $${values.length}
+        OR verification_status ILIKE $${values.length}
+        OR public_gallery_status ILIKE $${values.length}
       )`);
     }
 
-    const whereClause = `WHERE ${conditions.join(" AND ")}`;
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
 
     const query = `
       SELECT
@@ -71,11 +87,14 @@ export default async function getPhotoReviewGallery(req, res) {
         uploader_email,
         caption,
         ai_description,
-        created_at_utc
+        created_at_utc,
+        reviewed_at_utc,
+        reviewed_by,
+        student_confirmed_at
       FROM photo_uploads_review
       ${whereClause}
       ORDER BY created_at_utc DESC
-      LIMIT 200;
+      LIMIT 300;
     `;
 
     const result = await pool.query(query, values);
