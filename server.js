@@ -90,7 +90,10 @@ app.get("/api/academy-upload-review", async (req, res) => {
 
     res.json({
       ok: true,
-      upload: result.rows[0]
+      upload: {
+  ...result.rows[0],
+  file_url: result.rows[0].cropped_file_url
+}
     });
 
   } catch (err) {
