@@ -14,6 +14,11 @@ export default async function getPhotoReviewGallery(req, res) {
     const conditions = [];
     const values = [];
 
+    // Public student gallery safety filter:
+    // only approved/public uploads are shown.
+    conditions.push(`verification_status = 'approved'`);
+    conditions.push(`public_gallery_status = 'public'`);
+
     if (category && category !== "all") {
       values.push(category);
       conditions.push(`category = $${values.length}`);
@@ -37,12 +42,12 @@ export default async function getPhotoReviewGallery(req, res) {
         OR uploader_name ILIKE $${values.length}
         OR caption ILIKE $${values.length}
         OR ai_description ILIKE $${values.length}
+        OR academy_track ILIKE $${values.length}
+        OR academy_cohort ILIKE $${values.length}
       )`);
     }
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(" AND ")}`
-      : "";
+    const whereClause = `WHERE ${conditions.join(" AND ")}`;
 
     const query = `
       SELECT
@@ -57,6 +62,13 @@ export default async function getPhotoReviewGallery(req, res) {
         ROUND(original_file_size_bytes / 1024.0, 1) AS original_kb,
         ROUND(cropped_file_size_bytes / 1024.0, 1) AS cropped_kb,
         review_status,
+        verification_status,
+        public_gallery_status,
+        academy_student_id,
+        academy_track,
+        academy_cohort,
+        uploader_name,
+        uploader_email,
         caption,
         ai_description,
         created_at_utc
