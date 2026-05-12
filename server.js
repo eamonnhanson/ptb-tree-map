@@ -66,13 +66,14 @@ app.get("/api/academy-upload-review", async (req, res) => {
     const result = await pool.query(
       `
       SELECT
-        id,
-        uploader_name,
-        uploader_email,
-        academy_track,
-        academy_cohort,
-        file_url,
-        verification_status
+      id,
+      uploader_name,
+      uploader_email,
+      academy_track,
+      academy_cohort,
+      cropped_file_url,
+      original_file_url,
+      verification_status
       FROM photo_uploads_review
       WHERE id = $1
       LIMIT 1
