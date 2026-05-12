@@ -403,7 +403,51 @@ app.get("/api/diag/heroes", async (req, res) => {
     });
   }
 });
+app.post("/api/academy-approve-upload", async (req, res) => {
+  try {
+    const { review_id, reviewed_by } = req.body;
 
+    if (!review_id) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing review_id"
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE photo_uploads_review
+      SET
+        verification_status = 'approved',
+        public_gallery_status = 'public',
+        reviewed_at_utc = NOW(),
+        reviewed_by = $2
+      WHERE id = $1
+      RETURNING id, verification_status, public_gallery_status
+      `,
+      [review_id, reviewed_by || "eamonn"]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        error: "Upload not found"
+      });
+    }
+
+    res.json({
+      ok: true,
+      upload: result.rows[0]
+    });
+
+  } catch (err) {
+    console.error("academy-approve-upload error:", err);
+    res.status(500).json({
+      ok: false,
+      error: err.message
+    });
+  }
+});
 // =====================================================
 // 404 guard
 // =====================================================
