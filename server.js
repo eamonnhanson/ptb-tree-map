@@ -12,6 +12,7 @@ import forestHeroes from "./api/forestHeroes.js";
 import forestHeroSearch from "./api/forestHeroSearch.js";
 import savePhotoReview from "./api/savePhotoReview.js";
 import getPhotoReviewGallery from "./api/getPhotoReviewGallery.js";
+import getStudentGallery from "./api/getStudentGallery.js";
 import { pool } from "./api/db.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -87,6 +88,7 @@ app.get("/api/trees/:id", treeByAdHandler);
 app.get("/api/forest-hero-search", forestHeroSearch);
 
 app.get("/api/photo-review-gallery", getPhotoReviewGallery);
+app.get("/api/student-gallery", getStudentGallery);
 
 app.post("/api/save-photo-review", savePhotoReview);
 
