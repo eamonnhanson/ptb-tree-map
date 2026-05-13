@@ -7,24 +7,35 @@ export default async function getStudentGallery(req, res) {
 
   try {
     const query = `
-      SELECT
-        id,
-        category,
-        linked_entity_name,
-        cropped_file_url,
-        uploader_name,
-        academy_track,
-        academy_cohort,
-        caption,
-        ai_description,
-        created_at_utc
-      FROM photo_uploads_review
-      WHERE category = 'academy_onboarding'
-        AND verification_status = 'approved'
-        AND public_gallery_status = 'public'
-      ORDER BY created_at_utc DESC
-      LIMIT 200;
-    `;
+  SELECT
+    p.id,
+    p.category,
+    p.linked_entity_name,
+    p.cropped_file_url,
+    p.uploader_name,
+    p.academy_track,
+    p.academy_cohort,
+    p.caption,
+    p.ai_description,
+    p.created_at_utc,
+
+    r.total_points,
+    r.badge_count,
+    r.public_badge_count,
+    r.badges
+
+  FROM photo_uploads_review p
+
+  LEFT JOIN academy_student_rewards r
+    ON r.academy_student_id = p.academy_student_id
+
+  WHERE p.category = 'academy_onboarding'
+    AND p.verification_status = 'approved'
+    AND p.public_gallery_status = 'public'
+
+  ORDER BY p.created_at_utc DESC
+  LIMIT 200;
+`;
 
     const result = await pool.query(query);
 
