@@ -151,63 +151,66 @@ if (category === "academy_onboarding" && !academy_student_id && uploader_email) 
       console.log("AI failed:", err.message);
     }
 
-    const query = `
-      INSERT INTO photo_uploads_review (
-        category,
-        linked_entity_type,
-        linked_entity_name,
-        user_id,
-        tree_id,
-        cropped_file_url,
-        original_file_url,
-        original_file_size_bytes,
-        cropped_file_size_bytes,
-        uploader_name,
-        uploader_email,
-        review_status,
-        ai_description,
-        ai_status,
-        ai_confidence,
-        academy_whatsapp,
-        academy_track,
-        upload_type,
-        consent_given,
-        verification_status,
-        upload_context
-      )
-      VALUES (
-        $1,$2,$3,$4,$5,
-        $6,$7,$8,$9,$10,
-        $11,'pending',$12,$13,$14,
-        $15,$16,$17,$18,$19,
-        $20
-      )
-      RETURNING id;
-    `;
+   const query = `
+  INSERT INTO photo_uploads_review (
+    category,
+    linked_entity_type,
+    linked_entity_name,
+    user_id,
+    tree_id,
+    cropped_file_url,
+    original_file_url,
+    original_file_size_bytes,
+    cropped_file_size_bytes,
+    uploader_name,
+    uploader_email,
+    review_status,
+    ai_description,
+    ai_status,
+    ai_confidence,
+    academy_whatsapp,
+    academy_track,
+    upload_type,
+    consent_given,
+    verification_status,
+    upload_context,
+    academy_student_id,
+    academy_cohort
+  )
+  VALUES (
+    $1,$2,$3,$4,$5,
+    $6,$7,$8,$9,$10,
+    $11,'pending',$12,$13,$14,
+    $15,$16,$17,$18,$19,
+    $20,$21,$22
+  )
+  RETURNING id;
+`;
 
     const values = [
-      category,
-      linked_entity_type,
-      linked_entity_name,
-      user_id,
-      tree_id,
-      cropped_file_url,
-      original_file_url,
-      original_file_size_bytes,
-      cropped_file_size_bytes,
-      uploader_name,
-      uploader_email,
-      ai_description,
-      ai_status,
-      ai_confidence,
-      academy_whatsapp,
-      academy_track,
-      upload_type,
-      consent_given,
-      verification_status,
-      upload_context
-    ];
-
+    category,
+    linked_entity_type,
+    linked_entity_name,
+    user_id,
+    tree_id,
+    cropped_file_url,
+    original_file_url,
+    original_file_size_bytes,
+    cropped_file_size_bytes,
+    uploader_name,
+    uploader_email,
+    ai_description,
+    ai_status,
+    ai_confidence,
+    academy_whatsapp,
+    academy_track,
+    upload_type,
+    consent_given,
+    verification_status,
+    upload_context,
+    academy_student_id,
+    academy_cohort
+  ];
     console.log("savePhotoReview query values =", values);
 
     const result = await pool.query(query, values);
