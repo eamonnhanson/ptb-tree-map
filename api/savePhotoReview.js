@@ -28,6 +28,9 @@ export default async function savePhotoReview(req, res) {
     const original_file_size_bytes = normalizeNumber(body.original_file_size_bytes);
     const cropped_file_size_bytes = normalizeNumber(body.cropped_file_size_bytes);
 
+    let academy_student_id = normalizeNumber(body.academy_student_id);
+    let academy_cohort = normalize(body.academy_cohort);
+
     const academy_whatsapp = normalize(body.academy_whatsapp);
     const academy_track = normalize(body.academy_track);
     const upload_type = normalize(body.upload_type);
@@ -109,7 +112,31 @@ export default async function savePhotoReview(req, res) {
         });
       }
     }
+if (category === "academy_onboarding" && !academy_student_id && uploader_email) {
+  try {
+    const studentLookup = await pool.query(
+      `
+      SELECT id, cohort
+      FROM academy_students
+      WHERE email IS NOT NULL
+        AND LOWER(TRIM(email)) = LOWER(TRIM($1))
+      ORDER BY id ASC
+      LIMIT 2
+      `,
+      [uploader_email]
+    );
 
+    if (studentLookup.rows.length === 1) {
+      academy_student_id = studentLookup.rows[0].id;
+
+      if (!academy_cohort) {
+        academy_cohort = studentLookup.rows[0].cohort;
+      }
+    }
+  } catch (err) {
+    console.warn("Could not resolve academy_student_id by email:", err.message);
+  }
+}
     let ai_description = null;
     let ai_confidence = null;
 
