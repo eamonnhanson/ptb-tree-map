@@ -635,6 +635,84 @@ app.post("/api/academy-reject-upload", async (req, res) => {
     });
   }
 });
+app.get("/api/student-profile/:id", async (req, res) => {
+  try {
+    const studentId = Number(req.params.id);
+
+    if (!Number.isFinite(studentId)) {
+      return res.status(400).json({
+        ok: false,
+        error: "Invalid student id"
+      });
+    }
+
+    const studentResult = await pool.query(
+      `
+      SELECT
+        s.id,
+        s.full_name,
+        s.email,
+        s.whatsapp,
+        s.track,
+        s.cohort,
+        s.status,
+        COALESCE(SUM(p.points_awarded), 0)::int AS total_points
+      FROM academy_students s
+      LEFT JOIN photo_uploads_review p
+        ON p.academy_student_id = s.id
+       AND p.review_status = 'approved'
+      WHERE s.id = $1
+      GROUP BY s.id
+      LIMIT 1
+      `,
+      [studentId]
+    );
+
+    if (!studentResult.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        error: "Student not found"
+      });
+    }
+
+    const uploadsResult = await pool.query(
+      `
+      SELECT
+        id,
+        lesson_key,
+        interest_area,
+        upload_type,
+        file_type,
+        cropped_file_url,
+        original_file_url,
+        ai_description,
+        ai_feedback,
+        points_awarded,
+        approved_at,
+        created_at_utc
+      FROM photo_uploads_review
+      WHERE academy_student_id = $1
+        AND review_status = 'approved'
+        AND is_visible_in_gallery = true
+      ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
+      `,
+      [studentId]
+    );
+
+    return res.json({
+      ok: true,
+      student: studentResult.rows[0],
+      uploads: uploadsResult.rows
+    });
+
+  } catch (err) {
+    console.error("student-profile error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: err.message
+    });
+  }
+});
 // =====================================================
 // 404 guard
 // =====================================================
