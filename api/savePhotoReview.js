@@ -177,7 +177,15 @@ export default async function savePhotoReview(req, res) {
     try {
       ai_status = "checking";
 
-      ai_description = await generateImageDescription(cropped_file_url);
+    ai_description = await generateImageDescription(cropped_file_url);
+
+if (!ai_description) {
+  ai_description = buildFallbackDescription({
+    upload_type,
+    lesson_key,
+    interest_area
+  });
+}
 
       ai_feedback = buildAcademyFeedback({
         category,
@@ -458,4 +466,11 @@ function improvementHintFromLesson(value) {
   };
 
   return map[value] || "Improvement suggestion: make the connection to the selected lesson clearer.";
+}
+function buildFallbackDescription({ upload_type, lesson_key, interest_area }) {
+  const uploadLabel = uploadLabelFromKey(upload_type);
+  const lessonLabel = lessonLabelFromKey(lesson_key);
+  const interestLabel = interestLabelFromKey(interest_area);
+
+  return `Upload received. AI could not confidently describe the content yet. Upload type: ${uploadLabel}. Topic: ${lessonLabel}. Interest area: ${interestLabel}.`;
 }
