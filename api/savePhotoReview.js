@@ -1,22 +1,3 @@
-Before replacing the file, run this in Beekeeper if you have not done it yet:
-
-```sql
-ALTER TABLE photo_uploads_review
-ADD COLUMN IF NOT EXISTS lesson_key TEXT,
-ADD COLUMN IF NOT EXISTS interest_area TEXT,
-ADD COLUMN IF NOT EXISTS file_type TEXT,
-ADD COLUMN IF NOT EXISTS file_extension TEXT,
-ADD COLUMN IF NOT EXISTS points_awarded INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS ai_feedback TEXT,
-ADD COLUMN IF NOT EXISTS is_visible_in_gallery BOOLEAN DEFAULT false,
-ADD COLUMN IF NOT EXISTS reviewed_by_admin BOOLEAN DEFAULT false,
-ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ,
-ADD COLUMN IF NOT EXISTS rejected_reason TEXT;
-```
-
-Then replace your full `savePhotoReview.js` with this:
-
-```js
 import { pool } from "./db.js";
 import { generateImageDescription } from "./generateImageDescription.js";
 
@@ -478,4 +459,3 @@ function improvementHintFromLesson(value) {
 
   return map[value] || "Improvement suggestion: make the connection to the selected lesson clearer.";
 }
-```
