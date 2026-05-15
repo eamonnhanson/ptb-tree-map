@@ -527,7 +527,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   try {
-    const status = String(req.query.status || "submitted_for_review").trim();
+    const status = String(req.query.status || "pending").trim();
 
     const values = [];
     const conditions = [`category IN ('academy_onboarding', 'academy_upload')`];
@@ -539,23 +539,31 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
 
     const query = `
       SELECT
-        id,
-        uploader_name,
-        uploader_email,
-        academy_student_id,
-        academy_track,
-        academy_cohort,
-        cropped_file_url,
-        original_file_url,
-        verification_status,
-        public_gallery_status,
-        created_at_utc,
-        student_confirmed_at,
-        reviewed_at_utc,
-        reviewed_by,
-        caption,
-        ai_description
-      FROM photo_uploads_review
+  id,
+  uploader_name,
+  uploader_email,
+  academy_student_id,
+  academy_track,
+  academy_cohort,
+  interest_area,
+  lesson_key,
+  upload_type,
+  file_type,
+  cropped_file_url,
+  original_file_url,
+  verification_status,
+  review_status,
+  public_gallery_status,
+  is_visible_in_gallery,
+  points_awarded,
+  created_at_utc,
+  student_confirmed_at,
+  reviewed_at_utc,
+  reviewed_by,
+  caption,
+  ai_description,
+  ai_feedback
+FROM photo_uploads_review
       WHERE ${conditions.join(" AND ")}
       ORDER BY
         student_confirmed_at DESC NULLS LAST,
@@ -593,20 +601,20 @@ app.post("/api/academy-reject-upload", async (req, res) => {
     const result = await pool.query(
       `
       UPDATE photo_uploads_review
-      SET
-      verification_status = 'rejected',
-      review_status = 'rejected',
-      public_gallery_status = 'private',
-      is_visible_in_gallery = false,
-      reviewed_at_utc = NOW(),
-      reviewed_by = $2,
-      rejected_reason = $3
-      WHERE id = $1
-      RETURNING
-      id,
-      verification_status,
-      review_status,
-      public_gallery_status
+SET
+  verification_status = 'rejected',
+  review_status = 'rejected',
+  public_gallery_status = 'private',
+  is_visible_in_gallery = false,
+  reviewed_at_utc = NOW(),
+  reviewed_by = $2,
+  rejected_reason = $3
+WHERE id = $1
+RETURNING
+  id,
+  verification_status,
+  review_status,
+  public_gallery_status
       `,
       [
       review_id,
