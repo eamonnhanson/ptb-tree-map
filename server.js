@@ -530,7 +530,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
     const status = String(req.query.status || "submitted_for_review").trim();
 
     const values = [];
-    const conditions = [`category = 'academy_onboarding'`];
+    const conditions = [`category IN ('academy_onboarding', 'academy_upload')`];
 
     if (status !== "all") {
       values.push(status);
@@ -582,8 +582,7 @@ app.post("/api/academy-reject-upload", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   try {
-    const { review_id, reviewed_by } = req.body;
-
+    const { review_id, reviewed_by, rejected_reason } = req.body;
     if (!review_id) {
       return res.status(400).json({
         ok: false,
@@ -595,14 +594,25 @@ app.post("/api/academy-reject-upload", async (req, res) => {
       `
       UPDATE photo_uploads_review
       SET
-        verification_status = 'rejected',
-        public_gallery_status = 'private',
-        reviewed_at_utc = NOW(),
-        reviewed_by = $2
+      verification_status = 'rejected',
+      review_status = 'rejected',
+      public_gallery_status = 'private',
+      is_visible_in_gallery = false,
+      reviewed_at_utc = NOW(),
+      reviewed_by = $2,
+      rejected_reason = $3
       WHERE id = $1
-      RETURNING id, verification_status, public_gallery_status
+      RETURNING
+      id,
+      verification_status,
+      review_status,
+      public_gallery_status
       `,
-      [review_id, reviewed_by || "eamonn"]
+      [
+      review_id,
+      reviewed_by || "eamonn",
+      rejected_reason || null
+      ]
     );
 
     if (!result.rows.length) {
