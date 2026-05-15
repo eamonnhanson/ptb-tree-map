@@ -477,10 +477,14 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       `
       UPDATE photo_uploads_review
       SET
-        verification_status = 'approved',
-        public_gallery_status = 'public',
-        reviewed_at_utc = NOW(),
-        reviewed_by = $2
+      verification_status = 'approved',
+      review_status = 'approved',
+      public_gallery_status = 'public',
+      is_visible_in_gallery = true,
+      reviewed_at_utc = NOW(),
+      approved_at = NOW(),
+      reviewed_by = $2,
+      points_awarded = CASE WHEN points_awarded = 0 THEN 1 ELSE points_awarded END
       WHERE id = $1
       RETURNING
         id,
