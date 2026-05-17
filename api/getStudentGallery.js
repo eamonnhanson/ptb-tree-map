@@ -29,9 +29,9 @@ export default async function getStudentGallery(req, res) {
   LEFT JOIN academy_student_rewards r
     ON r.academy_student_id = p.academy_student_id
 
-  WHERE p.category = 'academy_onboarding'
-    AND p.verification_status = 'approved'
-    AND p.public_gallery_status = 'public'
+  WHERE p.academy_student_id IS NOT NULL
+  AND p.verification_status = 'approved'
+  AND p.public_gallery_status = 'public'
 
   ORDER BY p.created_at_utc DESC
   LIMIT 200;
