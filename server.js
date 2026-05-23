@@ -632,6 +632,10 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
       conditions.push(`verification_status = $${values.length}`);
     }
 
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
     const query = `
       SELECT
         p.id,
@@ -672,7 +676,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
           AND approved.verification_status = 'approved'
           AND approved.public_gallery_status = 'public'
       ) existing_onboarding ON p.academy_student_id IS NOT NULL
-      WHERE ${conditions.join(" AND ")}
+      ${whereClause}
       ORDER BY
         p.student_confirmed_at DESC NULLS LAST,
         p.created_at_utc DESC
