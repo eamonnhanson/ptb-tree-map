@@ -32,6 +32,8 @@ export default async function getStudentGallery(req, res) {
   WHERE p.academy_student_id IS NOT NULL
   AND p.verification_status = 'approved'
   AND p.public_gallery_status = 'public'
+  AND p.category IN ('academy_onboarding', 'academy_upload')
+  AND COALESCE(p.file_type, 'image') = 'image'
 
   ORDER BY p.created_at_utc DESC
   LIMIT 200;
