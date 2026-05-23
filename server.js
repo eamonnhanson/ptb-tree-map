@@ -634,35 +634,48 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
 
     const query = `
       SELECT
-  id,
-  uploader_name,
-  uploader_email,
-  academy_student_id,
-  academy_track,
-  academy_cohort,
-  interest_area,
-  lesson_key,
-  upload_type,
-  file_type,
-  cropped_file_url,
-  original_file_url,
-  verification_status,
-  review_status,
-  public_gallery_status,
-  is_visible_in_gallery,
-  points_awarded,
-  created_at_utc,
-  student_confirmed_at,
-  reviewed_at_utc,
-  reviewed_by,
-  caption,
-  ai_description,
-  ai_feedback
-FROM photo_uploads_review
+        p.id,
+        p.uploader_name,
+        p.uploader_email,
+        p.academy_student_id,
+        p.academy_track,
+        p.academy_cohort,
+        p.interest_area,
+        p.lesson_key,
+        p.upload_type,
+        p.file_type,
+        p.cropped_file_url,
+        p.original_file_url,
+        p.verification_status,
+        p.review_status,
+        p.public_gallery_status,
+        p.is_visible_in_gallery,
+        p.points_awarded,
+        p.created_at_utc,
+        p.student_confirmed_at,
+        p.reviewed_at_utc,
+        p.reviewed_by,
+        p.caption,
+        p.ai_description,
+        p.ai_feedback,
+        COALESCE(existing_onboarding.approved_count, 0)::int AS existing_approved_onboarding_count,
+        existing_onboarding.latest_approved_onboarding_id
+      FROM photo_uploads_review p
+      LEFT JOIN LATERAL (
+        SELECT
+          COUNT(*)::int AS approved_count,
+          MAX(id) AS latest_approved_onboarding_id
+        FROM photo_uploads_review approved
+        WHERE approved.academy_student_id = p.academy_student_id
+          AND approved.id <> p.id
+          AND approved.category = 'academy_onboarding'
+          AND approved.verification_status = 'approved'
+          AND approved.public_gallery_status = 'public'
+      ) existing_onboarding ON p.academy_student_id IS NOT NULL
       WHERE ${conditions.join(" AND ")}
       ORDER BY
-        student_confirmed_at DESC NULLS LAST,
-        created_at_utc DESC
+        p.student_confirmed_at DESC NULLS LAST,
+        p.created_at_utc DESC
       LIMIT 300;
     `;
 
