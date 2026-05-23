@@ -149,6 +149,90 @@ async function notifyApproval(upload) {
     console.error("Zapier approval notification failed:", err);
   }
 }
+
+async function syncApprovedUploadPoint(upload) {
+  if (!upload?.id || !upload?.academy_student_id) return;
+
+  const eventKey = `approved_upload_${upload.id}`;
+
+  try {
+    if (
+      upload.verification_status === "approved" &&
+      upload.public_gallery_status === "public"
+    ) {
+      await pool.query(
+        `
+        UPDATE academy_point_events
+        SET
+          points = 1,
+          metadata = $4::jsonb
+        WHERE source_table = 'photo_uploads_review'
+          AND source_id = $3
+        `,
+        [
+          upload.academy_student_id,
+          eventKey,
+          upload.id,
+          JSON.stringify({
+            review_id: upload.id,
+            category: upload.category || null,
+            upload_context: upload.upload_context || null
+          })
+        ]
+      );
+
+      await pool.query(
+        `
+        INSERT INTO academy_point_events (
+          academy_student_id,
+          event_key,
+          event_label,
+          points,
+          source_table,
+          source_id,
+          metadata
+        )
+        SELECT
+          $1,
+          $2,
+          'Approved public upload',
+          1,
+          'photo_uploads_review',
+          $3,
+          $4::jsonb
+        WHERE NOT EXISTS (
+          SELECT 1
+          FROM academy_point_events
+          WHERE source_table = 'photo_uploads_review'
+            AND source_id = $3
+        )
+        `,
+        [
+          upload.academy_student_id,
+          eventKey,
+          upload.id,
+          JSON.stringify({
+            review_id: upload.id,
+            category: upload.category || null,
+            upload_context: upload.upload_context || null
+          })
+        ]
+      );
+      return;
+    }
+
+    await pool.query(
+      `
+      DELETE FROM academy_point_events
+      WHERE source_table = 'photo_uploads_review'
+        AND source_id = $1
+      `,
+      [upload.id]
+    );
+  } catch (err) {
+    console.warn("Could not sync academy_point_events:", err.message);
+  }
+}
 // =====================================================
 // academy upload review
 // =====================================================
@@ -464,7 +548,8 @@ app.post("/api/academy-approve-upload", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   try {
-    const { review_id, reviewed_by } = req.body;
+    const { review_id, reviewed_by, public_gallery_status } = req.body;
+    const nextGalleryStatus = public_gallery_status === "private" ? "private" : "public";
 
     if (!review_id) {
       return res.status(400).json({
@@ -479,24 +564,30 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       SET
       verification_status = 'approved',
       review_status = 'approved',
-      public_gallery_status = 'public',
-      is_visible_in_gallery = true,
+      public_gallery_status = $3,
+      is_visible_in_gallery = $3 = 'public',
       reviewed_at_utc = NOW(),
       approved_at = NOW(),
       reviewed_by = $2,
-      points_awarded = CASE WHEN points_awarded = 0 THEN 1 ELSE points_awarded END
+      points_awarded = CASE
+        WHEN academy_student_id IS NOT NULL AND $3 = 'public' THEN 1
+        ELSE 0
+      END
       WHERE id = $1
       RETURNING
         id,
+        category,
+        upload_context,
         uploader_name,
         uploader_email,
+        academy_student_id,
         academy_track,
         academy_cohort,
         verification_status,
         public_gallery_status,
         cropped_file_url
       `,
-      [review_id, reviewed_by || "eamonn"]
+      [review_id, reviewed_by || "eamonn", nextGalleryStatus]
     );
 
     if (!result.rows.length) {
@@ -508,7 +599,11 @@ app.post("/api/academy-approve-upload", async (req, res) => {
 
     const upload = result.rows[0];
 
-    await notifyApproval(upload);
+    await syncApprovedUploadPoint(upload);
+
+    if (nextGalleryStatus === "public") {
+      await notifyApproval(upload);
+    }
 
     res.json({
       ok: true,
@@ -530,7 +625,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
     const status = String(req.query.status || "pending").trim();
 
     const values = [];
-    const conditions = [`category IN ('academy_onboarding', 'academy_upload')`];
+    const conditions = [];
 
     if (status !== "all") {
       values.push(status);
@@ -604,14 +699,16 @@ app.post("/api/academy-reject-upload", async (req, res) => {
 SET
   verification_status = 'rejected',
   review_status = 'rejected',
-  public_gallery_status = 'private',
+  public_gallery_status = 'hidden',
   is_visible_in_gallery = false,
+  points_awarded = 0,
   reviewed_at_utc = NOW(),
   reviewed_by = $2,
   rejected_reason = $3
 WHERE id = $1
 RETURNING
   id,
+  academy_student_id,
   verification_status,
   review_status,
   public_gallery_status
@@ -630,6 +727,8 @@ RETURNING
       });
     }
 
+    await syncApprovedUploadPoint(result.rows[0]);
+
     res.json({
       ok: true,
       upload: result.rows[0]
@@ -637,6 +736,60 @@ RETURNING
 
   } catch (err) {
     console.error("academy-reject-upload error:", err);
+    res.status(500).json({
+      ok: false,
+      error: err.message
+    });
+  }
+});
+app.post("/api/academy-hide-upload", async (req, res) => {
+  if (!requireAdmin(req, res)) return;
+
+  try {
+    const { review_id, reviewed_by, rejected_reason } = req.body;
+
+    if (!review_id) {
+      return res.status(400).json({
+        ok: false,
+        error: "Missing review_id"
+      });
+    }
+
+    const result = await pool.query(
+      `
+      UPDATE photo_uploads_review
+      SET
+        public_gallery_status = 'hidden',
+        is_visible_in_gallery = false,
+        points_awarded = 0,
+        reviewed_at_utc = NOW(),
+        reviewed_by = $2,
+        rejected_reason = COALESCE($3, rejected_reason)
+      WHERE id = $1
+      RETURNING
+        id,
+        academy_student_id,
+        verification_status,
+        public_gallery_status
+      `,
+      [review_id, reviewed_by || "eamonn", rejected_reason || null]
+    );
+
+    if (!result.rows.length) {
+      return res.status(404).json({
+        ok: false,
+        error: "Upload not found"
+      });
+    }
+
+    await syncApprovedUploadPoint(result.rows[0]);
+
+    res.json({
+      ok: true,
+      upload: result.rows[0]
+    });
+  } catch (err) {
+    console.error("academy-hide-upload error:", err);
     res.status(500).json({
       ok: false,
       error: err.message
