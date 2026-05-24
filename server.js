@@ -870,36 +870,55 @@ app.get("/api/student-profile/:id", async (req, res) => {
     }
 
     const uploadsResult = await pool.query(
-      `
-      SELECT
-        id,
-        lesson_key,
-        interest_area,
-        upload_type,
-        file_type,
-        cropped_file_url,
-        original_file_url,
-        ai_description,
-        ai_feedback,
-        points_awarded,
-        approved_at,
-        created_at_utc
-      FROM photo_uploads_review
-      WHERE academy_student_id = $1
-        AND review_status = 'approved'
-        AND verification_status = 'approved'
-        AND public_gallery_status = 'public'
-        AND is_visible_in_gallery = true
-      ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
-      `,
-      [studentId]
-    );
+  `
+  SELECT
+    id,
+    lesson_key,
+    interest_area,
+    upload_type,
+    file_type,
+    cropped_file_url,
+    original_file_url,
+    ai_description,
+    ai_feedback,
+    points_awarded,
+    approved_at,
+    created_at_utc
+  FROM photo_uploads_review
+  WHERE academy_student_id = $1
+    AND review_status = 'approved'
+    AND verification_status = 'approved'
+    AND public_gallery_status = 'public'
+    AND is_visible_in_gallery = true
+  ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
+  `,
+  [studentId]
+);
 
-    return res.json({
-      ok: true,
-      student: studentResult.rows[0],
-      uploads: uploadsResult.rows
-    });
+const pointEventsResult = await pool.query(
+  `
+  SELECT
+    id,
+    event_key,
+    event_label,
+    points,
+    source_table,
+    source_id,
+    created_at_utc
+  FROM academy_point_events
+  WHERE academy_student_id = $1
+    AND points <> 0
+  ORDER BY created_at_utc ASC
+  `,
+  [studentId]
+);
+
+ return res.json({
+  ok: true,
+  student: studentResult.rows[0],
+  uploads: uploadsResult.rows,
+  point_events: pointEventsResult.rows
+});
   } catch (err) {
     console.error("student-profile error:", err);
 
