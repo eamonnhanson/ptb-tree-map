@@ -826,25 +826,29 @@ app.get("/api/student-profile/:id", async (req, res) => {
 
     const studentResult = await pool.query(
       `
-      SELECT
-        s.id,
-        s.full_name,
-        s.email,
-        s.whatsapp,
-        s.track,
-        s.cohort,
-        s.status,
-        COALESCE(SUM(p.points_awarded), 0)::int AS total_points
-      FROM academy_students s
-      LEFT JOIN photo_uploads_review p
-        ON p.academy_student_id = s.id
-       AND p.review_status = 'approved'
-      WHERE s.id = $1
-      GROUP BY s.id
-      LIMIT 1
-      `,
-      [studentId]
-    );
+     const studentResult = await pool.query(
+  `
+  SELECT
+    s.id,
+    s.full_name,
+    s.email,
+    s.whatsapp,
+    s.track,
+    s.cohort,
+    s.status,
+    s.onboarding_status,
+    COALESCE(r.total_points, 0)::int AS total_points,
+    COALESCE(r.badge_count, 0)::int AS badge_count,
+    COALESCE(r.public_badge_count, 0)::int AS public_badge_count,
+    COALESCE(r.badges, '[]'::jsonb) AS badges
+  FROM academy_students s
+  LEFT JOIN academy_student_rewards r
+    ON r.academy_student_id = s.id
+  WHERE s.id = $1
+  LIMIT 1
+  `,
+  [studentId]
+);
 
     if (!studentResult.rows.length) {
       return res.status(404).json({
@@ -870,8 +874,10 @@ app.get("/api/student-profile/:id", async (req, res) => {
         created_at_utc
       FROM photo_uploads_review
       WHERE academy_student_id = $1
-        AND review_status = 'approved'
-        AND is_visible_in_gallery = true
+      AND review_status = 'approved'
+      AND verification_status = 'approved'
+      AND public_gallery_status = 'public'
+      AND is_visible_in_gallery = true
       ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
       `,
       [studentId]
