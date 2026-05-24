@@ -47,6 +47,7 @@ WHERE p.academy_student_id IS NOT NULL
 
 ORDER BY p.created_at_utc DESC
 LIMIT 200;
+`;
 
     const result = await pool.query(query);
 
