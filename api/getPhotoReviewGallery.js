@@ -10,29 +10,21 @@ export default async function getPhotoReviewGallery(req, res) {
     const date_from = normalize(req.query.date_from);
     const date_to = normalize(req.query.date_to);
     const search = normalize(req.query.search);
-    const verification_status = normalize(req.query.verification_status);
-    const public_gallery_status = normalize(req.query.public_gallery_status);
 
-    const conditions = [];
+    console.log("photo-review-gallery endpoint called");
+    console.log("photo-review-gallery selected category:", category || "all");
+
+    const conditions = [
+      "verification_status = 'approved'",
+      "public_gallery_status = 'public'",
+      "academy_student_id IS NULL",
+      "(upload_context IN ('photo_review', 'legacy_photo_import', 'staff_upload') OR upload_context IS NULL)"
+    ];
     const values = [];
-
-    // Staff gallery:
-    // No automatic approval filter here.
-    // This endpoint should show all uploads unless filters are explicitly used.
 
     if (category && category !== "all") {
       values.push(category);
       conditions.push(`category = $${values.length}`);
-    }
-
-    if (verification_status && verification_status !== "all") {
-      values.push(verification_status);
-      conditions.push(`verification_status = $${values.length}`);
-    }
-
-    if (public_gallery_status && public_gallery_status !== "all") {
-      values.push(public_gallery_status);
-      conditions.push(`public_gallery_status = $${values.length}`);
     }
 
     if (date_from) {
@@ -97,7 +89,9 @@ export default async function getPhotoReviewGallery(req, res) {
       LIMIT 300;
     `;
 
+    console.log("photo-review-gallery SQL params:", values);
     const result = await pool.query(query, values);
+    console.log("photo-review-gallery row count returned:", result.rowCount);
 
     return res.status(200).json({
       ok: true,
