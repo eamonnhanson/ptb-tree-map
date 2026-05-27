@@ -86,7 +86,6 @@ export default async function getPhotoReviewGallery(req, res) {
         verification_status,
         public_gallery_status,
         upload_context,
-        uploader_role,
         academy_student_id,
         academy_track,
         academy_cohort,
