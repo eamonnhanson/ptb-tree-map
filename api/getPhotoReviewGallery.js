@@ -10,16 +10,29 @@ export default async function getPhotoReviewGallery(req, res) {
     const date_from = normalize(req.query.date_from);
     const date_to = normalize(req.query.date_to);
     const search = normalize(req.query.search);
+    const anonymousOnboarding = req.query.anonymous_onboarding === "1";
 
     console.log("photo-review-gallery endpoint called");
     console.log("photo-review-gallery selected category:", category || "all");
 
-    const conditions = [
-      "verification_status = 'approved'",
-      "public_gallery_status = 'public'",
-      "academy_student_id IS NULL",
-      "(upload_context IN ('photo_review', 'legacy_photo_import', 'staff_upload') OR upload_context IS NULL)"
-    ];
+    const conditions = anonymousOnboarding
+      ? [
+        "(verification_status = 'approved' OR review_status = 'approved')",
+        "public_gallery_status = 'public'",
+        "academy_student_id IS NULL",
+        "COALESCE(NULLIF(TRIM(uploader_name), ''), NULLIF(TRIM(uploader_email), '')) IS NULL",
+        `(
+          category IN ('student_onboarding', 'academy_onboarding')
+          OR upload_context = 'academy_onboarding'
+          OR lesson_key = 'onboarding'
+        )`
+      ]
+      : [
+        "verification_status = 'approved'",
+        "public_gallery_status = 'public'",
+        "academy_student_id IS NULL",
+        "(upload_context IN ('photo_review', 'legacy_photo_import', 'staff_upload') OR upload_context IS NULL)"
+      ];
     const values = [];
 
     if (category && category !== "all") {
@@ -72,9 +85,12 @@ export default async function getPhotoReviewGallery(req, res) {
         review_status,
         verification_status,
         public_gallery_status,
+        upload_context,
+        uploader_role,
         academy_student_id,
         academy_track,
         academy_cohort,
+        lesson_key,
         uploader_name,
         uploader_email,
         caption,
