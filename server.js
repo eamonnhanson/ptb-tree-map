@@ -54,8 +54,9 @@ app.use(
       }
 
       console.log("❌ Blocked by CORS:", origin);
+
       return cb(new Error("Not allowed by CORS"));
-    }
+    },
   })
 );
 
@@ -75,9 +76,8 @@ app.get("/health", (_req, res) => {
 });
 
 // =====================================================
-// admin guard
+// API routes
 // =====================================================
-
 function requireAdmin(req, res) {
   const key =
     req.headers["x-admin-key"] ||
@@ -102,25 +102,20 @@ function requireAdmin(req, res) {
   return true;
 }
 
-// =====================================================
-// API routes
-// =====================================================
-
 app.get("/api/trees", treesHandler);
+
 app.get("/api/trees/by-codes", treesByCodesHandler);
+
 app.get("/api/trees/:id", treeByAdHandler);
 
 app.get("/api/forest-hero-search", forestHeroSearch);
-app.use("/api/forest-heroes", forestHeroes);
 
 app.get("/api/photo-review-gallery", getPhotoReviewGallery);
 app.get("/api/student-gallery", getStudentGallery);
 
 app.post("/api/save-photo-review", savePhotoReview);
 
-// =====================================================
-// helpers
-// =====================================================
+app.use("/api/forest-heroes", forestHeroes);
 
 async function notifyApproval(upload) {
   if (!process.env.ZAPIER_APPROVAL_WEBHOOK_URL) {
@@ -147,12 +142,9 @@ async function notifyApproval(upload) {
     });
 
     if (!response.ok) {
-      console.error(
-        "Zapier webhook failed:",
-        response.status,
-        await response.text()
-      );
+      console.error("Zapier webhook failed:", response.status, await response.text());
     }
+
   } catch (err) {
     console.error("Zapier approval notification failed:", err);
   }
@@ -226,7 +218,6 @@ async function syncApprovedUploadPoint(upload) {
           })
         ]
       );
-
       return;
     }
 
@@ -242,7 +233,6 @@ async function syncApprovedUploadPoint(upload) {
     console.warn("Could not sync academy_point_events:", err.message);
   }
 }
-
 // =====================================================
 // academy upload review
 // =====================================================
@@ -290,6 +280,7 @@ app.get("/api/academy-upload-review", async (req, res) => {
         file_url: result.rows[0].cropped_file_url
       }
     });
+
   } catch (err) {
     console.error("academy-upload-review error:", err);
 
@@ -338,6 +329,7 @@ app.post("/api/academy-submit-upload", async (req, res) => {
       ok: true,
       upload: result.rows[0]
     });
+
   } catch (err) {
     console.error("academy-submit-upload error:", err);
 
@@ -397,8 +389,84 @@ app.get("/api/academy-student", async (req, res) => {
       ok: true,
       student: result.rows[0]
     });
+
   } catch (e) {
     console.error("academy-student error:", {
+      code: e.code,
+      message: e.message,
+      detail: e.detail
+    });
+
+    return res.status(500).json({
+      ok: false,
+      error: "Server error",
+      code: e.code || null,
+      message: e.message || null
+    });
+  }
+});
+
+// =====================================================
+// academy student search for verified uploader identity
+// =====================================================
+
+app.get("/api/academy-student-search", async (req, res) => {
+  const q = String(req.query.q || "").trim().replace(/\s+/g, " ");
+
+  if (q.length < 2) {
+    return res.json({
+      ok: true,
+      students: []
+    });
+  }
+
+  if (q.length > 80) {
+    return res.status(400).json({
+      ok: false,
+      error: "Search text is too long"
+    });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        ketso_student_id,
+        full_name,
+        first_name,
+        last_name,
+        email,
+        whatsapp,
+        cohort,
+        track,
+        primary_stream
+      FROM public.academy_students
+      WHERE
+        full_name ILIKE '%' || $1 || '%'
+        OR first_name ILIKE '%' || $1 || '%'
+        OR last_name ILIKE '%' || $1 || '%'
+        OR email ILIKE '%' || $1 || '%'
+      ORDER BY
+        CASE
+          WHEN full_name ILIKE $1 || '%' THEN 0
+          WHEN first_name ILIKE $1 || '%' THEN 1
+          WHEN last_name ILIKE $1 || '%' THEN 2
+          ELSE 3
+        END,
+        full_name
+      LIMIT 20
+      `,
+      [q]
+    );
+
+    return res.json({
+      ok: true,
+      students: result.rows
+    });
+
+  } catch (e) {
+    console.error("academy-student-search error:", {
       code: e.code,
       message: e.message,
       detail: e.detail
@@ -417,6 +485,8 @@ app.get("/api/academy-student", async (req, res) => {
 // diagnose endpoints
 // =====================================================
 
+// 1) basis DB-info
+
 app.get("/api/diag/info", (_req, res) => {
   try {
     const u = new URL(process.env.DATABASE_URL);
@@ -427,6 +497,7 @@ app.get("/api/diag/info", (_req, res) => {
       db: u.pathname.slice(1),
       ssl: process.env.NODE_ENV === "production"
     });
+
   } catch {
     res.status(500).json({
       ok: false,
@@ -434,6 +505,8 @@ app.get("/api/diag/info", (_req, res) => {
     });
   }
 });
+
+// 2) ping + kolommen
 
 app.get("/api/diag/db", async (_req, res) => {
   try {
@@ -451,6 +524,7 @@ app.get("/api/diag/db", async (_req, res) => {
       now: ping.rows[0].now,
       columns: cols.rows
     });
+
   } catch (e) {
     console.error("diag db error:", {
       code: e.code,
@@ -472,6 +546,8 @@ app.get("/api/diag/db", async (_req, res) => {
     });
   }
 });
+
+// 3) heroes preview
 
 app.get("/api/diag/heroes", async (req, res) => {
   const params = [];
@@ -527,6 +603,7 @@ app.get("/api/diag/heroes", async (req, res) => {
       count: cnt?.n ?? 0,
       preview: prev?.[0] ?? null
     });
+
   } catch (e) {
     console.error("diag heroes error:", {
       code: e.code,
@@ -542,18 +619,12 @@ app.get("/api/diag/heroes", async (req, res) => {
     });
   }
 });
-
-// =====================================================
-// academy moderation actions
-// =====================================================
-
 app.post("/api/academy-approve-upload", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   try {
     const { review_id, reviewed_by, public_gallery_status } = req.body;
-    const nextGalleryStatus =
-      public_gallery_status === "private" ? "private" : "public";
+    const nextGalleryStatus = public_gallery_status === "private" ? "private" : "public";
 
     if (!review_id) {
       return res.status(400).json({
@@ -566,17 +637,17 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       `
       UPDATE photo_uploads_review
       SET
-        verification_status = 'approved',
-        review_status = 'approved',
-        public_gallery_status = $3,
-        is_visible_in_gallery = $3 = 'public',
-        reviewed_at_utc = NOW(),
-        approved_at = NOW(),
-        reviewed_by = $2,
-        points_awarded = CASE
-          WHEN academy_student_id IS NOT NULL AND $3 = 'public' THEN 1
-          ELSE 0
-        END
+      verification_status = 'approved',
+      review_status = 'approved',
+      public_gallery_status = $3,
+      is_visible_in_gallery = $3 = 'public',
+      reviewed_at_utc = NOW(),
+      approved_at = NOW(),
+      reviewed_by = $2,
+      points_awarded = CASE
+        WHEN academy_student_id IS NOT NULL AND $3 = 'public' THEN 1
+        ELSE 0
+      END
       WHERE id = $1
       RETURNING
         id,
@@ -613,16 +684,15 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       ok: true,
       upload
     });
+
   } catch (err) {
     console.error("academy-approve-upload error:", err);
-
     res.status(500).json({
       ok: false,
       error: err.message
     });
   }
 });
-
 app.get("/api/academy-moderation-queue", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
@@ -694,22 +764,20 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
       ok: true,
       uploads: result.rows
     });
+
   } catch (err) {
     console.error("academy-moderation-queue error:", err);
-
     res.status(500).json({
       ok: false,
       error: err.message
     });
   }
 });
-
 app.post("/api/academy-reject-upload", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
   try {
     const { review_id, reviewed_by, rejected_reason } = req.body;
-
     if (!review_id) {
       return res.status(400).json({
         ok: false,
@@ -720,27 +788,27 @@ app.post("/api/academy-reject-upload", async (req, res) => {
     const result = await pool.query(
       `
       UPDATE photo_uploads_review
-      SET
-        verification_status = 'rejected',
-        review_status = 'rejected',
-        public_gallery_status = 'hidden',
-        is_visible_in_gallery = false,
-        points_awarded = 0,
-        reviewed_at_utc = NOW(),
-        reviewed_by = $2,
-        rejected_reason = $3
-      WHERE id = $1
-      RETURNING
-        id,
-        academy_student_id,
-        verification_status,
-        review_status,
-        public_gallery_status
+SET
+  verification_status = 'rejected',
+  review_status = 'rejected',
+  public_gallery_status = 'hidden',
+  is_visible_in_gallery = false,
+  points_awarded = 0,
+  reviewed_at_utc = NOW(),
+  reviewed_by = $2,
+  rejected_reason = $3
+WHERE id = $1
+RETURNING
+  id,
+  academy_student_id,
+  verification_status,
+  review_status,
+  public_gallery_status
       `,
       [
-        review_id,
-        reviewed_by || "eamonn",
-        rejected_reason || null
+      review_id,
+      reviewed_by || "eamonn",
+      rejected_reason || null
       ]
     );
 
@@ -757,16 +825,15 @@ app.post("/api/academy-reject-upload", async (req, res) => {
       ok: true,
       upload: result.rows[0]
     });
+
   } catch (err) {
     console.error("academy-reject-upload error:", err);
-
     res.status(500).json({
       ok: false,
       error: err.message
     });
   }
 });
-
 app.post("/api/academy-hide-upload", async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
@@ -815,18 +882,12 @@ app.post("/api/academy-hide-upload", async (req, res) => {
     });
   } catch (err) {
     console.error("academy-hide-upload error:", err);
-
     res.status(500).json({
       ok: false,
       error: err.message
     });
   }
 });
-
-// =====================================================
-// student profile
-// =====================================================
-
 app.get("/api/student-profile/:id", async (req, res) => {
   try {
     const studentId = Number(req.params.id);
@@ -848,15 +909,13 @@ app.get("/api/student-profile/:id", async (req, res) => {
         s.track,
         s.cohort,
         s.status,
-        s.onboarding_status,
-        COALESCE(r.total_points, 0)::int AS total_points,
-        COALESCE(r.badge_count, 0)::int AS badge_count,
-        COALESCE(r.public_badge_count, 0)::int AS public_badge_count,
-        COALESCE(r.badges, '[]'::jsonb) AS badges
+        COALESCE(SUM(p.points_awarded), 0)::int AS total_points
       FROM academy_students s
-      LEFT JOIN academy_student_rewards r
-        ON r.academy_student_id = s.id
+      LEFT JOIN photo_uploads_review p
+        ON p.academy_student_id = s.id
+       AND p.review_status = 'approved'
       WHERE s.id = $1
+      GROUP BY s.id
       LIMIT 1
       `,
       [studentId]
@@ -870,65 +929,43 @@ app.get("/api/student-profile/:id", async (req, res) => {
     }
 
     const uploadsResult = await pool.query(
-  `
-  SELECT
-    id,
-    lesson_key,
-    interest_area,
-    upload_type,
-    file_type,
-    cropped_file_url,
-    original_file_url,
-    ai_description,
-    ai_feedback,
-    points_awarded,
-    approved_at,
-    created_at_utc
-  FROM photo_uploads_review
-  WHERE academy_student_id = $1
-    AND review_status = 'approved'
-    AND verification_status = 'approved'
-    AND public_gallery_status = 'public'
-    AND is_visible_in_gallery = true
-  ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
-  `,
-  [studentId]
-);
+      `
+      SELECT
+        id,
+        lesson_key,
+        interest_area,
+        upload_type,
+        file_type,
+        cropped_file_url,
+        original_file_url,
+        ai_description,
+        ai_feedback,
+        points_awarded,
+        approved_at,
+        created_at_utc
+      FROM photo_uploads_review
+      WHERE academy_student_id = $1
+        AND review_status = 'approved'
+        AND is_visible_in_gallery = true
+      ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
+      `,
+      [studentId]
+    );
 
-const pointEventsResult = await pool.query(
-  `
-  SELECT
-    id,
-    event_key,
-    event_label,
-    points,
-    source_table,
-    source_id,
-    created_at_utc
-  FROM academy_point_events
-  WHERE academy_student_id = $1
-    AND points <> 0
-  ORDER BY created_at_utc ASC
-  `,
-  [studentId]
-);
+    return res.json({
+      ok: true,
+      student: studentResult.rows[0],
+      uploads: uploadsResult.rows
+    });
 
- return res.json({
-  ok: true,
-  student: studentResult.rows[0],
-  uploads: uploadsResult.rows,
-  point_events: pointEventsResult.rows
-});
   } catch (err) {
     console.error("student-profile error:", err);
-
     return res.status(500).json({
       ok: false,
       error: err.message
     });
   }
 });
-
 // =====================================================
 // 404 guard
 // =====================================================
