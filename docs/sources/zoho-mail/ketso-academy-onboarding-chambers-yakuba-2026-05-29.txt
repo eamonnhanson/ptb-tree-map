@@ -1,0 +1,77 @@
+# Zoho Mail sample email
+
+File purpose:
+This file is a cleaned plain-text sample of an outbound KETSO Academy onboarding email.
+It is intended for workflow discovery and dashboard monitoring rules.
+
+Recommended GitHub location:
+docs/sources/zoho-mail/sample-emails/outbox-monitor/ketso-academy-onboarding-chambers-yakuba-2026-05-29.txt
+
+Source system:
+Zoho Mail
+
+Original source:
+Outbox Monitor email
+
+Dashboard category:
+Outbox Monitor
+
+Suggested event type:
+onboarding_email_sent
+
+Suggested severity:
+green
+
+Reason:
+This email is evidence that a KETSO Academy onboarding email was sent to a student. It contains a personal onboarding token link and instructions for uploading a selfie or object before joining the online tree planting session. It can be used as outbound evidence, but it does not prove that the student completed onboarding or submitted an upload.
+
+Extracted fields:
+- Recipient name: Chambers Yakuba
+- Email subject: Complete your KETSO Academy onboarding
+- Onboarding URL: https://ketso-uploader.pages.dev/academy-onboarding/?token=73208907789f059c
+- Upload options: selfie or favourite object
+- Required student action: upload image and submit for approval
+- WhatsApp group URL: https://chat.whatsapp.com/CqxAGgHO61xIXc48HyssjM
+- Sender identity: KETSO Academy
+
+Expected dashboard use:
+- Match this email to a student record, onboarding token or academy student workflow.
+- Use it as evidence that the onboarding invitation was sent.
+- Do not assume onboarding was completed unless a matching upload or approval record exists.
+- If this email exists but no upload follows after the expected time window, mark as orange.
+- If this email cannot be matched to a student record, mark as needs verification.
+
+Suggested dashboard rule:
+- Green: onboarding email is matched to a student record and later matched to a submitted or approved upload.
+- Orange: onboarding email was sent, but no upload or approval record exists yet.
+- Red: onboarding link/token is invalid, student record is missing, or upload/approval failed.
+
+Cleaned email subject:
+Complete your KETSO Academy onboarding
+
+Cleaned email body:
+
+Hello Chambers Yakuba,
+
+Welcome to KETSO Academy.
+
+Please complete your onboarding before joining the online tree planting session.
+
+Use your personal onboarding link below:
+
+https://ketso-uploader.pages.dev/academy-onboarding/?token=73208907789f059c
+
+You can upload:
+
+* a selfie
+* or a favourite object if you do not want to show your face
+
+After uploading, please review your image and click “Submit for approval”.
+
+Once approved, your upload may appear in the KETSO Academy student gallery. After this, join the WhatsApp group:
+
+https://chat.whatsapp.com/CqxAGgHO61xIXc48HyssjM
+
+Thank you for joining KETSO Academy.
+
+KETSO Academy
