@@ -1,0 +1,76 @@
+# Zoho Mail sample email
+
+File purpose:
+This file is a cleaned plain-text sample of a Shopify purchase notification email.
+It is intended for workflow discovery and dashboard monitoring rules.
+
+Recommended GitHub location:
+docs/sources/zoho-mail/sample-emails/manual-follow-up/shopify-monthly-donation-sku5-reinder-roos-2026-05-20.txt
+
+Source system:
+Zoho Mail
+
+Original source:
+Shopify order notification email
+
+Dashboard category:
+Manual Follow-up
+
+Suggested event type:
+shopify_recurring_donation_received
+
+Suggested severity:
+orange
+
+Reason:
+This email indicates a Shopify recurring donation purchase. It may require manual follow-up, such as verifying whether a thank-you email was sent, whether a certificate is expected, and whether the donor/subscription was registered.
+
+Extracted fields:
+- Customer name: Reinder Roos
+- Order ID: Plant N Boom26_1363
+- Order date/time: May 20, 10:08 am
+- Product name: Maandelijkse donatie
+- SKU: 5
+- Quantity: 1
+- Unit amount: €5,00
+- Recurring: yes
+- Recurrence text: Deliver every month
+- Subtotal: €5,00
+- Shipping: €0,00
+- Total: €5,00 EUR
+- Payment processing method: Shopify payments
+
+Expected follow-up:
+- Verify whether this product/SKU requires only a thank-you email or also a certificate/tree action.
+- Verify whether a thank-you email was sent.
+- Verify whether the donor/subscription was recorded in the relevant system.
+- Keep this as a manual follow-up candidate until the SKU 5 workflow is mapped and audited.
+
+Suggested dashboard rule:
+- Green: purchase is matched with required follow-up evidence.
+- Orange: purchase email exists, but follow-up evidence is missing or unknown.
+- Red: follow-up was attempted but failed, or remains open beyond the agreed SLA.
+
+Cleaned email body:
+
+Reinder Roos plaatste bestelling #Plant N Boom26_1363 op May 20 om 10:08 am.
+
+Bestelling weergeven
+
+Besteloverzicht
+
+Maandelijkse donatie
+€5,00 × 1
+SKU: 5
+Deliver every month
+€5,00
+
+Subtotaal: €5,00
+Verzending: €0,00
+Totaal: €5,00 EUR
+
+Betalingsverwerkingsmethode:
+Shopify payments
+
+Footer address:
+151 O'Connor Street, Ground floor, Ottawa, ON, K2P 2L8
