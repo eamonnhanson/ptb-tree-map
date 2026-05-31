@@ -1,1 +1,86 @@
+# Zoho Mail sample email
 
+File purpose:
+This file is a cleaned plain-text sample of a Chargebee New Revenue Alert email.
+It is intended for workflow discovery and dashboard monitoring rules.
+
+Recommended GitHub location:
+docs/sources/zoho-mail/sample-emails/manual-follow-up/chargebee-new-revenue-alert-cor-mai-honkoop-invoice-1008.txt
+
+Source system:
+Zoho Mail
+
+Original source:
+Chargebee notification email
+
+Dashboard category:
+Manual Follow-up
+
+Suggested event type:
+chargebee_new_revenue_alert
+
+Suggested severity:
+orange
+
+Reason:
+This email indicates that Chargebee generated the first invoice for a customer or subscription. It may require follow-up verification, such as checking whether the customer/subscription is mapped to the correct workflow, whether tree allocation is expected, whether a welcome or thank-you email was sent, and whether the subscription is visible in the monitoring registry.
+
+Extracted fields:
+- Email subject: New Revenue Alert
+- Alert type: First invoice generated
+- Customer name: Cor & Mai Honkoop
+- Customer email: corenmai@hotmail.com
+- Customer/subscription reference: 199Hc7V4uAEO2WBD
+- Plan/Add-on: 1-boom-per-maand
+- Amount: € 10,00
+- Invoice number: 1008
+- Source system: Chargebee
+
+Expected follow-up:
+- Verify whether the Chargebee plan `1-boom-per-maand` maps to an active subscription workflow.
+- Verify whether tree allocation is expected for this plan.
+- Verify whether the customer exists in PostgreSQL `users1` or the relevant CRM/contact system.
+- Verify whether a tree allocation event exists, if applicable.
+- Verify whether an outbound welcome/thank-you email was sent.
+- Verify whether this invoice appears in the Chargebee invoice export.
+- Keep this as a manual follow-up candidate until the Chargebee workflow is mapped and audited.
+
+Suggested dashboard rule:
+- Green: invoice is matched with a known Chargebee plan workflow, expected tree/customer/email actions are complete, and outbound evidence exists where required.
+- Orange: invoice email exists but workflow mapping, tree allocation, customer registration, or outbound email evidence is missing or unknown.
+- Red: invoice processing failed, subscription workflow failed, tree allocation failed, or follow-up remains open beyond the agreed SLA.
+
+Cleaned email subject:
+New Revenue Alert
+
+Cleaned email body:
+
+First invoice generated for Cor & Mai Honkoop
+
+Hi there,
+
+You just generated your first invoice for a customer or for one of their subscriptions. Here are the details:
+
+Customer details
+
+Cor & Mai Honkoop
+
+corenmai@hotmail.com
+
+Customer/subscription reference:
+199Hc7V4uAEO2WBD
+
+Plan / Addon:
+1-boom-per-maand
+
+Amount:
+€ 10,00
+
+Invoice number:
+1008
+
+Here's wishing you continued business from this customer.
+
+If you have questions about this invoice, feel free to contact us. We’d love to hear from you.
+
+Happy Billing!
