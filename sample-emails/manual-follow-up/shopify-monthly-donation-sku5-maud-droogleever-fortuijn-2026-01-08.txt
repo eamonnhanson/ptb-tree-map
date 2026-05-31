@@ -1,0 +1,73 @@
+# Zoho Mail sample email
+
+File purpose:
+This file is a cleaned plain-text sample of a Shopify purchase notification email.
+It is intended for workflow discovery and dashboard monitoring rules.
+
+Recommended GitHub location:
+docs/sources/zoho-mail/sample-emails/manual-follow-up/shopify-monthly-donation-sku5-maud-droogleever-fortuijn-2026-01-08.txt
+
+Source system:
+Zoho Mail
+
+Original source:
+Shopify order notification email
+
+Dashboard category:
+Manual Follow-up
+
+Suggested event type:
+shopify_recurring_donation_received
+
+Suggested severity:
+orange
+
+Reason:
+This email indicates a Shopify recurring donation purchase. It may require manual follow-up, such as verifying whether a thank-you email was sent, whether a certificate is expected, and whether the donor/subscription was registered.
+
+Extracted fields:
+- Customer name: Maud Droogleever Fortuijn
+- Order ID: Plant N Boom25_1346
+- Order date/time: Jan 08, 10:08 am
+- Product name: Maandelijkse donatie – Plant N Boom
+- SKU: 5
+- Quantity: 1
+- Unit amount: €5,00
+- Recurring: yes
+- Recurrence text: Elke maand bezorgen
+- Subtotal: €5,00
+- Shipping: €0,00
+- Total: €5,00 EUR
+- Payment processing method: shopify_payments
+
+Expected follow-up:
+- Verify whether this product/SKU requires only a thank-you email or also a certificate/tree action.
+- Verify whether a thank-you email was sent.
+- Verify whether the donor/subscription was recorded in the relevant system.
+- Keep this as a manual follow-up candidate until the SKU 5 workflow is mapped and audited.
+
+Suggested dashboard rule:
+- Green: purchase is matched with required follow-up evidence.
+- Orange: purchase email exists, but follow-up evidence is missing or unknown.
+- Red: follow-up was attempted but failed, or remains open beyond the agreed SLA.
+
+Cleaned email body:
+
+Maud Droogleever Fortuijn plaatste bestelling #Plant N Boom25_1346 op Jan 08 om 10:08 am.
+
+Bestelling weergeven
+
+Besteloverzicht
+
+Maandelijkse donatie – Plant N Boom
+€5,00 × 1
+SKU: 5
+Elke maand bezorgen
+€5,00
+
+Subtotaal: €5,00
+Verzending: €0,00
+Totaal: €5,00 EUR
+
+Betalingsverwerkingsmethode:
+shopify_payments
