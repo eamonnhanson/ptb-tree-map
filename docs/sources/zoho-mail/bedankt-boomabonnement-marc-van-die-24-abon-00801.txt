@@ -1,0 +1,80 @@
+# Zoho Mail sample email
+
+File purpose:
+This file is a cleaned plain-text sample of an outbound customer email with certificate attachment.
+It is intended for workflow discovery and dashboard monitoring rules.
+
+Recommended GitHub location:
+docs/sources/zoho-mail/sample-emails/outbox-monitor/bedankt-boomabonnement-marc-van-die-24-abon-00801.txt
+
+Source system:
+Zoho Mail
+
+Original source:
+Outbox Monitor email
+
+Dashboard category:
+Outbox Monitor
+
+Suggested event type:
+subscription_thank_you_sent
+
+Suggested severity:
+green
+
+Reason:
+This email is evidence that a customer-facing thank-you email was sent after a tree subscription or tree purchase. It also indicates that a certificate PDF was attached. This can be used as proof of outbound customer follow-up, but it should not by itself prove that the tree was correctly allocated in PostgreSQL unless matched with a separate tree allocation event.
+
+Extracted fields:
+- Recipient name: Marc Van Die
+- Email subject: Bedankt voor jouw boomabonnement
+- Tree code: 24_Abon-00801
+- Price: 1000
+- Attachment present: yes
+- Attachment filename: Certificate.pdf
+- Sender identity: Het Plant N Boom Team
+- Contact email: info@planteenboom.nu
+
+Expected dashboard use:
+- Match this email to a purchase, subscription, invoice, tree allocation or manual follow-up item.
+- Use it as evidence that a customer-facing thank-you email was sent.
+- Use attachment presence as evidence that a certificate email was probably sent.
+- Do not assume that PostgreSQL tree allocation succeeded unless a matching tree allocation event exists.
+- If a related purchase/subscription exists without this email evidence, the related dashboard item should remain orange.
+- If this email exists without a matching purchase/subscription/allocation, flag as needs verification.
+
+Suggested dashboard rule:
+- Green: thank-you email with certificate evidence is matched with the relevant customer and tree allocation.
+- Orange: thank-you email exists but no matching purchase, subscription or tree allocation evidence is found.
+- Red: email/certificate was expected but missing, failed, or the tree code cannot be matched.
+
+Cleaned email subject:
+Bedankt voor jouw boomabonnement
+
+Cleaned email body:
+
+Beste Marc Van Die,
+
+Bedankt voor het kopen van een boomabonnement. De bomen zijn van een code voorzien. Zie certificaat in de bijlage.
+
+Boomcode: 24_Abon-00801
+Prijs: 1000
+
+Je kunt nagaan waar de boom staat via het lijstje op de website.
+
+Als je vragen hebt, stuur gerust een e-mail naar info@planteenboom.nu.
+
+Met vriendelijke groet,
+
+Het Plant N Boom Team
+
+FB | twitter | Insta | YT | Web | LinkedIn
+
+Plant N Boom, Industrieweg 68-1, 3606 AS Maarssen
+
+Kantoor NL tel: +31(0) 20 7744930
+
+Unsubscribe
+
+Attachment:
+- Certificate.pdf
