@@ -3,7 +3,7 @@
 ## Huidige werkbranch
 
 Branch:
-feature/codex-workflow-registry-docs
+feature/dashboard-automation
 
 Gemaakt vanaf:
 staging
@@ -12,7 +12,7 @@ Datum:
 2026-06-01
 
 Doel:
-Codex ZIP met workflow registry documentatie controleren en daarna naar staging zetten.
+Automatiseringen-dashboard bouwen of aanpassen met Codex.
 
 ## Branch-regels
 
