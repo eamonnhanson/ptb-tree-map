@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plant N Boom Automatiseringen</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="../" aria-label="Terug naar Plant N Boom kaart">
+      <img src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160" alt="Plant N Boom">
+      <span>Automatiseringen</span>
+    </a>
+    <div class="status-pill" id="summary-status">Auditoverzicht</div>
+  </header>
+
+  <main>
+    <section class="overview" aria-label="Dashboard samenvatting">
+      <div>
+        <p class="eyebrow">Operationeel dashboard</p>
+        <h1>Workflowdekking en opvolging</h1>
+      </div>
+      <div class="summary-grid" id="summary-grid"></div>
+    </section>
+
+    <section class="controls" aria-label="Dashboard filters">
+      <label>
+        <span>Zoeken</span>
+        <input id="search" type="search" placeholder="Workflow, signaal, systeem">
+      </label>
+      <label>
+        <span>Status</span>
+        <select id="status-filter">
+          <option value="all">Alle statussen</option>
+          <option value="red">Rood</option>
+          <option value="orange">Oranje</option>
+          <option value="green">Groen</option>
+        </select>
+      </label>
+      <label>
+        <span>Systeem</span>
+        <select id="system-filter">
+          <option value="all">Alle systemen</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="signal-board" aria-label="Dashboardkaarten" id="signal-board"></section>
+
+    <section class="detail-layout">
+      <div class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Workflow registry</p>
+            <h2>Te monitoren stromen</h2>
+          </div>
+          <span id="workflow-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Workflow</th>
+                <th>Systeem</th>
+                <th>Categorie</th>
+                <th>Status</th>
+                <th>Bewijs</th>
+              </tr>
+            </thead>
+            <tbody id="workflow-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Eerstvolgend</p>
+            <h2>Auditgaten</h2>
+          </div>
+        </div>
+        <ol class="action-list" id="action-list"></ol>
+      </aside>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
