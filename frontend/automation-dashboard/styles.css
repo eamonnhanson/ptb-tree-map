@@ -15,6 +15,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   color: var(--ink);
@@ -60,6 +64,7 @@ body {
 .status-pill {
   background: #e9f5f1;
   color: var(--green);
+  text-decoration: none;
 }
 
 main {
