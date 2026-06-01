@@ -1,0 +1,19 @@
+# Product catalog map
+
+| source | product_id | product_name | sku | plan_id | price_or_plan | status | expected_operational_result | known_trigger_system | mapping_status |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Shopify | Geef een boom cadeau | Geef een boom cadeau | '01 |  | 10.00 | active | gift tree claim link; certificate likely | Shopify email/manual or unknown | unknown |
+| Shopify | Koop een boom (voor jezelf) | Koop een boom (voor jezelf) | '02 |  | 10.00 | active | tree allocation; certificate likely | Shopify email/manual or unknown | unknown |
+| Shopify | Doneer (eenmalig) | Doneer (eenmalig) | '05 |  | 10.00 | active | donation only/no action or thank-you | Shopify email/manual or unknown | unknown |
+| Shopify | Persoons-abonnement | Persoons-abonnement | '03 |  | 10.00 | active | subscription handling; welcome email; periodic tree allocation | Shopify email/manual or unknown | unknown |
+| Shopify | Gezins-abonnement | Gezins-abonnement | '04 |  | 15.00 | active | subscription handling; welcome email; periodic tree allocation | Shopify email/manual or unknown | unknown |
+| Shopify | Maandelijkse donatie | Maandelijkse donatie |  |  | 5.00 | active | unknown | Shopify email/manual or unknown | unknown |
+| Shopify |  |  |  |  | 10.00 | unknown | unknown | Shopify email/manual or unknown | unknown |
+| Shopify |  |  |  |  | 20.00 | unknown | unknown | Shopify email/manual or unknown | unknown |
+| Chargebee | 1-boom-per-maand | 10 euro (12 bomen) abonnement |  | 1-boom-per-maand-EUR-Monthly | 1-boom-per-maand-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
+| Chargebee | 15-boom-per-maand | 15 euro (18 bomen) abonnement |  | 15-boom-per-maand-EUR-Monthly | 15-boom-per-maand-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
+| Chargebee | 1-boom-per-maand-ingang-volgende-maand | 1 boom per maand ingang volgende maand |  | 1-boom-per-maand-ingang-volgende-maand-EUR-Monthly | 1-boom-per-maand-ingang-volgende-maand-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
+| Chargebee | Maandelijkse-bijdrage-1250-euro | Maandelijkse bijdrage 12.50 euro |  | Maandelijkse-bijdrage-1250-euro-EUR-Monthly | Maandelijkse-bijdrage-1250-euro-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
+| Chargebee | 750-9-bomen-abonnement | 7.50 euro (9 bomen p/j) abonnement |  | 750-9-bomen-abonnement-EUR-Monthly | 750-9-bomen-abonnement-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
+| Chargebee | 20-euro-24-bomen-abonnement | 20 euro (24 bomen p/j) abonnement |  | 20-euro-24-bomen-abonnement-EUR-Monthly | 20-euro-24-bomen-abonnement-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
+| Chargebee | 12-5-euro-15-bomen-abonnement | 12.5 euro (15 bomen p/j) abonnement |  | 12-5-euro-15-bomen-abonnement-EUR-Monthly | 12-5-euro-15-bomen-abonnement-EUR-Monthly | active subscriptions | subscription; monthly tree allocation or donation handling needs verification | Chargebee Zapier trigger / Chargebee email notification | inferred_needs_verification |
