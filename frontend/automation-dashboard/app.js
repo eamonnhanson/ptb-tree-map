@@ -246,6 +246,15 @@ function matchesStudentFilters(item) {
     (lesson === "all" || item.lesson === lesson);
 }
 
+function matchesRegistrationFilters(item) {
+  const query = studentSearchInput.value.trim().toLowerCase();
+  const status = studentStatusFilter.value;
+  const haystack = Object.values(item).join(" ").toLowerCase();
+
+  return (!query || haystack.includes(query)) &&
+    (status === "all" || item.status === status);
+}
+
 function renderUploads() {
   const filtered = studentData.uploads.filter(matchesStudentFilters);
   const tbody = document.getElementById("upload-table");
@@ -269,18 +278,18 @@ function renderUploads() {
 }
 
 function renderRegistrations() {
-  const registrations = studentData.registrations;
+  const registrations = studentData.registrations.filter(matchesRegistrationFilters);
   document.getElementById("registration-count").textContent = `${registrations.length} zichtbaar`;
 
   if (!registrations.length) {
-    document.getElementById("registration-list").innerHTML = `<li><strong>Geen registraties</strong><span>Er is nog geen voorbeelddata geladen.</span></li>`;
+    document.getElementById("registration-list").innerHTML = `<li><strong>Geen registraties</strong><span>Geen onboardingregistraties voor deze filters.</span></li>`;
     return;
   }
 
   document.getElementById("registration-list").innerHTML = registrations.map(registration => `
     <li>
       <strong>${registration.studentName}</strong>
-      <span>${registration.program} · ${registration.registeredAt}</span>
+      <span>${registration.program} &middot; ${registration.registeredAt}</span>
       <span><span class="badge student-${registration.status}">${studentStatusLabel[registration.status]}</span></span>
       <span>${registration.followUp}</span>
     </li>
@@ -330,5 +339,6 @@ loadStudentData();
 [studentSearchInput, studentStatusFilter, lessonFilter].forEach(control => {
   control.addEventListener("input", () => {
     renderUploads();
+    renderRegistrations();
   });
 });
