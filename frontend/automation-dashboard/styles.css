@@ -366,6 +366,51 @@ td small {
   margin: 8px 0 2px;
 }
 
+.student-row {
+  border-left: 4px solid transparent;
+}
+
+tr.student-row td:first-child {
+  border-left: 4px solid transparent;
+}
+
+tr.student-nieuw td:first-child {
+  border-left-color: var(--blue);
+}
+
+tr.student-goedgekeurd td:first-child {
+  border-left-color: var(--leaf);
+}
+
+tr.student-afgewezen td:first-child {
+  border-left-color: var(--red);
+}
+
+tr.student-meer_info_nodig td:first-child {
+  border-left-color: var(--amber);
+}
+
+.registration-list .student-row {
+  margin-left: -12px;
+  padding-left: 12px;
+}
+
+.registration-list .student-nieuw {
+  border-left-color: var(--blue);
+}
+
+.registration-list .student-goedgekeurd {
+  border-left-color: var(--leaf);
+}
+
+.registration-list .student-afgewezen {
+  border-left-color: var(--red);
+}
+
+.registration-list .student-meer_info_nodig {
+  border-left-color: var(--amber);
+}
+
 .empty {
   padding: 24px;
   color: var(--muted);

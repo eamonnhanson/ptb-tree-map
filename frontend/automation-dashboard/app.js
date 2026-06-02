@@ -107,6 +107,13 @@ const studentStatusLabel = {
   meer_info_nodig: "Meer info nodig"
 };
 
+const studentSignal = {
+  nieuw: ["Te beoordelen", "neutral"],
+  goedgekeurd: ["Klaar", "green"],
+  afgewezen: ["Herhalen", "red"],
+  meer_info_nodig: ["Wacht op info", "orange"]
+};
+
 const searchInput = document.getElementById("search");
 const statusFilter = document.getElementById("status-filter");
 const systemFilter = document.getElementById("system-filter");
@@ -212,12 +219,15 @@ function renderActions() {
 function renderStudentSummary() {
   const uploads = studentData.uploads;
   const registrations = studentData.registrations;
-  const openFollowUps = [...uploads, ...registrations].filter(item => !item.followUp.toLowerCase().includes("geen openstaande actie")).length;
+  const openFollowUps = [...uploads, ...registrations].filter(hasOpenFollowUp).length;
+  const missingScreenshots = uploads.filter(upload => upload.screenshot === "Ontbreekt").length;
+  const approvedUploads = uploads.filter(upload => upload.status === "goedgekeurd").length;
+  const blockedItems = [...uploads, ...registrations].filter(item => ["afgewezen", "meer_info_nodig"].includes(item.status)).length;
   const metrics = [
-    [registrations.length, "nieuwe registraties"],
-    [uploads.length, "uploads per les"],
-    [uploads.filter(upload => upload.screenshot === "Ontvangen").length, "score screenshots"],
-    [openFollowUps, "openstaande opvolgacties"]
+    [openFollowUps, "openstaande opvolgacties"],
+    [missingScreenshots, "ontbrekende screenshots"],
+    [approvedUploads, "goedgekeurde uploads"],
+    [blockedItems, "geblokkeerd of extra info"]
   ];
 
   document.getElementById("student-summary").innerHTML = metrics.map(([value, label]) => `
@@ -226,6 +236,10 @@ function renderStudentSummary() {
       <span>${label}</span>
     </div>
   `).join("");
+}
+
+function hasOpenFollowUp(item) {
+  return !item.followUp.toLowerCase().includes("geen openstaande actie");
 }
 
 function renderLessonFilter() {
@@ -255,23 +269,29 @@ function matchesRegistrationFilters(item) {
     (status === "all" || item.status === status);
 }
 
+function renderStudentSignal(status) {
+  const [label, tone] = studentSignal[status] || ["Controleren", "neutral"];
+  return `<span class="badge ${tone}">${label}</span>`;
+}
+
 function renderUploads() {
   const filtered = studentData.uploads.filter(matchesStudentFilters);
   const tbody = document.getElementById("upload-table");
   document.getElementById("upload-count").textContent = `${filtered.length} zichtbaar`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">Geen student uploads voor deze filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty">Geen student uploads voor deze filters.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filtered.map(upload => `
-    <tr>
+    <tr class="student-row student-${upload.status}">
       <td><strong>${upload.studentName}</strong><small>${upload.id}</small></td>
       <td>${upload.lesson}</td>
       <td>${upload.uploadType}<small>Screenshot: ${upload.screenshot}</small></td>
       <td><span class="badge student-${upload.status}">${studentStatusLabel[upload.status]}</span></td>
       <td><strong>${upload.score}</strong><small>${upload.assessment}</small></td>
+      <td>${renderStudentSignal(upload.status)}</td>
       <td>${upload.followUp}</td>
     </tr>
   `).join("");
@@ -287,10 +307,11 @@ function renderRegistrations() {
   }
 
   document.getElementById("registration-list").innerHTML = registrations.map(registration => `
-    <li>
+    <li class="student-row student-${registration.status}">
       <strong>${registration.studentName}</strong>
-      <span>${registration.program} &middot; ${registration.registeredAt}</span>
+      <span>${registration.program} &middot; ${registration.registeredAt} &middot; ${registration.owner}</span>
       <span><span class="badge student-${registration.status}">${studentStatusLabel[registration.status]}</span></span>
+      <span>${renderStudentSignal(registration.status)}</span>
       <span>${registration.followUp}</span>
     </li>
   `).join("");
