@@ -185,6 +185,7 @@ const studentStatusFilter = document.getElementById("student-status-filter");
 const lessonFilter = document.getElementById("lesson-filter");
 const actionTypeFilter = document.getElementById("action-type-filter");
 const urgencyFilter = document.getElementById("urgency-filter");
+const resetFiltersButton = document.getElementById("reset-filters");
 
 let studentData = {
   registrations: [],
@@ -208,6 +209,52 @@ function getGeneralQuery() {
 
 function getStudentQuery() {
   return studentSearchInput.value.trim().toLowerCase();
+}
+
+function getActiveFilterSummary(scope = "all") {
+  const filters = [];
+
+  if (getGeneralQuery()) {
+    filters.push(`zoekterm "${searchInput.value.trim()}"`);
+  }
+
+  if (statusFilter.value !== "all") {
+    filters.push(`dashboardstatus ${statusLabel[statusFilter.value]}`);
+  }
+
+  if (systemFilter.value !== "all") {
+    filters.push(`systeem ${systemFilter.value}`);
+  }
+
+  if (scope === "all" || scope === "actions") {
+    if (actionTypeFilter.value !== "all") {
+      filters.push(`actietype ${actionTypeLabel[actionTypeFilter.value]}`);
+    }
+
+    if (urgencyFilter.value !== "all") {
+      filters.push(`urgentie ${urgencyLabel[urgencyFilter.value]}`);
+    }
+  }
+
+  if (scope === "all" || scope === "students") {
+    if (getStudentQuery()) {
+      filters.push(`studentzoekterm "${studentSearchInput.value.trim()}"`);
+    }
+
+    if (studentStatusFilter.value !== "all") {
+      filters.push(`studentstatus ${studentStatusLabel[studentStatusFilter.value]}`);
+    }
+
+    if (lessonFilter.value !== "all") {
+      filters.push(`les ${lessonFilter.value}`);
+    }
+  }
+
+  return filters.length ? filters.join(", ") : "geen actieve filters";
+}
+
+function emptyMessage(title, scope = "all") {
+  return `<div class="empty"><strong>${title}</strong><span>Actieve filters: ${getActiveFilterSummary(scope)}.</span></div>`;
 }
 
 function renderSummary() {
@@ -258,7 +305,7 @@ function renderSignals() {
   const board = document.getElementById("signal-board");
 
   if (!filtered.length) {
-    board.innerHTML = `<div class="empty">Geen dashboardkaarten voor deze filters.</div>`;
+    board.innerHTML = emptyMessage("Geen dashboardkaarten voor deze filters.", "all");
     return;
   }
 
@@ -284,7 +331,7 @@ function renderWorkflows() {
   document.getElementById("workflow-count").textContent = `${filtered.length} zichtbaar`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Geen workflowregels voor deze filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5">${emptyMessage("Geen workflowregels voor deze filters.", "all")}</td></tr>`;
     return;
   }
 
@@ -305,7 +352,7 @@ function renderActions() {
     .filter(action => matchesWorkflowActionFilters(action) && matchesActionControls(action));
 
   if (!filtered.length) {
-    document.getElementById("action-list").innerHTML = `<li><strong>Geen audittaken</strong><span>Geen audittaken voor deze filters.</span></li>`;
+    document.getElementById("action-list").innerHTML = `<li><strong>Geen audittaken</strong><span>Geen audittaken voor deze filters. Actieve filters: ${getActiveFilterSummary("all")}.</span></li>`;
     return;
   }
 
@@ -430,7 +477,7 @@ function formatActionCount(count) {
 
 function renderActionItems(items, emptyText) {
   if (!items.length) {
-    return `<li><strong>Geen open acties</strong><span>${emptyText}</span></li>`;
+    return `<li><strong>Geen open acties</strong><span>${emptyText} Actieve filters: ${getActiveFilterSummary("all")}.</span></li>`;
   }
 
   return items.map(item => `
@@ -595,7 +642,7 @@ function renderUploads() {
   document.getElementById("upload-count").textContent = `${filtered.length} zichtbaar`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">Geen student uploads voor deze filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7">${emptyMessage("Geen student uploads voor deze filters.", "students")}</td></tr>`;
     return;
   }
 
@@ -617,7 +664,7 @@ function renderRegistrations() {
   document.getElementById("registration-count").textContent = `${registrations.length} zichtbaar`;
 
   if (!registrations.length) {
-    document.getElementById("registration-list").innerHTML = `<li><strong>Geen registraties</strong><span>Geen onboardingregistraties voor deze filters.</span></li>`;
+    document.getElementById("registration-list").innerHTML = `<li><strong>Geen registraties</strong><span>Geen onboardingregistraties voor deze filters. Actieve filters: ${getActiveFilterSummary("students")}.</span></li>`;
     return;
   }
 
@@ -667,6 +714,18 @@ function renderAll() {
   renderOpenActions();
 }
 
+function resetFilters() {
+  searchInput.value = "";
+  statusFilter.value = "all";
+  systemFilter.value = "all";
+  actionTypeFilter.value = "all";
+  urgencyFilter.value = "all";
+  studentSearchInput.value = "";
+  studentStatusFilter.value = "all";
+  lessonFilter.value = "all";
+  renderAll();
+}
+
 renderSummary();
 renderFilters();
 renderActions();
@@ -688,3 +747,5 @@ loadStudentData();
 [actionTypeFilter, urgencyFilter].forEach(control => {
   control.addEventListener("input", renderOpenActions);
 });
+
+resetFiltersButton.addEventListener("click", resetFilters);

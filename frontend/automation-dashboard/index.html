@@ -24,11 +24,16 @@
       <div>
         <p class="eyebrow">Operationeel dashboard</p>
         <h1>Workflowdekking en opvolging</h1>
+        <p class="intro-copy">Read-only dashboard met statische voorbeelddata voor dagelijkse controle van workflows, student uploads en opvolging.</p>
       </div>
       <div class="summary-grid" id="summary-grid"></div>
     </section>
 
     <section class="controls" aria-label="Dashboard filters">
+      <div class="filter-heading">
+        <strong>Dashboardfilters</strong>
+        <span>Beinvloedt kaarten, workflow registry, audittaken en workflow/audit-acties.</span>
+      </div>
       <label>
         <span>Zoeken</span>
         <input id="search" type="search" placeholder="Workflow, signaal, systeem">
@@ -48,6 +53,7 @@
           <option value="all">Alle systemen</option>
         </select>
       </label>
+      <button class="reset-button" id="reset-filters" type="button">Reset filters</button>
     </section>
 
     <section class="panel action-hub" id="open-actions" aria-label="Openstaande acties">
@@ -59,6 +65,10 @@
         <span id="open-action-count"></span>
       </div>
       <section class="controls action-controls" aria-label="Openstaande acties filters">
+        <div class="filter-heading">
+          <strong>Actiefilters</strong>
+          <span>Beinvloedt alleen openstaande acties en Vandaag opvolgen.</span>
+        </div>
         <label>
           <span>Actietype</span>
           <select id="action-type-filter">
@@ -161,6 +171,10 @@
       </div>
 
       <section class="controls student-controls" aria-label="Student upload filters">
+        <div class="filter-heading">
+          <strong>Studentfilters</strong>
+          <span>Beinvloedt student uploads, onboarding en bijbehorende open acties.</span>
+        </div>
         <label>
           <span>Zoeken</span>
           <input id="student-search" type="search" placeholder="Student, les, opvolgactie">
