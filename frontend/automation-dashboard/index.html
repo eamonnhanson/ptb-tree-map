@@ -13,6 +13,7 @@
       <span>Automatiseringen</span>
     </a>
     <nav class="top-actions" aria-label="Dashboard navigatie">
+      <a class="status-pill" href="#open-actions">Openstaande acties</a>
       <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
       <a class="status-pill" href="#student-uploads">Student uploads</a>
     </nav>
@@ -47,6 +48,39 @@
           <option value="all">Alle systemen</option>
         </select>
       </label>
+    </section>
+
+    <section class="panel action-hub" id="open-actions" aria-label="Openstaande acties">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Actielijst</p>
+          <h2>Openstaande acties</h2>
+        </div>
+        <span id="open-action-count"></span>
+      </div>
+      <div class="action-columns">
+        <section class="action-column" aria-label="Openstaande acties voor student uploads">
+          <div class="action-column-heading">
+            <h3>Student uploads</h3>
+            <span id="student-upload-action-count"></span>
+          </div>
+          <ol class="action-list action-card-list" id="student-upload-actions"></ol>
+        </section>
+        <section class="action-column" aria-label="Openstaande acties voor onboarding">
+          <div class="action-column-heading">
+            <h3>Onboarding</h3>
+            <span id="onboarding-action-count"></span>
+          </div>
+          <ol class="action-list action-card-list" id="onboarding-actions"></ol>
+        </section>
+        <section class="action-column" aria-label="Openstaande workflow en audit acties">
+          <div class="action-column-heading">
+            <h3>Workflow/audit</h3>
+            <span id="workflow-action-count"></span>
+          </div>
+          <ol class="action-list action-card-list" id="workflow-actions"></ol>
+        </section>
+      </div>
     </section>
 
     <section class="signal-board" aria-label="Dashboardkaarten" id="signal-board"></section>

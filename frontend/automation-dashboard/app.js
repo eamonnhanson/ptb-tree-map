@@ -86,12 +86,52 @@ const workflows = [
   ["zoho_outbox", "Outbound email monitor", "Zoho Mail", "outbound email", "orange", "message id matched to expected workflow"]
 ].map(([id, name, system, category, status, evidence]) => ({ id, name, system, category, status, evidence }));
 
-const actions = [
-  ["Voeg final logging toe aan Zapier workflows", "Nodig voor groen/oranje/rood status per workflow."],
-  ["Maak Zoho Mail folder/tag bewijs expliciet", "De huidige inventaris gebruikt samples waar live folderpaden nog ontbreken."],
-  ["Koppel Shopify productdekking aan orderbewijs", "SKU's bestaan, maar niet elk product heeft volledig workflowbewijs."],
-  ["Verifieer Chargebee plan-to-item mapping", "Abonnementen blijven oranje zolang allocatie en outbound bewijs niet matchen."],
-  ["Leg manual follow-up resolved status vast", "Zonder afhandelmarker blijft opvolging operationeel onduidelijk."]
+const workflowActions = [
+  {
+    title: "Final logging voor Zapier workflows",
+    system: "Zapier",
+    status: "orange",
+    owner: "Automation team",
+    nextAction: "Voeg eindstatus en job-id toe aan de workflows met allocatiebewijs.",
+    urgency: "hoog",
+    lastUpdated: "2026-06-01"
+  },
+  {
+    title: "Zoho Mail folder/tag bewijs",
+    system: "Zoho Mail",
+    status: "red",
+    owner: "Support",
+    nextAction: "Leg live folderpaden en afhandelstatus vast voor manual follow-up.",
+    urgency: "hoog",
+    lastUpdated: "2026-05-31"
+  },
+  {
+    title: "Shopify productdekking koppelen",
+    system: "Shopify",
+    status: "orange",
+    owner: "Operations",
+    nextAction: "Match SKU 01, 02 en 05 met orderbewijs en outbound mailbewijs.",
+    urgency: "middel",
+    lastUpdated: "2026-05-30"
+  },
+  {
+    title: "Chargebee plan-to-item mapping",
+    system: "Chargebee",
+    status: "orange",
+    owner: "Finance operations",
+    nextAction: "Controleer abonnement, factuur, allocatie en outbound bewijs per plan.",
+    urgency: "middel",
+    lastUpdated: "2026-05-29"
+  },
+  {
+    title: "Academy onboarding logging",
+    system: "ZohoCRM",
+    status: "red",
+    owner: "Academy team",
+    nextAction: "Koppel CRM-onboarding aan uploadgoedkeuring en mailbewijs.",
+    urgency: "hoog",
+    lastUpdated: "2026-06-01"
+  }
 ];
 
 const statusLabel = {
@@ -112,6 +152,12 @@ const studentSignal = {
   goedgekeurd: ["Klaar", "green"],
   afgewezen: ["Herhalen", "red"],
   meer_info_nodig: ["Wacht op info", "orange"]
+};
+
+const urgencyLabel = {
+  hoog: "Hoog",
+  middel: "Middel",
+  laag: "Laag"
 };
 
 const searchInput = document.getElementById("search");
@@ -211,8 +257,8 @@ function renderWorkflows() {
 }
 
 function renderActions() {
-  document.getElementById("action-list").innerHTML = actions.map(([title, body]) => `
-    <li><strong>${title}</strong><span>${body}</span></li>
+  document.getElementById("action-list").innerHTML = workflowActions.map(action => `
+    <li><strong>${action.title}</strong><span>${action.nextAction}</span></li>
   `).join("");
 }
 
@@ -240,6 +286,27 @@ function renderStudentSummary() {
 
 function hasOpenFollowUp(item) {
   return !item.followUp.toLowerCase().includes("geen openstaande actie");
+}
+
+function getStudentActionMeta(item) {
+  if (item.urgency && item.lastUpdated && item.owner) {
+    return item;
+  }
+
+  const fallbackUrgency = {
+    afgewezen: "hoog",
+    meer_info_nodig: "hoog",
+    nieuw: "middel",
+    goedgekeurd: "laag"
+  };
+
+  return {
+    ...item,
+    owner: item.owner || "Academy team",
+    nextAction: item.nextAction || item.followUp,
+    urgency: item.urgency || fallbackUrgency[item.status] || "middel",
+    lastUpdated: item.lastUpdated || item.registeredAt || "2026-06-01"
+  };
 }
 
 function renderLessonFilter() {
@@ -272,6 +339,80 @@ function matchesRegistrationFilters(item) {
 function renderStudentSignal(status) {
   const [label, tone] = studentSignal[status] || ["Controleren", "neutral"];
   return `<span class="badge ${tone}">${label}</span>`;
+}
+
+function renderUrgencyBadge(urgency) {
+  return `<span class="badge urgency-${urgency}">${urgencyLabel[urgency] || "Middel"}</span>`;
+}
+
+function formatActionCount(count) {
+  return `${count} ${count === 1 ? "actie" : "acties"}`;
+}
+
+function renderActionItems(items, emptyText) {
+  if (!items.length) {
+    return `<li><strong>Geen open acties</strong><span>${emptyText}</span></li>`;
+  }
+
+  return items.map(item => `
+    <li class="action-card urgency-${item.urgency}">
+      <div class="action-card-top">
+        <strong>${item.title}</strong>
+        ${renderUrgencyBadge(item.urgency)}
+      </div>
+      <span><strong>Eigenaar:</strong> ${item.owner}</span>
+      <span><strong>Volgende actie:</strong> ${item.nextAction}</span>
+      <span><strong>Laatste update:</strong> ${item.lastUpdated}</span>
+    </li>
+  `).join("");
+}
+
+function matchesWorkflowActionFilters(item) {
+  const query = searchInput.value.trim().toLowerCase();
+  const status = statusFilter.value;
+  const system = systemFilter.value;
+  const haystack = Object.values(item).join(" ").toLowerCase();
+
+  return (!query || haystack.includes(query)) &&
+    (status === "all" || item.status === status) &&
+    (system === "all" || item.system === system);
+}
+
+function renderOpenActions() {
+  const uploadActions = studentData.uploads
+    .filter(upload => hasOpenFollowUp(upload) && matchesStudentFilters(upload))
+    .map(upload => {
+      const meta = getStudentActionMeta(upload);
+      return {
+        title: `${upload.studentName} - ${upload.lesson}`,
+        owner: meta.owner,
+        nextAction: meta.nextAction,
+        urgency: meta.urgency,
+        lastUpdated: meta.lastUpdated
+      };
+    });
+  const onboardingActions = studentData.registrations
+    .filter(registration => hasOpenFollowUp(registration) && matchesRegistrationFilters(registration))
+    .map(registration => {
+      const meta = getStudentActionMeta(registration);
+      return {
+        title: `${registration.studentName} - ${registration.program}`,
+        owner: meta.owner,
+        nextAction: meta.nextAction,
+        urgency: meta.urgency,
+        lastUpdated: meta.lastUpdated
+      };
+    });
+  const filteredWorkflowActions = workflowActions.filter(matchesWorkflowActionFilters);
+  const totalActions = uploadActions.length + onboardingActions.length + filteredWorkflowActions.length;
+
+  document.getElementById("open-action-count").textContent = `${totalActions} zichtbaar`;
+  document.getElementById("student-upload-action-count").textContent = formatActionCount(uploadActions.length);
+  document.getElementById("onboarding-action-count").textContent = formatActionCount(onboardingActions.length);
+  document.getElementById("workflow-action-count").textContent = formatActionCount(filteredWorkflowActions.length);
+  document.getElementById("student-upload-actions").innerHTML = renderActionItems(uploadActions, "Geen student uploads met opvolging voor deze filters.");
+  document.getElementById("onboarding-actions").innerHTML = renderActionItems(onboardingActions, "Geen onboardingacties voor deze filters.");
+  document.getElementById("workflow-actions").innerHTML = renderActionItems(filteredWorkflowActions, "Geen workflow/audit acties voor deze filters.");
 }
 
 function renderUploads() {
@@ -322,6 +463,7 @@ function renderStudentModule() {
   renderLessonFilter();
   renderUploads();
   renderRegistrations();
+  renderOpenActions();
 }
 
 async function loadStudentData() {
@@ -345,6 +487,7 @@ async function loadStudentData() {
 function renderAll() {
   renderSignals();
   renderWorkflows();
+  renderOpenActions();
 }
 
 renderSummary();
@@ -361,5 +504,6 @@ loadStudentData();
   control.addEventListener("input", () => {
     renderUploads();
     renderRegistrations();
+    renderOpenActions();
   });
 });

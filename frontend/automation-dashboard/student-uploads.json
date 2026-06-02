@@ -7,6 +7,9 @@
       "program": "Plant N Boom Academy",
       "status": "nieuw",
       "owner": "Academy team",
+      "urgency": "middel",
+      "lastUpdated": "2026-05-29",
+      "nextAction": "Controleer CRM-profiel en stuur welkomstmail.",
       "followUp": "Controleer CRM-profiel en stuur welkomstmail."
     },
     {
@@ -16,6 +19,9 @@
       "program": "Plant N Boom Academy",
       "status": "meer_info_nodig",
       "owner": "Support",
+      "urgency": "hoog",
+      "lastUpdated": "2026-05-30",
+      "nextAction": "Vraag ontbrekende schoolnaam op.",
       "followUp": "Vraag ontbrekende schoolnaam op."
     },
     {
@@ -25,6 +31,9 @@
       "program": "Wayground Boommodule",
       "status": "goedgekeurd",
       "owner": "Academy team",
+      "urgency": "laag",
+      "lastUpdated": "2026-06-01",
+      "nextAction": "Geen openstaande actie.",
       "followUp": "Geen openstaande actie."
     }
   ],
@@ -36,8 +45,12 @@
       "uploadType": "Wayground-score screenshot",
       "screenshot": "Ontvangen",
       "status": "nieuw",
+      "owner": "Academy team",
+      "urgency": "middel",
+      "lastUpdated": "2026-06-01",
       "score": "84%",
       "assessment": "Nog te beoordelen",
+      "nextAction": "Vergelijk screenshot met lesresultaat.",
       "followUp": "Vergelijk screenshot met lesresultaat."
     },
     {
@@ -47,8 +60,12 @@
       "uploadType": "Reflectie + score",
       "screenshot": "Ontbreekt",
       "status": "meer_info_nodig",
+      "owner": "Support",
+      "urgency": "hoog",
+      "lastUpdated": "2026-06-01",
       "score": "-",
       "assessment": "Wacht op screenshot",
+      "nextAction": "Vraag Wayground-score screenshot opnieuw op.",
       "followUp": "Vraag Wayground-score screenshot opnieuw op."
     },
     {
@@ -58,8 +75,12 @@
       "uploadType": "Wayground-score screenshot",
       "screenshot": "Ontvangen",
       "status": "goedgekeurd",
+      "owner": "Academy team",
+      "urgency": "laag",
+      "lastUpdated": "2026-06-01",
       "score": "92%",
       "assessment": "9 punten",
+      "nextAction": "Geen openstaande actie.",
       "followUp": "Geen openstaande actie."
     },
     {
@@ -69,8 +90,12 @@
       "uploadType": "Quizresultaat",
       "screenshot": "Ontvangen",
       "status": "afgewezen",
+      "owner": "Academy team",
+      "urgency": "hoog",
+      "lastUpdated": "2026-05-31",
       "score": "41%",
       "assessment": "Onvoldoende",
+      "nextAction": "Laat student les opnieuw afronden.",
       "followUp": "Laat student les opnieuw afronden."
     },
     {
@@ -80,8 +105,12 @@
       "uploadType": "Wayground-score screenshot",
       "screenshot": "Ontvangen",
       "status": "nieuw",
+      "owner": "Academy team",
+      "urgency": "middel",
+      "lastUpdated": "2026-06-01",
       "score": "78%",
       "assessment": "Nog te beoordelen",
+      "nextAction": "Controleer of beoordeling aan CRM wordt gekoppeld.",
       "followUp": "Controleer of beoordeling aan CRM wordt gekoppeld."
     }
   ]
