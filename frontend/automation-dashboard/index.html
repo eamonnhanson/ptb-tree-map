@@ -12,7 +12,10 @@
       <img src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160" alt="Plant N Boom">
       <span>Automatiseringen</span>
     </a>
-    <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
+    <nav class="top-actions" aria-label="Dashboard navigatie">
+      <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
+      <a class="status-pill" href="#student-uploads">Student uploads</a>
+    </nav>
   </header>
 
   <main>
@@ -82,6 +85,80 @@
         </div>
         <ol class="action-list" id="action-list"></ol>
       </aside>
+    </section>
+
+    <section class="student-module" id="student-uploads" aria-label="Onboarding en student uploads">
+      <div class="panel module-intro">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Read-only module</p>
+            <h2>Onboarding en student uploads</h2>
+          </div>
+          <span id="student-data-source">Statische voorbeelddata</span>
+        </div>
+        <div class="module-summary" id="student-summary"></div>
+      </div>
+
+      <section class="controls student-controls" aria-label="Student upload filters">
+        <label>
+          <span>Zoeken</span>
+          <input id="student-search" type="search" placeholder="Student, les, opvolgactie">
+        </label>
+        <label>
+          <span>Status</span>
+          <select id="student-status-filter">
+            <option value="all">Alle statussen</option>
+            <option value="nieuw">Nieuw</option>
+            <option value="goedgekeurd">Goedgekeurd</option>
+            <option value="afgewezen">Afgewezen</option>
+            <option value="meer_info_nodig">Meer info nodig</option>
+          </select>
+        </label>
+        <label>
+          <span>Les</span>
+          <select id="lesson-filter">
+            <option value="all">Alle lessen</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="detail-layout student-layout">
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Upload inbox</p>
+              <h2>Student uploads per les</h2>
+            </div>
+            <span id="upload-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Les</th>
+                  <th>Upload</th>
+                  <th>Status</th>
+                  <th>Punten</th>
+                  <th>Opvolging</th>
+                </tr>
+              </thead>
+              <tbody id="upload-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Nieuwe registraties</p>
+              <h2>Onboarding inbox</h2>
+            </div>
+            <span id="registration-count"></span>
+          </div>
+          <ol class="action-list registration-list" id="registration-list"></ol>
+        </aside>
+      </section>
     </section>
   </main>
 

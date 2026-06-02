@@ -61,6 +61,13 @@ body {
   white-space: nowrap;
 }
 
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .status-pill {
   background: #e9f5f1;
   color: var(--green);
@@ -235,6 +242,26 @@ select {
   color: var(--blue);
 }
 
+.badge.student-nieuw {
+  background: #eef3f8;
+  color: var(--blue);
+}
+
+.badge.student-goedgekeurd {
+  background: #e8f5e9;
+  color: var(--leaf);
+}
+
+.badge.student-afgewezen {
+  background: #ffebe8;
+  color: var(--red);
+}
+
+.badge.student-meer_info_nodig {
+  background: #fff3df;
+  color: var(--amber);
+}
+
 .detail-layout {
   margin-top: 16px;
   display: grid;
@@ -307,7 +334,36 @@ td small {
 }
 
 .action-list span {
+  display: block;
   color: var(--muted);
+}
+
+.student-module {
+  margin-top: 16px;
+}
+
+.module-intro {
+  margin-bottom: 16px;
+}
+
+.module-summary {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.student-controls {
+  margin-top: 0;
+}
+
+.student-layout {
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, .7fr);
+}
+
+.registration-list .badge {
+  display: inline-block;
+  margin: 8px 0 2px;
 }
 
 .empty {
@@ -323,6 +379,7 @@ td small {
   }
 
   .summary-grid,
+  .module-summary,
   .signal-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -342,6 +399,7 @@ td small {
 
   .controls,
   .summary-grid,
+  .module-summary,
   .signal-board {
     grid-template-columns: 1fr;
   }

@@ -100,9 +100,24 @@ const statusLabel = {
   red: "Rood"
 };
 
+const studentStatusLabel = {
+  nieuw: "Nieuw",
+  goedgekeurd: "Goedgekeurd",
+  afgewezen: "Afgewezen",
+  meer_info_nodig: "Meer info nodig"
+};
+
 const searchInput = document.getElementById("search");
 const statusFilter = document.getElementById("status-filter");
 const systemFilter = document.getElementById("system-filter");
+const studentSearchInput = document.getElementById("student-search");
+const studentStatusFilter = document.getElementById("student-status-filter");
+const lessonFilter = document.getElementById("lesson-filter");
+
+let studentData = {
+  registrations: [],
+  uploads: []
+};
 
 function renderSummary() {
   const totalSignals = signalCards.reduce((sum, card) => sum + card.count, 0);
@@ -194,6 +209,109 @@ function renderActions() {
   `).join("");
 }
 
+function renderStudentSummary() {
+  const uploads = studentData.uploads;
+  const registrations = studentData.registrations;
+  const openFollowUps = [...uploads, ...registrations].filter(item => !item.followUp.toLowerCase().includes("geen openstaande actie")).length;
+  const metrics = [
+    [registrations.length, "nieuwe registraties"],
+    [uploads.length, "uploads per les"],
+    [uploads.filter(upload => upload.screenshot === "Ontvangen").length, "score screenshots"],
+    [openFollowUps, "openstaande opvolgacties"]
+  ];
+
+  document.getElementById("student-summary").innerHTML = metrics.map(([value, label]) => `
+    <div class="metric">
+      <strong>${value}</strong>
+      <span>${label}</span>
+    </div>
+  `).join("");
+}
+
+function renderLessonFilter() {
+  const currentValue = lessonFilter.value;
+  const lessons = [...new Set(studentData.uploads.map(upload => upload.lesson))].sort((a, b) => a.localeCompare(b, "nl"));
+  lessonFilter.innerHTML = `<option value="all">Alle lessen</option>${lessons.map(lesson => `<option value="${lesson}">${lesson}</option>`).join("")}`;
+  lessonFilter.value = lessons.includes(currentValue) ? currentValue : "all";
+}
+
+function matchesStudentFilters(item) {
+  const query = studentSearchInput.value.trim().toLowerCase();
+  const status = studentStatusFilter.value;
+  const lesson = lessonFilter.value;
+  const haystack = Object.values(item).join(" ").toLowerCase();
+
+  return (!query || haystack.includes(query)) &&
+    (status === "all" || item.status === status) &&
+    (lesson === "all" || item.lesson === lesson);
+}
+
+function renderUploads() {
+  const filtered = studentData.uploads.filter(matchesStudentFilters);
+  const tbody = document.getElementById("upload-table");
+  document.getElementById("upload-count").textContent = `${filtered.length} zichtbaar`;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Geen student uploads voor deze filters.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(upload => `
+    <tr>
+      <td><strong>${upload.studentName}</strong><small>${upload.id}</small></td>
+      <td>${upload.lesson}</td>
+      <td>${upload.uploadType}<small>Screenshot: ${upload.screenshot}</small></td>
+      <td><span class="badge student-${upload.status}">${studentStatusLabel[upload.status]}</span></td>
+      <td><strong>${upload.score}</strong><small>${upload.assessment}</small></td>
+      <td>${upload.followUp}</td>
+    </tr>
+  `).join("");
+}
+
+function renderRegistrations() {
+  const registrations = studentData.registrations;
+  document.getElementById("registration-count").textContent = `${registrations.length} zichtbaar`;
+
+  if (!registrations.length) {
+    document.getElementById("registration-list").innerHTML = `<li><strong>Geen registraties</strong><span>Er is nog geen voorbeelddata geladen.</span></li>`;
+    return;
+  }
+
+  document.getElementById("registration-list").innerHTML = registrations.map(registration => `
+    <li>
+      <strong>${registration.studentName}</strong>
+      <span>${registration.program} · ${registration.registeredAt}</span>
+      <span><span class="badge student-${registration.status}">${studentStatusLabel[registration.status]}</span></span>
+      <span>${registration.followUp}</span>
+    </li>
+  `).join("");
+}
+
+function renderStudentModule() {
+  renderStudentSummary();
+  renderLessonFilter();
+  renderUploads();
+  renderRegistrations();
+}
+
+async function loadStudentData() {
+  try {
+    const response = await fetch("student-uploads.json");
+
+    if (!response.ok) {
+      throw new Error(`Status ${response.status}`);
+    }
+
+    studentData = await response.json();
+    renderStudentModule();
+  } catch (error) {
+    document.getElementById("student-data-source").textContent = "Voorbeelddata niet geladen";
+    document.getElementById("student-summary").innerHTML = `<div class="empty">Het JSON-bestand met student uploads kon niet worden geladen.</div>`;
+    document.getElementById("upload-table").innerHTML = `<tr><td colspan="6" class="empty">Geen uploaddata beschikbaar.</td></tr>`;
+    document.getElementById("registration-list").innerHTML = `<li><strong>Geen registraties</strong><span>Controleer student-uploads.json.</span></li>`;
+  }
+}
+
 function renderAll() {
   renderSignals();
   renderWorkflows();
@@ -203,7 +321,14 @@ renderSummary();
 renderFilters();
 renderActions();
 renderAll();
+loadStudentData();
 
 [searchInput, statusFilter, systemFilter].forEach(control => {
   control.addEventListener("input", renderAll);
+});
+
+[studentSearchInput, studentStatusFilter, lessonFilter].forEach(control => {
+  control.addEventListener("input", () => {
+    renderUploads();
+  });
 });
