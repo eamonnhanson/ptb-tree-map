@@ -14,15 +14,37 @@ Bestand:
 
 De migration gebruikt:
 
+- `CREATE SCHEMA IF NOT EXISTS monitoring`
 - `CREATE TABLE IF NOT EXISTS`
 - `CREATE INDEX IF NOT EXISTS`
 - geen `ALTER` op bestaande business tables
 - geen destructieve SQL in het actieve deel
 - een rollbacksectie die volledig is uitgecommentarieerd
 
+Alle nieuwe tabellen worden schema-qualified aangemaakt in `monitoring`:
+
+- `monitoring.automation_events`
+- `monitoring.outbound_messages`
+- `monitoring.automation_registry`
+
+## Waarom een apart `monitoring` schema
+
+Een apart PostgreSQL schema is veiliger en overzichtelijker dan tabellen in het default schema plaatsen.
+
+Voordelen:
+
+- Monitoringtabellen blijven duidelijk gescheiden van bestaande business tables zoals `trees1`, `users1`, `photo_uploads_review`, `academy_students` en `academy_point_events`.
+- De migration hoeft geen bestaande business tables te droppen, alteren of verplaatsen.
+- Dashboard-API's kunnen later gericht rechten krijgen op alleen `monitoring.*`.
+- Backups, inspecties en eventuele cleanup van monitoringdata zijn eenvoudiger af te bakenen.
+- Het risico op naamconflicten met bestaande of toekomstige business tables wordt kleiner.
+- Aiven PostgreSQL omgevingen kunnen dezelfde database gebruiken terwijl monitoringobjecten toch herkenbaar bij elkaar staan.
+
+De migration maakt daarom eerst `CREATE SCHEMA IF NOT EXISTS monitoring;` aan en verwijst daarna overal expliciet naar `monitoring.<table>`.
+
 ## Tabellen
 
-### `automation_events`
+### `monitoring.automation_events`
 
 Doel: centrale eventlog voor workflowstatus, monitoringstatus en actie-signalen.
 
@@ -48,7 +70,7 @@ Belangrijke velden:
 - `external_link`: link naar bronsysteem of bewijs.
 - `error_message`: fouttekst bij rood/failure.
 
-### `outbound_messages`
+### `monitoring.outbound_messages`
 
 Doel: persistent loggen van uitgaande berichten en webhookachtige follow-up.
 
@@ -65,12 +87,12 @@ Belangrijke velden:
 - `provider`: bijvoorbeeld Zapier, Zoho Mail, SMTP provider.
 - `recipient_email`: ontvanger.
 - `status`: `sent`, `failed`, `queued`, of andere afgesproken status.
-- `related_event_id`: optionele foreign key naar `automation_events`.
+- `related_event_id`: optionele foreign key naar `monitoring.automation_events`.
 - `related_entity_type` en `related_entity_id`: bronobject als er geen event-id is.
 - `external_link`: providerlog of bewijslink.
 - `error_message`: foutmelding bij failure.
 
-### `automation_registry`
+### `monitoring.automation_registry`
 
 Doel: source of truth voor workflows en monitoringdekking.
 
@@ -98,17 +120,19 @@ Belangrijke velden:
 
 De migration maakt indexen voor dashboardfilters:
 
-- `automation_events(event_time)`
-- `automation_events(category)`
-- `automation_events(severity)`
-- `automation_events(action_required)`
-- `automation_events(customer_email)`
-- `outbound_messages(message_time)`
-- `outbound_messages(recipient_email)`
-- `outbound_messages(status)`
-- `automation_registry(flow_name)`
-- `automation_registry(category)`
-- `automation_registry(status)`
+- `monitoring.automation_events(event_time)`
+- `monitoring.automation_events(category)`
+- `monitoring.automation_events(severity)`
+- `monitoring.automation_events(action_required)`
+- `monitoring.automation_events(customer_email)`
+- `monitoring.outbound_messages(message_time)`
+- `monitoring.outbound_messages(recipient_email)`
+- `monitoring.outbound_messages(status)`
+- `monitoring.automation_registry(flow_name)`
+- `monitoring.automation_registry(category)`
+- `monitoring.automation_registry(status)`
+
+De SQL gebruikt schema-qualified index targets, bijvoorbeeld `ON monitoring.automation_events (event_time)`.
 
 Deze indexen ondersteunen de eerste dashboardvragen:
 
@@ -135,9 +159,9 @@ Voor productie kan de testdata-sectie worden overgeslagen of na validatie worden
 
 Fase 2 kan deze tabellen gebruiken voor read-only API's:
 
-- openstaande acties uit `automation_events where action_required = true`;
-- workflow registry uit `automation_registry`;
-- outbound monitoring uit `outbound_messages`;
+- openstaande acties uit `monitoring.automation_events where action_required = true`;
+- workflow registry uit `monitoring.automation_registry`;
+- outbound monitoring uit `monitoring.outbound_messages`;
 - dashboardkaarten op basis van categorie, severity en status.
 
 Het huidige statische dashboard hoeft in deze fase nog niet te worden aangepast.
@@ -155,10 +179,10 @@ Belangrijke randvoorwaarden:
 
 ## Open punten voor latere fases
 
-- Exacte mapping van bestaande Zapier/Shopify/Chargebee flows naar `automation_registry`.
+- Exacte mapping van bestaande Zapier/Shopify/Chargebee flows naar `monitoring.automation_registry`.
 - Of `severity` beperkt moet worden met een check constraint zodra de statuswoorden definitief zijn.
 - Of `status` per categorie een enum/check constraint moet krijgen.
-- Of `automation_events` later partitionering nodig heeft op `event_time`.
-- Of `outbound_messages.related_event_id` verplicht moet worden voor bepaalde message types.
+- Of `monitoring.automation_events` later partitionering nodig heeft op `event_time`.
+- Of `monitoring.outbound_messages.related_event_id` verplicht moet worden voor bepaalde message types.
 - Of er aparte tabellen nodig zijn voor dashboard action ownership en resolved-status.
 

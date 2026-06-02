@@ -15,9 +15,10 @@ Controleer vooraf:
 - Je gebruikt niet de productie-PostgreSQL connection string.
 - De migration is ongewijzigd en komt uit `docs/sql/001_monitoring_datamodel.sql`.
 - De migration bevat alleen nieuwe monitoringtabellen:
-  - `automation_events`
-  - `outbound_messages`
-  - `automation_registry`
+  - `monitoring.automation_events`
+  - `monitoring.outbound_messages`
+  - `monitoring.automation_registry`
+- De migration maakt alleen een nieuw schema aan met `CREATE SCHEMA IF NOT EXISTS monitoring`.
 - Er staan geen actieve `DROP`, `ALTER` of `DELETE` statements in het uit te voeren deel.
 - De rollbacksectie blijft volledig uitgecommentarieerd.
 - Er is een recente backup of snapshot als er op een gedeelde testdatabase wordt gewerkt.
@@ -53,13 +54,29 @@ Als er twijfel is: niet uitvoeren.
 
 Voorkeursvolgorde:
 
-1. Aparte lokale PostgreSQL database.
-2. Aparte cloud testdatabase zonder productiegegevens.
-3. Apart schema in een gedeelde testdatabase.
+1. Aparte Aiven testdatabase zonder productiegegevens.
+2. Aparte lokale PostgreSQL database.
+3. Apart `monitoring` schema in een gedeelde testdatabase.
 
-### Optie A: lokale PostgreSQL database
+Voer de migration niet direct uit op Aiven `defaultdb` zonder backup, hostcontrole en expliciet akkoord. Als `defaultdb` productie of productie-achtig is, moet eerst een aparte testdatabase worden gebruikt.
 
-Aanbevolen voor de eerste smoke-test.
+### Optie A: aparte Aiven testdatabase
+
+Aanbevolen voor de eerste cloudtest.
+
+Voordelen:
+
+- Zelfde provider als de vermoedelijke productieomgeving.
+- Geen risico voor productie- of stagingdata.
+- Geschikt om Aiven-specifieke rechten, SSL en connection strings te valideren.
+
+Voorbeeldnaam:
+
+- `ptb_tree_map_monitoring_test`
+
+### Optie B: lokale PostgreSQL database
+
+Geschikt voor een eerste syntax- en idempotentietest.
 
 Voordelen:
 
@@ -71,35 +88,15 @@ Voorbeeldnaam:
 
 - `ptb_monitoring_test`
 
-### Optie B: aparte testdatabase
+### Optie C: apart schema in een gedeelde testdatabase
 
-Aanbevolen na lokale validatie.
-
-Voordelen:
-
-- Lijkt meer op staging.
-- Kan met dezelfde PostgreSQL-versie en extensies draaien.
-- Geen schema-isolatie nodig.
-
-Voorbeeldnaam:
-
-- `ptb_tree_map_monitoring_test`
-
-### Optie C: apart schema
-
-Alleen gebruiken als een aparte database niet beschikbaar is.
+Alleen gebruiken als een aparte Aiven testdatabase of lokale database niet beschikbaar is.
 
 Voorbeeldschema:
 
-- `monitoring_test`
+- `monitoring`
 
-Let op: de huidige migration gebruikt geen expliciete schema-prefix. Als een apart schema wordt gebruikt, moet de sessie eerst expliciet worden gezet:
-
-```sql
-set search_path to monitoring_test;
-```
-
-Gebruik dit alleen in een testcontext en documenteer exact welke search path is gebruikt.
+De migration gebruikt expliciete schema-prefixes en maakt `monitoring` zelf aan met `CREATE SCHEMA IF NOT EXISTS monitoring;`. Er is dus geen `search_path` nodig.
 
 ## 4. SQL veilig uitvoeren
 
@@ -137,23 +134,23 @@ psql "%TEST_DATABASE_URL%" -f docs/sql/001_monitoring_datamodel.sql > monitoring
 ```sql
 select table_name
 from information_schema.tables
-where table_schema = current_schema()
+where table_schema = 'monitoring'
   and table_name in ('automation_events', 'outbound_messages', 'automation_registry')
 order by table_name;
 ```
 
 Verwacht:
 
-- `automation_events`
-- `automation_registry`
-- `outbound_messages`
+- `monitoring.automation_events`
+- `monitoring.automation_registry`
+- `monitoring.outbound_messages`
 
 ### Kolommen bestaan
 
 ```sql
 select table_name, column_name, data_type
 from information_schema.columns
-where table_schema = current_schema()
+where table_schema = 'monitoring'
   and table_name in ('automation_events', 'outbound_messages', 'automation_registry')
 order by table_name, ordinal_position;
 ```
@@ -172,7 +169,7 @@ Controleer dat alle gevraagde velden aanwezig zijn, waaronder:
 ```sql
 select tablename, indexname
 from pg_indexes
-where schemaname = current_schema()
+where schemaname = 'monitoring'
   and tablename in ('automation_events', 'outbound_messages', 'automation_registry')
 order by tablename, indexname;
 ```
@@ -195,16 +192,16 @@ Verwachte indexen:
 
 ```sql
 select id, flow_name, category, status
-from automation_registry
+from monitoring.automation_registry
 where flow_name like 'TEST -%';
 
 select id, category, severity, status, entity_id, action_required
-from automation_events
+from monitoring.automation_events
 where summary like 'TEST DATA -%'
 order by id;
 
 select id, message_type, provider, recipient_email, subject, related_event_id
-from outbound_messages
+from monitoring.outbound_messages
 where subject like 'TEST DATA -%';
 ```
 
@@ -223,22 +220,22 @@ select outbound.id as outbound_message_id,
        outbound.related_event_id,
        event.id as automation_event_id,
        event.entity_id
-from outbound_messages outbound
-left join automation_events event
+from monitoring.outbound_messages outbound
+left join monitoring.automation_events event
   on event.id = outbound.related_event_id
 where outbound.subject like 'TEST DATA -%';
 ```
 
 Verwacht:
 
-- `related_event_id` verwijst naar een bestaande `automation_events.id`.
+- `related_event_id` verwijst naar een bestaande `monitoring.automation_events.id`.
 
 Controleer dat een ongeldige foreign key faalt in een transaction die wordt teruggedraaid:
 
 ```sql
 begin;
 
-insert into outbound_messages (
+insert into monitoring.outbound_messages (
   message_type,
   related_event_id,
   status
@@ -265,15 +262,15 @@ Voorkeursrollback voor smoke-testdata:
 ```sql
 begin;
 
-delete from outbound_messages
+delete from monitoring.outbound_messages
 where related_entity_id in ('test-upload-001', 'test-workflow-001')
    or subject like 'TEST DATA -%';
 
-delete from automation_events
+delete from monitoring.automation_events
 where entity_id in ('test-upload-001', 'test-workflow-001')
    or summary like 'TEST DATA -%';
 
-delete from automation_registry
+delete from monitoring.automation_registry
 where flow_name like 'TEST -%';
 
 commit;
@@ -284,9 +281,10 @@ Volledige rollback van de nieuwe monitoringtabellen alleen in een testomgeving:
 ```sql
 begin;
 
-drop table if exists outbound_messages;
-drop table if exists automation_events;
-drop table if exists automation_registry;
+drop table if exists monitoring.outbound_messages;
+drop table if exists monitoring.automation_events;
+drop table if exists monitoring.automation_registry;
+drop schema if exists monitoring;
 
 commit;
 ```
@@ -296,6 +294,7 @@ Niet gebruiken op productie zonder expliciet akkoord en backup/snapshot.
 ## 7. Wat absoluut niet gedaan mag worden
 
 - De migration uitvoeren op productie.
+- De migration direct op Aiven `defaultdb` uitvoeren zonder backup, hostcontrole en expliciet akkoord.
 - De production `DATABASE_URL` gebruiken.
 - `DROP`, `ALTER` of `DELETE` uitvoeren op bestaande business tables.
 - Existing tables zoals `users1`, `trees1`, `photo_uploads_review`, `academy_students` of `academy_point_events` aanpassen.

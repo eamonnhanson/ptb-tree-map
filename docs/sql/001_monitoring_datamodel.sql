@@ -5,7 +5,9 @@
 
 BEGIN;
 
-CREATE TABLE IF NOT EXISTS automation_events (
+CREATE SCHEMA IF NOT EXISTS monitoring;
+
+CREATE TABLE IF NOT EXISTS monitoring.automation_events (
   id bigserial PRIMARY KEY,
   event_time timestamptz DEFAULT now(),
   category text NOT NULL,
@@ -24,7 +26,7 @@ CREATE TABLE IF NOT EXISTS automation_events (
   created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS outbound_messages (
+CREATE TABLE IF NOT EXISTS monitoring.outbound_messages (
   id bigserial PRIMARY KEY,
   message_time timestamptz DEFAULT now(),
   message_type text NOT NULL,
@@ -32,7 +34,7 @@ CREATE TABLE IF NOT EXISTS outbound_messages (
   recipient_email text,
   subject text,
   status text NOT NULL DEFAULT 'sent',
-  related_event_id bigint REFERENCES automation_events(id),
+  related_event_id bigint REFERENCES monitoring.automation_events(id),
   related_entity_type text,
   related_entity_id text,
   external_link text,
@@ -40,7 +42,7 @@ CREATE TABLE IF NOT EXISTS outbound_messages (
   created_at timestamptz DEFAULT now()
 );
 
-CREATE TABLE IF NOT EXISTS automation_registry (
+CREATE TABLE IF NOT EXISTS monitoring.automation_registry (
   id bigserial PRIMARY KEY,
   flow_name text NOT NULL,
   category text NOT NULL,
@@ -58,37 +60,37 @@ CREATE TABLE IF NOT EXISTS automation_registry (
 );
 
 CREATE INDEX IF NOT EXISTS idx_automation_events_event_time
-  ON automation_events (event_time);
+  ON monitoring.automation_events (event_time);
 
 CREATE INDEX IF NOT EXISTS idx_automation_events_category
-  ON automation_events (category);
+  ON monitoring.automation_events (category);
 
 CREATE INDEX IF NOT EXISTS idx_automation_events_severity
-  ON automation_events (severity);
+  ON monitoring.automation_events (severity);
 
 CREATE INDEX IF NOT EXISTS idx_automation_events_action_required
-  ON automation_events (action_required);
+  ON monitoring.automation_events (action_required);
 
 CREATE INDEX IF NOT EXISTS idx_automation_events_customer_email
-  ON automation_events (customer_email);
+  ON monitoring.automation_events (customer_email);
 
 CREATE INDEX IF NOT EXISTS idx_outbound_messages_message_time
-  ON outbound_messages (message_time);
+  ON monitoring.outbound_messages (message_time);
 
 CREATE INDEX IF NOT EXISTS idx_outbound_messages_recipient_email
-  ON outbound_messages (recipient_email);
+  ON monitoring.outbound_messages (recipient_email);
 
 CREATE INDEX IF NOT EXISTS idx_outbound_messages_status
-  ON outbound_messages (status);
+  ON monitoring.outbound_messages (status);
 
 CREATE INDEX IF NOT EXISTS idx_automation_registry_flow_name
-  ON automation_registry (flow_name);
+  ON monitoring.automation_registry (flow_name);
 
 CREATE INDEX IF NOT EXISTS idx_automation_registry_category
-  ON automation_registry (category);
+  ON monitoring.automation_registry (category);
 
 CREATE INDEX IF NOT EXISTS idx_automation_registry_status
-  ON automation_registry (status);
+  ON monitoring.automation_registry (status);
 
 -- ---------------------------------------------------------------------------
 -- TEST DATA
@@ -96,7 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_automation_registry_status
 -- Remove or skip this section for a clean production installation.
 -- ---------------------------------------------------------------------------
 
-INSERT INTO automation_registry (
+INSERT INTO monitoring.automation_registry (
   flow_name,
   category,
   status,
@@ -125,7 +127,7 @@ VALUES
   )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO automation_events (
+INSERT INTO monitoring.automation_events (
   category,
   severity,
   status,
@@ -173,7 +175,7 @@ VALUES
   )
 ON CONFLICT DO NOTHING;
 
-INSERT INTO outbound_messages (
+INSERT INTO monitoring.outbound_messages (
   message_type,
   provider,
   recipient_email,
@@ -196,7 +198,7 @@ SELECT
   event.entity_id,
   null,
   null
-FROM automation_events event
+FROM monitoring.automation_events event
 WHERE event.entity_id = 'test-upload-001'
 LIMIT 1;
 
@@ -209,19 +211,20 @@ COMMIT;
 --
 -- BEGIN;
 --
--- DELETE FROM outbound_messages
+-- DELETE FROM monitoring.outbound_messages
 -- WHERE related_entity_id IN ('test-upload-001', 'test-workflow-001')
 --    OR subject LIKE 'TEST DATA -%';
 --
--- DELETE FROM automation_events
+-- DELETE FROM monitoring.automation_events
 -- WHERE entity_id IN ('test-upload-001', 'test-workflow-001')
 --    OR summary LIKE 'TEST DATA -%';
 --
--- DELETE FROM automation_registry
+-- DELETE FROM monitoring.automation_registry
 -- WHERE flow_name LIKE 'TEST -%';
 --
--- DROP TABLE IF EXISTS outbound_messages;
--- DROP TABLE IF EXISTS automation_events;
--- DROP TABLE IF EXISTS automation_registry;
+-- DROP TABLE IF EXISTS monitoring.outbound_messages;
+-- DROP TABLE IF EXISTS monitoring.automation_events;
+-- DROP TABLE IF EXISTS monitoring.automation_registry;
+-- DROP SCHEMA IF EXISTS monitoring;
 --
 -- COMMIT;
