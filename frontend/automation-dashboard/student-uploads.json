@@ -10,6 +10,7 @@
       "urgency": "middel",
       "lastUpdated": "2026-05-29",
       "nextAction": "Controleer CRM-profiel en stuur welkomstmail.",
+      "evidence": "Zoho CRM-profiel; registratieformulier reg-2026-001",
       "followUp": "Controleer CRM-profiel en stuur welkomstmail."
     },
     {
@@ -22,6 +23,7 @@
       "urgency": "hoog",
       "lastUpdated": "2026-05-30",
       "nextAction": "Vraag ontbrekende schoolnaam op.",
+      "evidence": "Zoho CRM-profiel; registratieformulier reg-2026-002",
       "followUp": "Vraag ontbrekende schoolnaam op."
     },
     {
@@ -34,6 +36,7 @@
       "urgency": "laag",
       "lastUpdated": "2026-06-01",
       "nextAction": "Geen openstaande actie.",
+      "evidence": "Wayground Boommodule registratie; CRM-goedkeuring",
       "followUp": "Geen openstaande actie."
     }
   ],
@@ -51,6 +54,7 @@
       "score": "84%",
       "assessment": "Nog te beoordelen",
       "nextAction": "Vergelijk screenshot met lesresultaat.",
+      "evidence": "Wayground-score screenshot; upload upl-2026-014",
       "followUp": "Vergelijk screenshot met lesresultaat."
     },
     {
@@ -66,6 +70,7 @@
       "score": "-",
       "assessment": "Wacht op screenshot",
       "nextAction": "Vraag Wayground-score screenshot opnieuw op.",
+      "evidence": "Reflectie ontvangen; screenshot ontbreekt",
       "followUp": "Vraag Wayground-score screenshot opnieuw op."
     },
     {
@@ -81,6 +86,7 @@
       "score": "92%",
       "assessment": "9 punten",
       "nextAction": "Geen openstaande actie.",
+      "evidence": "Wayground-score screenshot; upload upl-2026-016",
       "followUp": "Geen openstaande actie."
     },
     {
@@ -96,6 +102,7 @@
       "score": "41%",
       "assessment": "Onvoldoende",
       "nextAction": "Laat student les opnieuw afronden.",
+      "evidence": "Quizresultaat; upload upl-2026-017",
       "followUp": "Laat student les opnieuw afronden."
     },
     {
@@ -111,6 +118,7 @@
       "score": "78%",
       "assessment": "Nog te beoordelen",
       "nextAction": "Controleer of beoordeling aan CRM wordt gekoppeld.",
+      "evidence": "Wayground-score screenshot; upload upl-2026-018",
       "followUp": "Controleer of beoordeling aan CRM wordt gekoppeld."
     }
   ]

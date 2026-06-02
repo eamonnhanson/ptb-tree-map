@@ -58,6 +58,33 @@
         </div>
         <span id="open-action-count"></span>
       </div>
+      <section class="controls action-controls" aria-label="Openstaande acties filters">
+        <label>
+          <span>Actietype</span>
+          <select id="action-type-filter">
+            <option value="all">Alle actietypes</option>
+            <option value="student-upload">Student upload</option>
+            <option value="onboarding">Onboarding</option>
+            <option value="workflow">Workflow/audit</option>
+          </select>
+        </label>
+        <label>
+          <span>Urgentie</span>
+          <select id="urgency-filter">
+            <option value="all">Alle urgenties</option>
+            <option value="hoog">Hoog</option>
+            <option value="middel">Normaal</option>
+            <option value="laag">Laag</option>
+          </select>
+        </label>
+      </section>
+      <section class="today-actions" aria-label="Vandaag opvolgen">
+        <div class="action-column-heading">
+          <h3>Vandaag opvolgen</h3>
+          <span id="today-action-count"></span>
+        </div>
+        <ol class="action-list today-action-list" id="today-actions"></ol>
+      </section>
       <div class="action-columns">
         <section class="action-column" aria-label="Openstaande acties voor student uploads">
           <div class="action-column-heading">

@@ -342,6 +342,29 @@ td small {
   margin-top: 16px;
 }
 
+.action-controls {
+  margin: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  grid-template-columns: repeat(2, minmax(180px, 260px));
+}
+
+.today-actions {
+  padding: 16px 16px 0;
+}
+
+.today-action-list {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.today-action-list li {
+  margin: 0;
+}
+
 .action-columns {
   padding: 16px;
   display: grid;
@@ -392,6 +415,7 @@ td small {
   margin-bottom: 0;
 }
 
+.today-action-list li,
 .action-card {
   display: grid;
   gap: 7px;
@@ -406,6 +430,13 @@ td small {
 
 .action-card-top strong {
   min-width: 0;
+}
+
+.action-card-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .action-card.urgency-hoog {
@@ -517,7 +548,8 @@ tr.student-meer_info_nodig td:first-child {
 @media (max-width: 1100px) {
   .overview,
   .detail-layout,
-  .action-columns {
+  .action-columns,
+  .today-action-list {
     grid-template-columns: 1fr;
   }
 
@@ -541,6 +573,7 @@ tr.student-meer_info_nodig td:first-child {
   }
 
   .controls,
+  .action-controls,
   .summary-grid,
   .module-summary,
   .signal-board {

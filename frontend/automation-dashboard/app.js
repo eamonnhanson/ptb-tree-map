@@ -94,7 +94,8 @@ const workflowActions = [
     owner: "Automation team",
     nextAction: "Voeg eindstatus en job-id toe aan de workflows met allocatiebewijs.",
     urgency: "hoog",
-    lastUpdated: "2026-06-01"
+    lastUpdated: "2026-06-01",
+    evidence: "Zapier history CSV; PostgreSQL allocation log"
   },
   {
     title: "Zoho Mail folder/tag bewijs",
@@ -103,7 +104,8 @@ const workflowActions = [
     owner: "Support",
     nextAction: "Leg live folderpaden en afhandelstatus vast voor manual follow-up.",
     urgency: "hoog",
-    lastUpdated: "2026-05-31"
+    lastUpdated: "2026-05-31",
+    evidence: "Zoho Mail Manual Follow-up folder"
   },
   {
     title: "Shopify productdekking koppelen",
@@ -112,7 +114,8 @@ const workflowActions = [
     owner: "Operations",
     nextAction: "Match SKU 01, 02 en 05 met orderbewijs en outbound mailbewijs.",
     urgency: "middel",
-    lastUpdated: "2026-05-30"
+    lastUpdated: "2026-05-30",
+    evidence: "Shopify order export; Zoho Mail outbound evidence"
   },
   {
     title: "Chargebee plan-to-item mapping",
@@ -121,7 +124,8 @@ const workflowActions = [
     owner: "Finance operations",
     nextAction: "Controleer abonnement, factuur, allocatie en outbound bewijs per plan.",
     urgency: "middel",
-    lastUpdated: "2026-05-29"
+    lastUpdated: "2026-05-29",
+    evidence: "Chargebee export; PostgreSQL users1/trees1"
   },
   {
     title: "Academy onboarding logging",
@@ -130,7 +134,8 @@ const workflowActions = [
     owner: "Academy team",
     nextAction: "Koppel CRM-onboarding aan uploadgoedkeuring en mailbewijs.",
     urgency: "hoog",
-    lastUpdated: "2026-06-01"
+    lastUpdated: "2026-06-01",
+    evidence: "Zoho CRM Academy record; uploader approval"
   }
 ];
 
@@ -156,8 +161,20 @@ const studentSignal = {
 
 const urgencyLabel = {
   hoog: "Hoog",
-  middel: "Middel",
+  middel: "Normaal",
   laag: "Laag"
+};
+
+const urgencyStatus = {
+  hoog: "red",
+  middel: "orange",
+  laag: "green"
+};
+
+const actionTypeLabel = {
+  "student-upload": "Student upload",
+  onboarding: "Onboarding",
+  workflow: "Workflow/audit"
 };
 
 const searchInput = document.getElementById("search");
@@ -166,11 +183,32 @@ const systemFilter = document.getElementById("system-filter");
 const studentSearchInput = document.getElementById("student-search");
 const studentStatusFilter = document.getElementById("student-status-filter");
 const lessonFilter = document.getElementById("lesson-filter");
+const actionTypeFilter = document.getElementById("action-type-filter");
+const urgencyFilter = document.getElementById("urgency-filter");
 
 let studentData = {
   registrations: [],
   uploads: []
 };
+
+function getSearchText(item, extraValues = []) {
+  return [...Object.values(item), ...extraValues]
+    .filter(value => value !== undefined && value !== null)
+    .join(" ")
+    .toLowerCase();
+}
+
+function matchesSearch(item, query, extraValues = []) {
+  return !query || getSearchText(item, extraValues).includes(query);
+}
+
+function getGeneralQuery() {
+  return searchInput.value.trim().toLowerCase();
+}
+
+function getStudentQuery() {
+  return studentSearchInput.value.trim().toLowerCase();
+}
 
 function renderSummary() {
   const totalSignals = signalCards.reduce((sum, card) => sum + card.count, 0);
@@ -200,12 +238,17 @@ function renderFilters() {
 }
 
 function matchesFilters(item) {
-  const query = searchInput.value.trim().toLowerCase();
+  const query = getGeneralQuery();
   const status = statusFilter.value;
   const system = systemFilter.value;
-  const haystack = Object.values(item).join(" ").toLowerCase();
+  const extraValues = [
+    statusLabel[item.status],
+    item.id,
+    item.title,
+    item.name
+  ];
 
-  return (!query || haystack.includes(query)) &&
+  return matchesSearch(item, query, extraValues) &&
     (status === "all" || item.status === status) &&
     (system === "all" || item.system === system);
 }
@@ -241,7 +284,7 @@ function renderWorkflows() {
   document.getElementById("workflow-count").textContent = `${filtered.length} zichtbaar`;
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">Geen workflows voor deze filters.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">Geen workflowregels voor deze filters.</td></tr>`;
     return;
   }
 
@@ -257,7 +300,16 @@ function renderWorkflows() {
 }
 
 function renderActions() {
-  document.getElementById("action-list").innerHTML = workflowActions.map(action => `
+  const filtered = workflowActions
+    .map(action => ({ ...action, type: "workflow" }))
+    .filter(action => matchesWorkflowActionFilters(action) && matchesActionControls(action));
+
+  if (!filtered.length) {
+    document.getElementById("action-list").innerHTML = `<li><strong>Geen audittaken</strong><span>Geen audittaken voor deze filters.</span></li>`;
+    return;
+  }
+
+  document.getElementById("action-list").innerHTML = filtered.map(action => `
     <li><strong>${action.title}</strong><span>${action.nextAction}</span></li>
   `).join("");
 }
@@ -305,7 +357,8 @@ function getStudentActionMeta(item) {
     owner: item.owner || "Academy team",
     nextAction: item.nextAction || item.followUp,
     urgency: item.urgency || fallbackUrgency[item.status] || "middel",
-    lastUpdated: item.lastUpdated || item.registeredAt || "2026-06-01"
+    lastUpdated: item.lastUpdated || item.registeredAt || "2026-06-01",
+    evidence: item.evidence || item.uploadType || item.program || item.id
   };
 }
 
@@ -317,22 +370,48 @@ function renderLessonFilter() {
 }
 
 function matchesStudentFilters(item) {
-  const query = studentSearchInput.value.trim().toLowerCase();
+  const query = getStudentQuery();
+  const generalQuery = getGeneralQuery();
   const status = studentStatusFilter.value;
   const lesson = lessonFilter.value;
-  const haystack = Object.values(item).join(" ").toLowerCase();
+  const extraValues = [
+    item.id,
+    item.studentName,
+    item.uploadType,
+    item.owner,
+    item.nextAction,
+    item.followUp,
+    item.evidence,
+    studentStatusLabel[item.status],
+    urgencyLabel[item.urgency],
+    urgencyStatus[item.urgency]
+  ];
 
-  return (!query || haystack.includes(query)) &&
+  return matchesSearch(item, generalQuery, extraValues) &&
+    matchesSearch(item, query, extraValues) &&
     (status === "all" || item.status === status) &&
     (lesson === "all" || item.lesson === lesson);
 }
 
 function matchesRegistrationFilters(item) {
-  const query = studentSearchInput.value.trim().toLowerCase();
+  const query = getStudentQuery();
+  const generalQuery = getGeneralQuery();
   const status = studentStatusFilter.value;
-  const haystack = Object.values(item).join(" ").toLowerCase();
+  const extraValues = [
+    item.id,
+    item.studentName,
+    item.program,
+    item.owner,
+    item.nextAction,
+    item.followUp,
+    item.evidence,
+    studentStatusLabel[item.status],
+    urgencyLabel[item.urgency],
+    urgencyStatus[item.urgency]
+  ];
 
-  return (!query || haystack.includes(query)) &&
+  return matchesSearch(item, generalQuery, extraValues) &&
+    matchesSearch(item, query, extraValues) &&
     (status === "all" || item.status === status);
 }
 
@@ -358,61 +437,156 @@ function renderActionItems(items, emptyText) {
     <li class="action-card urgency-${item.urgency}">
       <div class="action-card-top">
         <strong>${item.title}</strong>
-        ${renderUrgencyBadge(item.urgency)}
+        <span class="action-card-badges">
+          <span class="badge neutral">${actionTypeLabel[item.type]}</span>
+          ${renderUrgencyBadge(item.urgency)}
+        </span>
       </div>
       <span><strong>Eigenaar:</strong> ${item.owner}</span>
-      <span><strong>Volgende actie:</strong> ${item.nextAction}</span>
+      <span><strong>Eerstvolgende stap:</strong> ${item.nextAction}</span>
       <span><strong>Laatste update:</strong> ${item.lastUpdated}</span>
+      <span><strong>Bron/bewijs:</strong> ${item.evidence}</span>
     </li>
   `).join("");
 }
 
 function matchesWorkflowActionFilters(item) {
-  const query = searchInput.value.trim().toLowerCase();
-  const status = statusFilter.value;
+  const query = getGeneralQuery();
   const system = systemFilter.value;
-  const haystack = Object.values(item).join(" ").toLowerCase();
+  const extraValues = [
+    item.type,
+    actionTypeLabel[item.type],
+    statusLabel[item.status],
+    urgencyLabel[item.urgency],
+    urgencyStatus[item.urgency],
+    item.evidence,
+    item.nextAction,
+    item.owner
+  ];
 
-  return (!query || haystack.includes(query)) &&
-    (status === "all" || item.status === status) &&
+  return matchesSearch(item, query, extraValues) &&
     (system === "all" || item.system === system);
 }
 
-function renderOpenActions() {
+function matchesActionSearch(item) {
+  const extraValues = [
+    item.type,
+    actionTypeLabel[item.type],
+    statusLabel[item.status],
+    urgencyLabel[item.urgency],
+    urgencyStatus[item.urgency],
+    item.owner,
+    item.nextAction,
+    item.evidence,
+    item.id
+  ];
+
+  return matchesSearch(item, getGeneralQuery(), extraValues);
+}
+
+function matchesActionType(item) {
+  return actionTypeFilter.value === "all" || item.type === actionTypeFilter.value;
+}
+
+function matchesUrgency(item) {
+  return urgencyFilter.value === "all" || item.urgency === urgencyFilter.value;
+}
+
+function matchesActionStatus(item) {
+  const status = statusFilter.value;
+
+  if (status === "all") {
+    return true;
+  }
+
+  return (urgencyStatus[item.urgency] || item.status) === status;
+}
+
+function matchesActionControls(item) {
+  return matchesActionType(item) && matchesUrgency(item) && matchesActionStatus(item);
+}
+
+function shouldShowToday(item) {
+  return item.urgency === "hoog" || item.lastUpdated === "2026-06-01";
+}
+
+function sortActions(items) {
+  const urgencyRank = { hoog: 0, middel: 1, laag: 2 };
+  return [...items].sort((a, b) => {
+    const urgencyDelta = (urgencyRank[a.urgency] ?? 3) - (urgencyRank[b.urgency] ?? 3);
+
+    if (urgencyDelta) {
+      return urgencyDelta;
+    }
+
+    return b.lastUpdated.localeCompare(a.lastUpdated);
+  });
+}
+
+function getOpenActionGroups() {
   const uploadActions = studentData.uploads
     .filter(upload => hasOpenFollowUp(upload) && matchesStudentFilters(upload))
     .map(upload => {
       const meta = getStudentActionMeta(upload);
       return {
+        type: "student-upload",
+        id: upload.id,
         title: `${upload.studentName} - ${upload.lesson}`,
         owner: meta.owner,
         nextAction: meta.nextAction,
         urgency: meta.urgency,
-        lastUpdated: meta.lastUpdated
+        status: urgencyStatus[meta.urgency],
+        lastUpdated: meta.lastUpdated,
+        evidence: meta.evidence || `${upload.uploadType}; screenshot ${upload.screenshot.toLowerCase()}`
       };
-    });
+    })
+    .filter(matchesActionSearch)
+    .filter(matchesActionControls);
   const onboardingActions = studentData.registrations
     .filter(registration => hasOpenFollowUp(registration) && matchesRegistrationFilters(registration))
     .map(registration => {
       const meta = getStudentActionMeta(registration);
       return {
+        type: "onboarding",
+        id: registration.id,
         title: `${registration.studentName} - ${registration.program}`,
         owner: meta.owner,
         nextAction: meta.nextAction,
         urgency: meta.urgency,
-        lastUpdated: meta.lastUpdated
+        status: urgencyStatus[meta.urgency],
+        lastUpdated: meta.lastUpdated,
+        evidence: meta.evidence || `${registration.program}; ${registration.id}`
       };
-    });
-  const filteredWorkflowActions = workflowActions.filter(matchesWorkflowActionFilters);
-  const totalActions = uploadActions.length + onboardingActions.length + filteredWorkflowActions.length;
+    })
+    .filter(matchesActionSearch)
+    .filter(matchesActionControls);
+  const filteredWorkflowActions = workflowActions
+    .filter(matchesWorkflowActionFilters)
+    .map(action => ({ ...action, type: "workflow" }))
+    .filter(matchesActionControls);
+
+  return {
+    uploadActions: sortActions(uploadActions),
+    onboardingActions: sortActions(onboardingActions),
+    workflowActions: sortActions(filteredWorkflowActions)
+  };
+}
+
+function renderOpenActions() {
+  const { uploadActions, onboardingActions, workflowActions: filteredWorkflowActions } = getOpenActionGroups();
+  const allActions = [...uploadActions, ...onboardingActions, ...filteredWorkflowActions];
+  const todayActions = sortActions(allActions.filter(shouldShowToday)).slice(0, 5);
+  const totalActions = allActions.length;
 
   document.getElementById("open-action-count").textContent = `${totalActions} zichtbaar`;
+  document.getElementById("today-action-count").textContent = formatActionCount(todayActions.length);
   document.getElementById("student-upload-action-count").textContent = formatActionCount(uploadActions.length);
   document.getElementById("onboarding-action-count").textContent = formatActionCount(onboardingActions.length);
   document.getElementById("workflow-action-count").textContent = formatActionCount(filteredWorkflowActions.length);
-  document.getElementById("student-upload-actions").innerHTML = renderActionItems(uploadActions, "Geen student uploads met opvolging voor deze filters.");
-  document.getElementById("onboarding-actions").innerHTML = renderActionItems(onboardingActions, "Geen onboardingacties voor deze filters.");
-  document.getElementById("workflow-actions").innerHTML = renderActionItems(filteredWorkflowActions, "Geen workflow/audit acties voor deze filters.");
+  document.getElementById("today-actions").innerHTML = renderActionItems(todayActions, "Geen open acties voor deze filters.");
+  document.getElementById("student-upload-actions").innerHTML = renderActionItems(uploadActions, "Geen open acties voor deze filters.");
+  document.getElementById("onboarding-actions").innerHTML = renderActionItems(onboardingActions, "Geen open acties voor deze filters.");
+  document.getElementById("workflow-actions").innerHTML = renderActionItems(filteredWorkflowActions, "Geen open acties voor deze filters.");
 }
 
 function renderUploads() {
@@ -487,6 +661,9 @@ async function loadStudentData() {
 function renderAll() {
   renderSignals();
   renderWorkflows();
+  renderActions();
+  renderUploads();
+  renderRegistrations();
   renderOpenActions();
 }
 
@@ -506,4 +683,8 @@ loadStudentData();
     renderRegistrations();
     renderOpenActions();
   });
+});
+
+[actionTypeFilter, urgencyFilter].forEach(control => {
+  control.addEventListener("input", renderOpenActions);
 });
