@@ -1,3 +1,7 @@
+[build]
+publish = "frontend"
+functions = "netlify/functions"
+
 [[redirects]]
 from = "/automation-dashboard"
 to = "/automation-dashboard/"
