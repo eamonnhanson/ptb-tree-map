@@ -61,6 +61,13 @@ body {
   white-space: nowrap;
 }
 
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .status-pill {
   background: #e9f5f1;
   color: var(--green);
@@ -111,6 +118,12 @@ h1 {
   line-height: 1.05;
 }
 
+.intro-copy {
+  max-width: 620px;
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
 h2 {
   margin-bottom: 0;
   font-size: 20px;
@@ -150,8 +163,9 @@ h3 {
   margin-top: 16px;
   padding: 14px;
   display: grid;
-  grid-template-columns: 1.5fr 220px 260px;
+  grid-template-columns: minmax(220px, 1fr) 1.5fr 220px 260px auto;
   gap: 12px;
+  align-items: end;
 }
 
 label span {
@@ -172,6 +186,42 @@ select {
   border: 1px solid #cdd7e1;
   border-radius: 6px;
   font: inherit;
+}
+
+.filter-heading {
+  align-self: center;
+}
+
+.filter-heading strong,
+.filter-heading span {
+  display: block;
+}
+
+.filter-heading strong {
+  margin-bottom: 3px;
+}
+
+.filter-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.reset-button {
+  min-height: 40px;
+  padding: 8px 12px;
+  color: var(--green);
+  background: #e9f5f1;
+  border: 1px solid #b9ded3;
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.reset-button:hover,
+.reset-button:focus {
+  background: #dff0ea;
 }
 
 .signal-board {
@@ -233,6 +283,26 @@ select {
 .badge.neutral {
   background: #eef3f8;
   color: var(--blue);
+}
+
+.badge.student-nieuw {
+  background: #eef3f8;
+  color: var(--blue);
+}
+
+.badge.student-goedgekeurd {
+  background: #e8f5e9;
+  color: var(--leaf);
+}
+
+.badge.student-afgewezen {
+  background: #ffebe8;
+  color: var(--red);
+}
+
+.badge.student-meer_info_nodig {
+  background: #fff3df;
+  color: var(--amber);
 }
 
 .detail-layout {
@@ -307,7 +377,223 @@ td small {
 }
 
 .action-list span {
+  display: block;
   color: var(--muted);
+}
+
+.action-hub {
+  margin-top: 16px;
+}
+
+.action-controls {
+  margin: 0;
+  border-width: 0 0 1px;
+  border-radius: 0;
+  grid-template-columns: minmax(220px, 1fr) repeat(2, minmax(180px, 260px));
+}
+
+.today-actions {
+  padding: 16px 16px 0;
+}
+
+.today-action-list {
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+.today-action-list li {
+  margin: 0;
+}
+
+.action-columns {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.action-column {
+  min-width: 0;
+}
+
+.action-column-heading {
+  min-height: 34px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.action-column-heading h3 {
+  margin-bottom: 0;
+}
+
+.action-column-heading span,
+.panel-heading > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.action-card-list {
+  padding: 0;
+  list-style: none;
+}
+
+.action-card-list li {
+  margin: 0 0 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--blue);
+  border-radius: 8px;
+  background: #fbfcfd;
+}
+
+.action-card-list li:last-child {
+  margin-bottom: 0;
+}
+
+.today-action-list li,
+.action-card {
+  display: grid;
+  gap: 7px;
+}
+
+.today-action-list .action-card {
+  gap: 5px;
+  padding: 10px;
+}
+
+.today-action-list .action-card span:not(.badge) {
+  font-size: 12px;
+}
+
+.today-action-list .action-card span:nth-of-type(3) {
+  display: none;
+}
+
+.action-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.action-card-top strong {
+  min-width: 0;
+}
+
+.action-card-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.action-card.urgency-hoog {
+  border-left-color: var(--red);
+}
+
+.action-card.urgency-middel {
+  border-left-color: var(--amber);
+}
+
+.action-card.urgency-laag {
+  border-left-color: var(--leaf);
+}
+
+.badge.urgency-hoog {
+  background: #ffebe8;
+  color: var(--red);
+}
+
+.badge.urgency-middel {
+  background: #fff3df;
+  color: var(--amber);
+}
+
+.badge.urgency-laag {
+  background: #e8f5e9;
+  color: var(--leaf);
+}
+
+.student-module {
+  margin-top: 16px;
+}
+
+.module-intro {
+  margin-bottom: 16px;
+}
+
+.module-summary {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.student-controls {
+  margin-top: 0;
+  grid-template-columns: minmax(220px, 1fr) 1.5fr 220px 260px;
+}
+
+.student-layout {
+  grid-template-columns: minmax(0, 1.5fr) minmax(320px, .7fr);
+}
+
+.registration-list .badge {
+  display: inline-block;
+  margin: 8px 0 2px;
+}
+
+.student-row {
+  border-left: 4px solid transparent;
+}
+
+tr.student-row td:first-child {
+  border-left: 4px solid transparent;
+}
+
+tr.student-nieuw td:first-child {
+  border-left-color: var(--blue);
+}
+
+tr.student-goedgekeurd td:first-child {
+  border-left-color: var(--leaf);
+}
+
+tr.student-afgewezen td:first-child {
+  border-left-color: var(--red);
+}
+
+tr.student-meer_info_nodig td:first-child {
+  border-left-color: var(--amber);
+}
+
+.registration-list .student-row {
+  margin-left: -12px;
+  padding-left: 12px;
+}
+
+.registration-list .student-nieuw {
+  border-left-color: var(--blue);
+}
+
+.registration-list .student-goedgekeurd {
+  border-left-color: var(--leaf);
+}
+
+.registration-list .student-afgewezen {
+  border-left-color: var(--red);
+}
+
+.registration-list .student-meer_info_nodig {
+  border-left-color: var(--amber);
 }
 
 .empty {
@@ -316,15 +602,40 @@ td small {
   text-align: center;
 }
 
+.empty strong,
+.empty span {
+  display: block;
+}
+
+.empty strong {
+  color: var(--ink);
+}
+
+.empty span {
+  margin-top: 4px;
+}
+
 @media (max-width: 1100px) {
   .overview,
-  .detail-layout {
+  .detail-layout,
+  .action-columns,
+  .today-action-list {
     grid-template-columns: 1fr;
   }
 
   .summary-grid,
+  .module-summary,
   .signal-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controls,
+  .action-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filter-heading {
+    grid-column: 1 / -1;
   }
 }
 
@@ -341,7 +652,9 @@ td small {
   }
 
   .controls,
+  .action-controls,
   .summary-grid,
+  .module-summary,
   .signal-board {
     grid-template-columns: 1fr;
   }

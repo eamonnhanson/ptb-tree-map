@@ -12,7 +12,11 @@
       <img src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160" alt="Plant N Boom">
       <span>Automatiseringen</span>
     </a>
-    <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
+    <nav class="top-actions" aria-label="Dashboard navigatie">
+      <a class="status-pill" href="#open-actions">Openstaande acties</a>
+      <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
+      <a class="status-pill" href="#student-uploads">Student uploads</a>
+    </nav>
   </header>
 
   <main>
@@ -20,11 +24,16 @@
       <div>
         <p class="eyebrow">Operationeel dashboard</p>
         <h1>Workflowdekking en opvolging</h1>
+        <p class="intro-copy">Read-only dashboard met statische voorbeelddata voor dagelijkse controle van workflows, student uploads en opvolging.</p>
       </div>
       <div class="summary-grid" id="summary-grid"></div>
     </section>
 
     <section class="controls" aria-label="Dashboard filters">
+      <div class="filter-heading">
+        <strong>Dashboardfilters</strong>
+        <span>Beinvloedt kaarten, workflow registry, audittaken en workflow/audit-acties.</span>
+      </div>
       <label>
         <span>Zoeken</span>
         <input id="search" type="search" placeholder="Workflow, signaal, systeem">
@@ -44,6 +53,71 @@
           <option value="all">Alle systemen</option>
         </select>
       </label>
+      <button class="reset-button" id="reset-filters" type="button">Reset filters</button>
+    </section>
+
+    <section class="panel action-hub" id="open-actions" aria-label="Openstaande acties">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Actielijst</p>
+          <h2>Openstaande acties</h2>
+        </div>
+        <span id="open-action-count"></span>
+      </div>
+      <section class="controls action-controls" aria-label="Openstaande acties filters">
+        <div class="filter-heading">
+          <strong>Actiefilters</strong>
+          <span>Beinvloedt alleen openstaande acties en Vandaag opvolgen.</span>
+        </div>
+        <label>
+          <span>Actietype</span>
+          <select id="action-type-filter">
+            <option value="all">Alle actietypes</option>
+            <option value="student-upload">Student upload</option>
+            <option value="onboarding">Onboarding</option>
+            <option value="workflow">Workflow/audit</option>
+          </select>
+        </label>
+        <label>
+          <span>Urgentie</span>
+          <select id="urgency-filter">
+            <option value="all">Alle urgenties</option>
+            <option value="hoog">Hoog</option>
+            <option value="middel">Normaal</option>
+            <option value="laag">Laag</option>
+          </select>
+        </label>
+      </section>
+      <section class="today-actions" aria-label="Vandaag opvolgen">
+        <div class="action-column-heading">
+          <h3>Vandaag opvolgen</h3>
+          <span id="today-action-count"></span>
+        </div>
+        <ol class="action-list today-action-list" id="today-actions"></ol>
+      </section>
+      <div class="action-columns">
+        <section class="action-column" aria-label="Openstaande acties voor student uploads">
+          <div class="action-column-heading">
+            <h3>Student uploads</h3>
+            <span id="student-upload-action-count"></span>
+          </div>
+          <ol class="action-list action-card-list" id="student-upload-actions"></ol>
+        </section>
+        <section class="action-column" aria-label="Openstaande acties voor onboarding">
+          <div class="action-column-heading">
+            <h3>Onboarding</h3>
+            <span id="onboarding-action-count"></span>
+          </div>
+          <ol class="action-list action-card-list" id="onboarding-actions"></ol>
+        </section>
+        <section class="action-column" aria-label="Openstaande workflow en audit acties">
+          <div class="action-column-heading">
+            <h3>Workflow/audit</h3>
+            <span id="workflow-action-count"></span>
+          </div>
+          <ol class="action-list action-card-list" id="workflow-actions"></ol>
+        </section>
+      </div>
     </section>
 
     <section class="signal-board" aria-label="Dashboardkaarten" id="signal-board"></section>
@@ -82,6 +156,85 @@
         </div>
         <ol class="action-list" id="action-list"></ol>
       </aside>
+    </section>
+
+    <section class="student-module" id="student-uploads" aria-label="Onboarding en student uploads">
+      <div class="panel module-intro">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Read-only module</p>
+            <h2>Onboarding en student uploads</h2>
+          </div>
+          <span id="student-data-source">Statische voorbeelddata</span>
+        </div>
+        <div class="module-summary" id="student-summary"></div>
+      </div>
+
+      <section class="controls student-controls" aria-label="Student upload filters">
+        <div class="filter-heading">
+          <strong>Studentfilters</strong>
+          <span>Beinvloedt student uploads, onboarding en bijbehorende open acties.</span>
+        </div>
+        <label>
+          <span>Zoeken</span>
+          <input id="student-search" type="search" placeholder="Student, les, opvolgactie">
+        </label>
+        <label>
+          <span>Status</span>
+          <select id="student-status-filter">
+            <option value="all">Alle statussen</option>
+            <option value="nieuw">Nieuw</option>
+            <option value="goedgekeurd">Goedgekeurd</option>
+            <option value="afgewezen">Afgewezen</option>
+            <option value="meer_info_nodig">Meer info nodig</option>
+          </select>
+        </label>
+        <label>
+          <span>Les</span>
+          <select id="lesson-filter">
+            <option value="all">Alle lessen</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="detail-layout student-layout">
+        <div class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Upload inbox</p>
+              <h2>Student uploads per les</h2>
+            </div>
+            <span id="upload-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Les</th>
+                  <th>Upload</th>
+                  <th>Status</th>
+                  <th>Punten</th>
+                  <th>Signaal</th>
+                  <th>Opvolging</th>
+                </tr>
+              </thead>
+              <tbody id="upload-table"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <aside class="panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Nieuwe registraties</p>
+              <h2>Onboarding inbox</h2>
+            </div>
+            <span id="registration-count"></span>
+          </div>
+          <ol class="action-list registration-list" id="registration-list"></ol>
+        </aside>
+      </section>
     </section>
   </main>
 
