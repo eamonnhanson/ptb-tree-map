@@ -193,6 +193,9 @@ let studentData = {
   registrations: [],
   uploads: []
 };
+let liveWorkflowActions = null;
+let openActionsSourceLabel = "Statische voorbeelddata";
+let openActionsErrorMessage = "";
 
 function getSearchText(item, extraValues = []) {
   return [...Object.values(item), ...extraValues]
@@ -309,6 +312,14 @@ function renderLiveMonitoringSummary(data) {
   `).join("");
 }
 
+function renderOpenActionsSource() {
+  const count = document.getElementById("open-action-count");
+  const currentCount = count.dataset.count || "";
+  const parts = [currentCount, openActionsSourceLabel].filter(Boolean);
+
+  count.textContent = parts.join(" · ");
+}
+
 async function loadLiveMonitoringSummary() {
   renderLiveMonitoringLoading();
 
@@ -335,6 +346,91 @@ async function loadLiveMonitoringSummary() {
     renderLiveMonitoringSummary(await response.json());
   } catch (error) {
     renderLiveMonitoringError("Live monitoring niet beschikbaar");
+  }
+}
+
+function severityToUrgency(severity) {
+  const severityMap = {
+    red: "hoog",
+    orange: "middel",
+    yellow: "middel",
+    green: "laag"
+  };
+
+  return severityMap[severity] || "middel";
+}
+
+function formatMonitoringDate(value) {
+  if (!value) {
+    return "-";
+  }
+
+  return String(value).slice(0, 10);
+}
+
+function mapMonitoringEventToAction(event) {
+  const urgency = severityToUrgency(event.severity);
+
+  return {
+    type: "workflow",
+    id: event.id,
+    title: event.summary || event.category || `Monitoring event ${event.id}`,
+    system: event.category || "Monitoring",
+    status: event.severity || urgencyStatus[urgency],
+    owner: event.customer_email || "Automation team",
+    nextAction: event.summary || "Controleer dit monitoring event.",
+    urgency,
+    lastUpdated: formatMonitoringDate(event.event_time),
+    evidence: event.evidence || event.entity_id || event.status || "monitoring.automation_events"
+  };
+}
+
+function renderOpenActionsErrorMessage() {
+  if (!openActionsErrorMessage) {
+    return "";
+  }
+
+  return `<div class="live-actions-status">${openActionsErrorMessage}</div>`;
+}
+
+function renderLiveActionsError(status) {
+  if (status === 401) {
+    openActionsErrorMessage = "Live acties niet beschikbaar: niet geautoriseerd";
+  } else if (status === 503) {
+    openActionsErrorMessage = "Live acties niet beschikbaar: databaseconfiguratie of verbinding";
+  } else {
+    openActionsErrorMessage = "Live acties niet beschikbaar";
+  }
+
+  openActionsSourceLabel = "Statische voorbeelddata";
+  liveWorkflowActions = null;
+  renderOpenActions();
+}
+
+async function loadLiveMonitoringEvents() {
+  try {
+    const response = await fetch("/.netlify/functions/monitoring-events", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+      renderLiveActionsError(response.status);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.ok || !Array.isArray(data.events)) {
+      renderLiveActionsError();
+      return;
+    }
+
+    liveWorkflowActions = data.events.map(mapMonitoringEventToAction);
+    openActionsSourceLabel = "Live data";
+    openActionsErrorMessage = "";
+    renderOpenActions();
+  } catch (error) {
+    renderLiveActionsError();
   }
 }
 
@@ -666,7 +762,8 @@ function getOpenActionGroups() {
     })
     .filter(matchesActionSearch)
     .filter(matchesActionControls);
-  const filteredWorkflowActions = workflowActions
+  const workflowActionSource = liveWorkflowActions || workflowActions;
+  const filteredWorkflowActions = workflowActionSource
     .filter(matchesWorkflowActionFilters)
     .map(action => ({ ...action, type: "workflow" }))
     .filter(matchesActionControls);
@@ -684,12 +781,13 @@ function renderOpenActions() {
   const todayActions = sortActions(allActions.filter(shouldShowToday)).slice(0, 5);
   const totalActions = allActions.length;
 
-  document.getElementById("open-action-count").textContent = `${totalActions} zichtbaar`;
+  document.getElementById("open-action-count").dataset.count = `${totalActions} zichtbaar`;
+  renderOpenActionsSource();
   document.getElementById("today-action-count").textContent = formatActionCount(todayActions.length);
   document.getElementById("student-upload-action-count").textContent = formatActionCount(uploadActions.length);
   document.getElementById("onboarding-action-count").textContent = formatActionCount(onboardingActions.length);
   document.getElementById("workflow-action-count").textContent = formatActionCount(filteredWorkflowActions.length);
-  document.getElementById("today-actions").innerHTML = renderActionItems(todayActions, "Geen open acties voor deze filters.");
+  document.getElementById("today-actions").innerHTML = `${renderOpenActionsErrorMessage()}${renderActionItems(todayActions, "Geen open acties voor deze filters.")}`;
   document.getElementById("student-upload-actions").innerHTML = renderActionItems(uploadActions, "Geen open acties voor deze filters.");
   document.getElementById("onboarding-actions").innerHTML = renderActionItems(onboardingActions, "Geen open acties voor deze filters.");
   document.getElementById("workflow-actions").innerHTML = renderActionItems(filteredWorkflowActions, "Geen open acties voor deze filters.");
@@ -790,6 +888,7 @@ renderFilters();
 renderActions();
 renderAll();
 loadLiveMonitoringSummary();
+loadLiveMonitoringEvents();
 loadStudentData();
 
 [searchInput, statusFilter, systemFilter].forEach(control => {

@@ -239,6 +239,15 @@ select {
   border-radius: 8px;
 }
 
+.live-actions-status {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  color: var(--muted);
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
 .reset-button:hover,
 .reset-button:focus {
   background: #dff0ea;
