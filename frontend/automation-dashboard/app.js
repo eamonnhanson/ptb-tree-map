@@ -188,6 +188,7 @@ const urgencyFilter = document.getElementById("urgency-filter");
 const resetFiltersButton = document.getElementById("reset-filters");
 const liveMonitoringSummary = document.getElementById("live-monitoring-summary");
 const liveMonitoringSource = document.getElementById("live-monitoring-source");
+const outboundMessagesSource = document.getElementById("outbound-messages-source");
 
 let studentData = {
   registrations: [],
@@ -196,6 +197,9 @@ let studentData = {
 let liveWorkflowActions = null;
 let openActionsSourceLabel = "Statische voorbeelddata";
 let openActionsErrorMessage = "";
+let liveOutboundActions = null;
+let outboundMessagesSourceLabel = "Statische voorbeelddata";
+let outboundMessagesErrorMessage = "";
 
 function getSearchText(item, extraValues = []) {
   return [...Object.values(item), ...extraValues]
@@ -434,6 +438,100 @@ async function loadLiveMonitoringEvents() {
   }
 }
 
+function outboundStatusToUrgency(status) {
+  const normalizedStatus = String(status || "").toLowerCase();
+
+  if (["failed", "error", "bounced", "rejected"].includes(normalizedStatus)) {
+    return "hoog";
+  }
+
+  if (["sent", "delivered", "ok"].includes(normalizedStatus)) {
+    return "laag";
+  }
+
+  return "middel";
+}
+
+function mapOutboundMessageToAction(message) {
+  const urgency = outboundStatusToUrgency(message.status);
+  const entity = [
+    message.related_entity_type,
+    message.related_entity_id
+  ].filter(Boolean).join(": ");
+  const evidence = [
+    message.provider,
+    message.recipient_email,
+    entity,
+    message.external_link
+  ].filter(Boolean).join("; ");
+
+  return {
+    type: "workflow",
+    id: message.id,
+    title: message.subject || message.message_type || `Outbound bericht ${message.id}`,
+    system: message.provider || "Outbound",
+    status: urgencyStatus[urgency],
+    owner: message.recipient_email || "Automation team",
+    nextAction: `Status: ${message.status || "onbekend"}; type: ${message.message_type || "onbekend"}`,
+    urgency,
+    lastUpdated: formatMonitoringDate(message.message_time),
+    evidence: evidence || `monitoring.outbound_messages #${message.id}`
+  };
+}
+
+function renderOutboundMessagesSource() {
+  outboundMessagesSource.textContent = outboundMessagesSourceLabel;
+}
+
+function renderOutboundMessagesErrorMessage() {
+  if (!outboundMessagesErrorMessage) {
+    return "";
+  }
+
+  return `<li class="live-actions-status"><strong>${outboundMessagesErrorMessage}</strong><span>Statische voorbeelddata blijft zichtbaar.</span></li>`;
+}
+
+function renderLiveOutboundMessagesError(status) {
+  if (status === 401) {
+    outboundMessagesErrorMessage = "Live outbound berichten niet beschikbaar: niet geautoriseerd";
+  } else if (status === 503) {
+    outboundMessagesErrorMessage = "Live outbound berichten niet beschikbaar: databaseconfiguratie of verbinding";
+  } else {
+    outboundMessagesErrorMessage = "Live outbound berichten niet beschikbaar";
+  }
+
+  outboundMessagesSourceLabel = "Statische voorbeelddata";
+  liveOutboundActions = null;
+  renderActions();
+}
+
+async function loadLiveOutboundMessages() {
+  try {
+    const response = await fetch("/.netlify/functions/monitoring-outbound-messages", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+      renderLiveOutboundMessagesError(response.status);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.ok || !Array.isArray(data.messages)) {
+      renderLiveOutboundMessagesError();
+      return;
+    }
+
+    liveOutboundActions = data.messages.map(mapOutboundMessageToAction);
+    outboundMessagesSourceLabel = "Live data";
+    outboundMessagesErrorMessage = "";
+    renderActions();
+  } catch (error) {
+    renderLiveOutboundMessagesError();
+  }
+}
+
 function renderFilters() {
   const systems = [...new Set(workflows.map(workflow => workflow.system))].sort((a, b) => a.localeCompare(b, "nl"));
   systemFilter.insertAdjacentHTML("beforeend", systems.map(system => `<option value="${system}">${system}</option>`).join(""));
@@ -502,18 +600,22 @@ function renderWorkflows() {
 }
 
 function renderActions() {
-  const filtered = workflowActions
+  const actionSource = liveOutboundActions || workflowActions;
+  const filtered = actionSource
     .map(action => ({ ...action, type: "workflow" }))
     .filter(action => matchesWorkflowActionFilters(action) && matchesActionControls(action));
+  const errorMessage = renderOutboundMessagesErrorMessage();
+
+  renderOutboundMessagesSource();
 
   if (!filtered.length) {
-    document.getElementById("action-list").innerHTML = `<li><strong>Geen audittaken</strong><span>Geen audittaken voor deze filters. Actieve filters: ${getActiveFilterSummary("all")}.</span></li>`;
+    document.getElementById("action-list").innerHTML = `${errorMessage}<li><strong>Geen audittaken</strong><span>Geen audittaken voor deze filters. Actieve filters: ${getActiveFilterSummary("all")}.</span></li>`;
     return;
   }
 
-  document.getElementById("action-list").innerHTML = filtered.map(action => `
+  document.getElementById("action-list").innerHTML = `${errorMessage}${filtered.map(action => `
     <li><strong>${action.title}</strong><span>${action.nextAction}</span></li>
-  `).join("");
+  `).join("")}`;
 }
 
 function renderStudentSummary() {
@@ -889,6 +991,7 @@ renderActions();
 renderAll();
 loadLiveMonitoringSummary();
 loadLiveMonitoringEvents();
+loadLiveOutboundMessages();
 loadStudentData();
 
 [searchInput, statusFilter, systemFilter].forEach(control => {
