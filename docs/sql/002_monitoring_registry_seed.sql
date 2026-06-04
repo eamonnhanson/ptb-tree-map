@@ -1,0 +1,69 @@
+-- Concept seed for monitoring.automation_registry.
+-- Status: PLAN ONLY / DO NOT RUN.
+--
+-- This file intentionally contains no active INSERT statements.
+-- It is a sketch for a future, reviewed load into ptb_monitoring_test only.
+-- Do not run against production. Do not add secrets here.
+--
+-- Preferred source:
+--   docs/master_workflow_registry.csv
+--
+-- Enrichment source for first Zapier batch:
+--   docs/zapier_workflow_registry.csv
+--
+-- Target table:
+--   monitoring.automation_registry
+--
+-- Candidate first batch:
+--   zap_1, zap_15, zap_29, zap_47, zap_61, zap_95,
+--   zap_124, zap_129, zap_135, zap_141, zap_172, zap_175
+--
+-- Mapping sketch:
+--
+-- INSERT INTO monitoring.automation_registry (
+--   flow_name,
+--   category,
+--   status,
+--   trigger_description,
+--   systems_used,
+--   tables_touched,
+--   fields_touched,
+--   github_repo,
+--   github_files,
+--   technical_summary,
+--   notes
+-- )
+-- VALUES
+-- (
+--   '<master.flow_name>',
+--   '<master.business_category>',
+--   '<master.status>',
+--   '<master.trigger_system>: <master.trigger_event>',
+--   string_to_array('<master.systems_used>', '; '),
+--   string_to_array('<zapier.postgresql_tables>', '; '),
+--   jsonb_build_object(
+--     'workflow_id', '<master.workflow_id>',
+--     'postgresql_fields_updated', string_to_array('<zapier.postgresql_fields_updated>', '; '),
+--     'history', jsonb_build_object(
+--       'success', <zapier.history_success>,
+--       'filtered', <zapier.history_filtered>,
+--       'halted', <zapier.history_halted>,
+--       'error', <zapier.history_error>
+--     )
+--   ),
+--   'ptb-tree-map',
+--   ARRAY[
+--     'docs/master_workflow_registry.csv',
+--     'docs/zapier_workflow_registry.csv'
+--   ],
+--   '<master.expected_result>; evidence: <master.evidence_source>',
+--   '<master.open_questions>; notes: <master.notes>; risk: <master.failure_risk>'
+-- );
+--
+-- Future safety requirements before uncommenting any INSERT:
+--
+-- 1. Verify MONITORING_DATABASE_URL points to database ptb_monitoring_test.
+-- 2. Run SELECT-only preflight counts and duplicate checks.
+-- 3. Review generated values for encoding artifacts and overlong notes.
+-- 4. Use a transaction and rollback on unexpected counts.
+-- 5. Do not run against production.
