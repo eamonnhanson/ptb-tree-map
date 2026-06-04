@@ -186,6 +186,8 @@ const lessonFilter = document.getElementById("lesson-filter");
 const actionTypeFilter = document.getElementById("action-type-filter");
 const urgencyFilter = document.getElementById("urgency-filter");
 const resetFiltersButton = document.getElementById("reset-filters");
+const liveMonitoringSummary = document.getElementById("live-monitoring-summary");
+const liveMonitoringSource = document.getElementById("live-monitoring-source");
 
 let studentData = {
   registrations: [],
@@ -277,6 +279,63 @@ function renderSummary() {
       <span>${label}</span>
     </div>
   `).join("");
+}
+
+function renderLiveMonitoringLoading() {
+  liveMonitoringSource.textContent = "Live monitoring laden...";
+  liveMonitoringSummary.innerHTML = `<div class="live-monitoring-status">Live monitoring laden...</div>`;
+}
+
+function renderLiveMonitoringError(message) {
+  liveMonitoringSource.textContent = "Niet beschikbaar";
+  liveMonitoringSummary.innerHTML = `<div class="live-monitoring-status">${message}</div>`;
+}
+
+function renderLiveMonitoringSummary(data) {
+  const counts = data.counts || {};
+  const metrics = [
+    [counts.automation_registry ?? "-", "Automation registry"],
+    [counts.automation_events ?? "-", "Automation events"],
+    [counts.outbound_messages ?? "-", "Outbound messages"],
+    [data.generated_at || "-", "Laatst opgehaald"]
+  ];
+
+  liveMonitoringSource.textContent = data.database || data.source || "Monitoring";
+  liveMonitoringSummary.innerHTML = metrics.map(([value, label]) => `
+    <div class="metric">
+      <strong>${value}</strong>
+      <span>${label}</span>
+    </div>
+  `).join("");
+}
+
+async function loadLiveMonitoringSummary() {
+  renderLiveMonitoringLoading();
+
+  try {
+    const response = await fetch("/.netlify/functions/monitoring-summary", {
+      credentials: "same-origin"
+    });
+
+    if (response.status === 401) {
+      renderLiveMonitoringError("Live monitoring niet beschikbaar: niet geautoriseerd");
+      return;
+    }
+
+    if (response.status === 503) {
+      renderLiveMonitoringError("Live monitoring niet beschikbaar: databaseconfiguratie of verbinding");
+      return;
+    }
+
+    if (!response.ok) {
+      renderLiveMonitoringError("Live monitoring niet beschikbaar");
+      return;
+    }
+
+    renderLiveMonitoringSummary(await response.json());
+  } catch (error) {
+    renderLiveMonitoringError("Live monitoring niet beschikbaar");
+  }
 }
 
 function renderFilters() {
@@ -730,6 +789,7 @@ renderSummary();
 renderFilters();
 renderActions();
 renderAll();
+loadLiveMonitoringSummary();
 loadStudentData();
 
 [searchInput, statusFilter, systemFilter].forEach(control => {

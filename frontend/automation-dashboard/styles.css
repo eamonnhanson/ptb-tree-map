@@ -219,6 +219,26 @@ select {
   cursor: pointer;
 }
 
+.live-monitoring {
+  margin-top: 16px;
+}
+
+.live-monitoring-grid {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.live-monitoring-status {
+  grid-column: 1 / -1;
+  padding: 18px;
+  color: var(--muted);
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
 .reset-button:hover,
 .reset-button:focus {
   background: #dff0ea;
@@ -624,6 +644,7 @@ tr.student-meer_info_nodig td:first-child {
   }
 
   .summary-grid,
+  .live-monitoring-grid,
   .module-summary,
   .signal-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -654,6 +675,7 @@ tr.student-meer_info_nodig td:first-child {
   .controls,
   .action-controls,
   .summary-grid,
+  .live-monitoring-grid,
   .module-summary,
   .signal-board {
     grid-template-columns: 1fr;
