@@ -200,6 +200,9 @@ let openActionsErrorMessage = "";
 let liveOutboundActions = null;
 let outboundMessagesSourceLabel = "Statische voorbeelddata";
 let outboundMessagesErrorMessage = "";
+let liveWorkflows = null;
+let workflowRegistrySourceLabel = "Statische voorbeelddata";
+let workflowRegistryErrorMessage = "";
 
 function getSearchText(item, extraValues = []) {
   return [...Object.values(item), ...extraValues]
@@ -532,9 +535,102 @@ async function loadLiveOutboundMessages() {
   }
 }
 
+function normalizeRegistryStatus(status) {
+  const normalizedStatus = String(status || "").toLowerCase();
+
+  if (["active", "ok", "green"].includes(normalizedStatus)) {
+    return "green";
+  }
+
+  if (["paused", "test", "warning", "orange"].includes(normalizedStatus)) {
+    return "orange";
+  }
+
+  if (["failed", "error", "red", "inactive"].includes(normalizedStatus)) {
+    return "red";
+  }
+
+  return "orange";
+}
+
+function mapRegistryRecordToWorkflow(record) {
+  return {
+    id: record.id,
+    name: record.flow_name || `Registry record ${record.id}`,
+    system: record.system || "Monitoring registry",
+    category: record.category || "-",
+    status: normalizeRegistryStatus(record.status),
+    evidence: record.evidence || record.description || "monitoring.automation_registry"
+  };
+}
+
+function getWorkflowSource() {
+  return liveWorkflows || workflows;
+}
+
+function renderWorkflowRegistrySource(count) {
+  const parts = [`${count} zichtbaar`, workflowRegistrySourceLabel].filter(Boolean);
+
+  document.getElementById("workflow-count").textContent = parts.join(" · ");
+}
+
+function renderWorkflowRegistryErrorMessage() {
+  if (!workflowRegistryErrorMessage) {
+    return "";
+  }
+
+  return `<tr><td colspan="5"><div class="live-monitoring-status">${workflowRegistryErrorMessage}</div></td></tr>`;
+}
+
+function renderLiveWorkflowRegistryError(status) {
+  if (status === 401) {
+    workflowRegistryErrorMessage = "Live workflow registry niet beschikbaar: niet geautoriseerd";
+  } else if (status === 503) {
+    workflowRegistryErrorMessage = "Live workflow registry niet beschikbaar: databaseconfiguratie of verbinding";
+  } else {
+    workflowRegistryErrorMessage = "Live workflow registry niet beschikbaar";
+  }
+
+  workflowRegistrySourceLabel = "Statische voorbeelddata";
+  liveWorkflows = null;
+  renderFilters();
+  renderWorkflows();
+}
+
+async function loadLiveMonitoringRegistry() {
+  try {
+    const response = await fetch("/.netlify/functions/monitoring-registry", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+      renderLiveWorkflowRegistryError(response.status);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.ok || !Array.isArray(data.registry)) {
+      renderLiveWorkflowRegistryError();
+      return;
+    }
+
+    liveWorkflows = data.registry.map(mapRegistryRecordToWorkflow);
+    workflowRegistrySourceLabel = "Live data";
+    workflowRegistryErrorMessage = "";
+    renderFilters();
+    renderWorkflows();
+  } catch (error) {
+    renderLiveWorkflowRegistryError();
+  }
+}
+
 function renderFilters() {
-  const systems = [...new Set(workflows.map(workflow => workflow.system))].sort((a, b) => a.localeCompare(b, "nl"));
-  systemFilter.insertAdjacentHTML("beforeend", systems.map(system => `<option value="${system}">${system}</option>`).join(""));
+  const systems = [...new Set(getWorkflowSource().map(workflow => workflow.system))].sort((a, b) => a.localeCompare(b, "nl"));
+  const currentValue = systemFilter.value;
+
+  systemFilter.innerHTML = `<option value="all">Alle systemen</option>${systems.map(system => `<option value="${system}">${system}</option>`).join("")}`;
+  systemFilter.value = systems.includes(currentValue) ? currentValue : "all";
 }
 
 function matchesFilters(item) {
@@ -579,16 +675,18 @@ function renderSignals() {
 }
 
 function renderWorkflows() {
-  const filtered = workflows.filter(matchesFilters);
+  const filtered = getWorkflowSource().filter(matchesFilters);
   const tbody = document.getElementById("workflow-table");
-  document.getElementById("workflow-count").textContent = `${filtered.length} zichtbaar`;
+  const errorMessage = renderWorkflowRegistryErrorMessage();
+
+  renderWorkflowRegistrySource(filtered.length);
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="5">${emptyMessage("Geen workflowregels voor deze filters.", "all")}</td></tr>`;
+    tbody.innerHTML = `${errorMessage}<tr><td colspan="5">${emptyMessage("Geen workflowregels voor deze filters.", "all")}</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = filtered.map(workflow => `
+  tbody.innerHTML = `${errorMessage}${filtered.map(workflow => `
     <tr>
       <td><strong>${workflow.name}</strong><small>${workflow.id}</small></td>
       <td>${workflow.system}</td>
@@ -596,7 +694,7 @@ function renderWorkflows() {
       <td><span class="badge ${workflow.status}">${statusLabel[workflow.status]}</span></td>
       <td>${workflow.evidence}</td>
     </tr>
-  `).join("");
+  `).join("")}`;
 }
 
 function renderActions() {
@@ -992,6 +1090,7 @@ renderAll();
 loadLiveMonitoringSummary();
 loadLiveMonitoringEvents();
 loadLiveOutboundMessages();
+loadLiveMonitoringRegistry();
 loadStudentData();
 
 [searchInput, statusFilter, systemFilter].forEach(control => {
