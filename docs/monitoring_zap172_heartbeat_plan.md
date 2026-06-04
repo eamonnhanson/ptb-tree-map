@@ -2,7 +2,7 @@
 
 Datum: 2026-06-04
 
-Doel: de eerste echte automatische monitoring-event vanuit Zapier naar `monitoring.automation_events` laten schrijven, veilig en alleen in `ptb_monitoring_test`.
+Doel: vastleggen hoe de eerste echte automatische monitoring-event vanuit Zapier naar `monitoring.automation_events` is ingericht, veilig en alleen in `ptb_monitoring_test`.
 
 Pilot workflow:
 
@@ -25,26 +25,34 @@ De flow is geschikt als heartbeat omdat:
 
 Dit is bewust een groene heartbeat, geen failure-monitoring. Failure-events kunnen later als tweede patroon worden toegevoegd.
 
-## Waar de monitoringstap in de Zap komt
+## Waar de monitoringstap in de Zap staat
 
-Voeg de monitoringstap aan het einde van de Zap toe, nadat de primaire webhook/filter/mail-logica succesvol is doorlopen.
+De heartbeat is toegevoegd aan de bestaande Zap `Webhooks by Zapier` met interne registry-id `zap_172`.
 
-Aanbevolen plaats:
+De PostgreSQL-monitoringstap staat bewust voor Zoho Mail:
 
 1. Bestaande trigger: Webhooks by Zapier.
 2. Bestaande filter/logica.
-3. Bestaande Zoho Mail of vervolgactie.
-4. Nieuwe monitoringstap: PostgreSQL heartbeat insert.
+3. PostgreSQL heartbeat insert.
+4. Bestaande Zoho Mail of vervolgactie.
 
-Als de Zap meerdere paths heeft, plaats de heartbeat alleen in het success-pad dat echt betekent dat de workflow gezond is doorlopen. Voor error- of fallback-paden komt later een apart rood/oranje eventpatroon.
+Daarom betekent deze heartbeat concreet:
 
-## Toe te voegen Zapier-stap
+- webhook ontvangen;
+- filter gepasseerd;
+- monitoringstap uitgevoerd.
 
-Toe te voegen actie:
+De heartbeat betekent nog niet dat de e-mail succesvol is verzonden. Om `email_sent` te bewijzen is later een tweede monitoringevent na Zoho Mail nodig. Voor error- of fallback-paden komt later een apart rood/oranje eventpatroon.
+
+## Toegevoegde Zapier-stap
+
+Toegevoegde actie:
 
 - App: PostgreSQL by Zapier.
 - Action event: Find Row via Custom Query.
 - Query: gebruik `docs/sql/004_monitoring_zap172_heartbeat_template.sql`.
+- Connection: aparte PostgreSQL connection naar `ptb_monitoring_test`, niet de bestaande `defaultdb`-connection.
+- Successful if no search results are found: `true`.
 
 Waarom `Find Row via Custom Query`: Eamonn gebruikt deze Zapier-actie al vaak, ook voor writes met `RETURNING`. De template gebruikt daarom een `INSERT ... RETURNING` query die Zapier als resultaat kan tonen.
 
@@ -54,11 +62,11 @@ Minimaal te mappen waarden:
 
 | Placeholder | Waarde in Zapier | Opmerking |
 | --- | --- | --- |
-| `{{allow_write}}` | `false` tijdens setup/test, alleen `true` bij expliciet akkoord | Extra guard zodat Zapier test-runs standaard niets schrijven. |
+| `{{allow_write}}` | `true` | Write-guard staat aan voor deze pilot. |
 | `{{zapier_run_id}}` | Zapier run/task id als beschikbaar | Als niet beschikbaar, gebruik een timestamp of Zap meta value. |
 | `{{zapier_fallback_timestamp}}` | Zap meta timestamp, bijvoorbeeld human now of run time | Fallback voor dedupe/debug. |
-| `{{trigger_source}}` | webhook, filter, path of bronnaam | Bijvoorbeeld `webhook_success_path`. |
-| `{{inserted_by}}` | vaste tekst `zapier:z172` | Geen persoonlijke secret of credential. |
+| `{{trigger_source}}` | `webhook_passed_filter_before_email` | Geeft aan dat de stap voor Zoho Mail staat. |
+| `{{inserted_by}}` | vaste tekst `zapier` | Geen persoonlijke secret of credential. |
 
 De vaste workflowwaarden blijven in de SQL-template staan:
 
@@ -75,7 +83,7 @@ De vaste workflowwaarden blijven in de SQL-template staan:
 
 ## Waarden in monitoring.automation_events
 
-De eventregel schrijft naar deze kolommen:
+De stap schrijft naar `ptb_monitoring_test.monitoring.automation_events` met deze waarden:
 
 - `event_time`: `now()`
 - `category`: `workflow/heartbeat`
@@ -98,8 +106,9 @@ De eventregel schrijft naar deze kolommen:
 - `workflow_name`
 - `zapier_run_id`
 - `fallback_timestamp`
-- `trigger_source`
-- `inserted_by`
+- `trigger_source`: `webhook_passed_filter_before_email`
+- `inserted_by`: `zapier`
+- `allow_write`: `true`
 
 ## Hoe het dashboard dit toont
 
@@ -120,29 +129,21 @@ De SQL-template heeft drie guards:
    - schrijft alleen als `current_database() = 'ptb_monitoring_test'`.
 2. Zapier write-guard:
    - schrijft alleen als `{{allow_write}} = 'true'`.
-   - tijdens Zapier setup/test blijft deze waarde `false`.
+   - in de huidige pilot staat deze waarde op `true`.
 3. Dedupe-window:
    - schrijft geen tweede heartbeat met dezelfde `entity_id`, `summary` en `zapier_run_id` binnen 10 minuten.
    - als geen run id beschikbaar is, valt dedupe terug op de fallback timestamp.
 
-Daardoor kan de query veilig in Zapier getest worden zonder dat een write gebeurt.
+De databaseguard en aparte PostgreSQL connection naar `ptb_monitoring_test` voorkomen dat deze heartbeat via de bestaande `defaultdb`-connection schrijft. Voor toekomstige setup- of dry-runs kan `allow_write` tijdelijk op `false` worden gezet.
 
 ## Rollback en controle
 
-Voor setup:
-
-1. Zet `allow_write` op `false`.
-2. Test de Zapier Custom Query.
-3. Verwachte uitkomst: geen insert, geen returned row.
-
-Voor gecontroleerde test in `ptb_monitoring_test`:
+Voor controle:
 
 1. Controleer dat de PostgreSQL connection naar `ptb_monitoring_test` wijst.
-2. Zet `allow_write` tijdelijk op `true`.
-3. Run de Zap eenmalig bewust.
-4. Controleer via dashboard summary dat `automation_events` met 1 stijgt.
-5. Controleer met een SELECT-only query dat `entity_id = 'zap_172'` en `summary = 'Webhooks by Zapier heartbeat received'` aanwezig zijn.
-6. Zet `allow_write` terug naar de gewenste productiestand voor de pilot.
+2. Controleer dat `Successful if no search results are found` op `true` staat.
+3. Controleer via dashboard summary dat `automation_events` stijgt na een echte Zap-run.
+4. Controleer eventueel met een SELECT-only query dat `entity_id = 'zap_172'`, `category = 'workflow/heartbeat'`, `severity = 'green'`, `status = 'ok'` en `trigger_source = 'webhook_passed_filter_before_email'` aanwezig zijn.
 
 Rollback bij fout:
 
