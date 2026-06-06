@@ -16,6 +16,7 @@
       <a class="status-pill" href="#open-actions">Openstaande acties</a>
       <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
       <a class="status-pill" href="#student-uploads">Student uploads</a>
+      <a class="status-pill" href="#workflow-maintenance">Workflow maintenance</a>
     </nav>
   </header>
 
@@ -249,6 +250,170 @@
           <ol class="action-list registration-list" id="registration-list"></ol>
         </aside>
       </section>
+    </section>
+
+    <section class="workflow-maintenance-module" id="workflow-maintenance" aria-label="Workflow maintenance">
+      <div class="panel module-intro">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Read-only module</p>
+            <h2>Workflow maintenance</h2>
+          </div>
+          <span id="workflow-maintenance-source">Workflow maintenance laden...</span>
+        </div>
+        <div class="module-summary workflow-maintenance-summary" id="workflow-maintenance-summary">
+          <div class="live-monitoring-status">Workflow maintenance laden...</div>
+        </div>
+      </div>
+
+      <div class="maintenance-section-grid">
+        <section class="panel maintenance-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Workflows</p>
+              <h2>Workflow registry</h2>
+            </div>
+            <span id="maintenance-workflows-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="maintenance-table">
+              <thead>
+                <tr>
+                  <th>workflow_id</th>
+                  <th>workflow_name</th>
+                  <th>platform</th>
+                  <th>source_system</th>
+                  <th>target_system</th>
+                  <th>status</th>
+                  <th>risk_level</th>
+                  <th>next_review_at</th>
+                </tr>
+              </thead>
+              <tbody id="maintenance-workflows-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel maintenance-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Connections</p>
+              <h2>Service connections</h2>
+            </div>
+            <span id="maintenance-connections-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="maintenance-table">
+              <thead>
+                <tr>
+                  <th>system</th>
+                  <th>connection_name</th>
+                  <th>username</th>
+                  <th>rights_summary</th>
+                  <th>review_status</th>
+                </tr>
+              </thead>
+              <tbody id="maintenance-connections-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel maintenance-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Code assets</p>
+              <h2>Code assets</h2>
+            </div>
+            <span id="maintenance-code-assets-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="maintenance-table">
+              <thead>
+                <tr>
+                  <th>file_path</th>
+                  <th>asset_type</th>
+                  <th>related_workflows</th>
+                  <th>status</th>
+                  <th>review_status</th>
+                </tr>
+              </thead>
+              <tbody id="maintenance-code-assets-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel maintenance-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Runbooks</p>
+              <h2>Runbooks</h2>
+            </div>
+            <span id="maintenance-runbooks-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="maintenance-table">
+              <thead>
+                <tr>
+                  <th>workflow_id</th>
+                  <th>runbook_file</th>
+                  <th>runbook_title</th>
+                  <th>status</th>
+                </tr>
+              </thead>
+              <tbody id="maintenance-runbooks-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel maintenance-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Reviews</p>
+              <h2>Reviews</h2>
+            </div>
+            <span id="maintenance-reviews-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="maintenance-table">
+              <thead>
+                <tr>
+                  <th>workflow_id</th>
+                  <th>review_type</th>
+                  <th>review_status</th>
+                  <th>findings</th>
+                  <th>action_items</th>
+                </tr>
+              </thead>
+              <tbody id="maintenance-reviews-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel maintenance-section">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">Dependencies</p>
+              <h2>Dependencies</h2>
+            </div>
+            <span id="maintenance-dependencies-count"></span>
+          </div>
+          <div class="table-wrap">
+            <table class="maintenance-table">
+              <thead>
+                <tr>
+                  <th>workflow_id</th>
+                  <th>dependency_type</th>
+                  <th>source_system</th>
+                  <th>target_system</th>
+                  <th>action_summary</th>
+                  <th>uncertainty_level</th>
+                </tr>
+              </thead>
+              <tbody id="maintenance-dependencies-table"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
     </section>
   </main>
 
