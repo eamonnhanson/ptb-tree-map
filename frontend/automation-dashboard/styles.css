@@ -555,6 +555,10 @@ td small {
   margin-top: 16px;
 }
 
+.workflow-maintenance-module {
+  margin-top: 16px;
+}
+
 .module-intro {
   margin-bottom: 16px;
 }
@@ -564,6 +568,28 @@ td small {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.workflow-maintenance-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.maintenance-section-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.maintenance-section {
+  scroll-margin-top: 80px;
+}
+
+.maintenance-table {
+  min-width: 1040px;
+}
+
+.maintenance-table td {
+  max-width: 360px;
 }
 
 .student-controls {
@@ -655,6 +681,7 @@ tr.student-meer_info_nodig td:first-child {
   .summary-grid,
   .live-monitoring-grid,
   .module-summary,
+  .workflow-maintenance-summary,
   .signal-board {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -686,6 +713,7 @@ tr.student-meer_info_nodig td:first-child {
   .summary-grid,
   .live-monitoring-grid,
   .module-summary,
+  .workflow-maintenance-summary,
   .signal-board {
     grid-template-columns: 1fr;
   }

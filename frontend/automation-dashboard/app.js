@@ -189,6 +189,80 @@ const resetFiltersButton = document.getElementById("reset-filters");
 const liveMonitoringSummary = document.getElementById("live-monitoring-summary");
 const liveMonitoringSource = document.getElementById("live-monitoring-source");
 const outboundMessagesSource = document.getElementById("outbound-messages-source");
+const workflowMaintenanceSource = document.getElementById("workflow-maintenance-source");
+const workflowMaintenanceSummary = document.getElementById("workflow-maintenance-summary");
+
+const workflowMaintenanceTables = {
+  workflows: {
+    body: document.getElementById("maintenance-workflows-table"),
+    count: document.getElementById("maintenance-workflows-count"),
+    columns: [
+      "workflow_id",
+      "workflow_name",
+      "platform",
+      "source_system",
+      "target_system",
+      "status",
+      "risk_level",
+      "next_review_at"
+    ]
+  },
+  connections: {
+    body: document.getElementById("maintenance-connections-table"),
+    count: document.getElementById("maintenance-connections-count"),
+    columns: [
+      "system",
+      "connection_name",
+      "username",
+      "rights_summary",
+      "review_status"
+    ]
+  },
+  code_assets: {
+    body: document.getElementById("maintenance-code-assets-table"),
+    count: document.getElementById("maintenance-code-assets-count"),
+    columns: [
+      "file_path",
+      "asset_type",
+      "related_workflows",
+      "status",
+      "review_status"
+    ]
+  },
+  runbooks: {
+    body: document.getElementById("maintenance-runbooks-table"),
+    count: document.getElementById("maintenance-runbooks-count"),
+    columns: [
+      "workflow_id",
+      "runbook_file",
+      "runbook_title",
+      "status"
+    ]
+  },
+  reviews: {
+    body: document.getElementById("maintenance-reviews-table"),
+    count: document.getElementById("maintenance-reviews-count"),
+    columns: [
+      "workflow_id",
+      "review_type",
+      "review_status",
+      "findings",
+      "action_items"
+    ]
+  },
+  dependencies: {
+    body: document.getElementById("maintenance-dependencies-table"),
+    count: document.getElementById("maintenance-dependencies-count"),
+    columns: [
+      "workflow_id",
+      "dependency_type",
+      "source_system",
+      "target_system",
+      "action_summary",
+      "uncertainty_level"
+    ]
+  }
+};
 
 let studentData = {
   registrations: [],
@@ -622,6 +696,137 @@ async function loadLiveMonitoringRegistry() {
     renderWorkflows();
   } catch (error) {
     renderLiveWorkflowRegistryError();
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "-").replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;"
+  }[character]));
+}
+
+function formatMaintenanceValue(value) {
+  if (value === null || value === undefined || value === "") {
+  return "-";
+}
+  return escapeHtml(String(value).slice(0, 400));
+}
+
+function renderWorkflowMaintenanceTable(tableKey, rows = []) {
+  const table = workflowMaintenanceTables[tableKey];
+
+  table.count.textContent = `${rows.length} zichtbaar`;
+
+  if (!rows.length) {
+    table.body.innerHTML = `<tr><td colspan="${table.columns.length}"><div class="empty"><strong>Geen data</strong><span>Geen records gevonden voor deze sectie.</span></div></td></tr>`;
+    return;
+  }
+
+  table.body.innerHTML = rows.map(row => `
+    <tr>
+      ${table.columns.map(column => `<td>${formatMaintenanceValue(row[column])}</td>`).join("")}
+    </tr>
+  `).join("");
+}
+
+function renderWorkflowMaintenanceTableMessage(message) {
+  Object.values(workflowMaintenanceTables).forEach(table => {
+    table.count.textContent = "";
+    table.body.innerHTML = `<tr><td colspan="${table.columns.length}"><div class="live-monitoring-status">${message}</div></td></tr>`;
+  });
+}
+
+function renderWorkflowMaintenanceLoading() {
+  workflowMaintenanceSource.textContent = "Workflow maintenance laden...";
+  workflowMaintenanceSummary.innerHTML = `<div class="live-monitoring-status">Workflow maintenance laden...</div>`;
+  renderWorkflowMaintenanceTableMessage("Workflow maintenance laden...");
+}
+
+function getWorkflowMaintenanceErrorMessage(status) {
+  if (status === 401) {
+    return "Workflow maintenance niet beschikbaar: niet geautoriseerd";
+  }
+
+  if (status === 503) {
+    return "Workflow maintenance niet beschikbaar: databaseconfiguratie of verbinding";
+  }
+
+  return "Workflow maintenance niet beschikbaar";
+}
+
+function renderWorkflowMaintenanceError(status) {
+  const message = getWorkflowMaintenanceErrorMessage(status);
+
+  workflowMaintenanceSource.textContent = "Niet beschikbaar";
+  workflowMaintenanceSummary.innerHTML = `<div class="live-monitoring-status">${message}</div>`;
+  renderWorkflowMaintenanceTableMessage(message);
+}
+
+function isOpenMaintenanceReview(review) {
+  return ["open", "needs_followup", "blocked"].includes(
+    String(review.review_status || "").toLowerCase()
+  );
+}
+
+function renderWorkflowMaintenanceSummary(data) {
+  const counts = data.counts || {};
+  const openReviews = Array.isArray(data.reviews)
+    ? data.reviews.filter(isOpenMaintenanceReview).length
+    : 0;
+  const metrics = [
+    [counts.workflow_registry ?? 0, "Workflows"],
+    [counts.workflow_connections ?? 0, "Connections"],
+    [counts.workflow_code_assets ?? 0, "Code assets"],
+    [counts.workflow_runbooks ?? 0, "Runbooks"],
+    [openReviews, "Open reviews"]
+  ];
+
+  workflowMaintenanceSummary.innerHTML = metrics.map(([value, label]) => `
+    <div class="metric">
+      <strong>${escapeHtml(value)}</strong>
+      <span>${escapeHtml(label)}</span>
+    </div>
+  `).join("");
+}
+
+function renderWorkflowMaintenance(data) {
+  workflowMaintenanceSource.textContent = data.database || data.source || "Live data";
+  renderWorkflowMaintenanceSummary(data);
+  renderWorkflowMaintenanceTable("workflows", data.workflows || []);
+  renderWorkflowMaintenanceTable("connections", data.connections || []);
+  renderWorkflowMaintenanceTable("code_assets", data.code_assets || []);
+  renderWorkflowMaintenanceTable("runbooks", data.runbooks || []);
+  renderWorkflowMaintenanceTable("reviews", data.reviews || []);
+  renderWorkflowMaintenanceTable("dependencies", data.dependencies || []);
+}
+
+async function loadWorkflowMaintenance() {
+  renderWorkflowMaintenanceLoading();
+
+  try {
+    const response = await fetch("/.netlify/functions/workflow-maintenance", {
+      credentials: "same-origin"
+    });
+
+    if (!response.ok) {
+      renderWorkflowMaintenanceError(response.status);
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.ok) {
+      renderWorkflowMaintenanceError();
+      return;
+    }
+
+    renderWorkflowMaintenance(data);
+  } catch (error) {
+    renderWorkflowMaintenanceError();
   }
 }
 
@@ -1091,6 +1296,7 @@ loadLiveMonitoringSummary();
 loadLiveMonitoringEvents();
 loadLiveOutboundMessages();
 loadLiveMonitoringRegistry();
+loadWorkflowMaintenance();
 loadStudentData();
 
 [searchInput, statusFilter, systemFilter].forEach(control => {
