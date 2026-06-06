@@ -13,14 +13,53 @@
       <span>Automatiseringen</span>
     </a>
     <nav class="top-actions" aria-label="Dashboard navigatie">
-      <a class="status-pill" href="#open-actions">Openstaande acties</a>
-      <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
-      <a class="status-pill" href="#student-uploads">Student uploads</a>
-      <a class="status-pill" href="#workflow-maintenance">Workflow maintenance</a>
+      <a class="status-pill" href="/automation-dashboard/tree-sales/">Tree sales</a>
+      <a class="status-pill" href="/automation-dashboard/ketso/">KETSO</a>
+      <a class="status-pill" href="/automation-dashboard/follow-up/">Follow-up</a>
+      <a class="status-pill" href="/automation-dashboard/workflow-maintenance/">Workflow maintenance</a>
     </nav>
   </header>
 
   <main>
+    <section class="main-menu" aria-label="Automation dashboard hoofdmenu">
+      <div class="main-menu-heading">
+        <p class="eyebrow">Hoofdmenu</p>
+        <h1>Automation dashboard</h1>
+        <p class="intro-copy">Kies een operationeel werkgebied. De bestaande modules blijven hieronder tijdelijk beschikbaar tot ze in latere fases naar hun eigen pagina verhuizen.</p>
+      </div>
+      <div class="menu-card-grid">
+        <a class="menu-card" href="/automation-dashboard/tree-sales/">
+          <strong>Plant N Boom tree sales</strong>
+          <span>Tree allocated, purchases requiring follow-up, outbound emails and certificates.</span>
+        </a>
+        <a class="menu-card" href="/automation-dashboard/ketso/">
+          <strong>KETSO</strong>
+          <span>Approval queue and photo viewer for student, staff and superuser views.</span>
+        </a>
+        <a class="menu-card" href="/automation-dashboard/follow-up/">
+          <strong>Follow-up</strong>
+          <span>Errors, retries, missing actions and operational follow-up.</span>
+        </a>
+        <a class="menu-card" href="/automation-dashboard/workflow-maintenance/">
+          <strong>Workflow maintenance and development</strong>
+          <span>Diagnostics, old flows, unused tables, unused fields and deprecated endpoints.</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="legacy-section-links" aria-label="Bestaande dashboardsecties">
+      <div>
+        <strong>Bestaande dashboardsecties</strong>
+        <span>Tijdelijke directe links naar modules die nog op deze hoofdmenu-pagina staan.</span>
+      </div>
+      <nav class="legacy-link-list" aria-label="Bestaande dashboardsecties navigatie">
+        <a class="status-pill" href="#open-actions">Openstaande acties</a>
+        <a class="status-pill" id="summary-status" href="#audit-overview">Auditoverzicht</a>
+        <a class="status-pill" href="#student-uploads">Student uploads</a>
+        <a class="status-pill" href="#workflow-maintenance">Workflow maintenance</a>
+      </nav>
+    </section>
+
     <section class="overview" aria-label="Dashboard samenvatting">
       <div>
         <p class="eyebrow">Operationeel dashboard</p>
