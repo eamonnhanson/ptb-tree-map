@@ -11,12 +11,15 @@ export default async function getPhotoReviewGallery(req, res) {
     const date_to = normalize(req.query.date_to);
     const search = normalize(req.query.search);
     const anonymousOnboarding = req.query.anonymous_onboarding === "1";
+    const uploadContext = normalize(req.query.upload_context);
 
     console.log("photo-review-gallery endpoint called");
     console.log("photo-review-gallery selected category:", category || "all");
 
-    const conditions = anonymousOnboarding
-      ? [
+    let conditions;
+
+    if (anonymousOnboarding) {
+      conditions = [
         "(verification_status = 'approved' OR review_status = 'approved')",
         "public_gallery_status = 'public'",
         "academy_student_id IS NULL",
@@ -26,13 +29,23 @@ export default async function getPhotoReviewGallery(req, res) {
           OR upload_context = 'academy_onboarding'
           OR lesson_key = 'onboarding'
         )`
-      ]
-      : [
+      ];
+    } else if (uploadContext === "staff_upload") {
+      conditions = [
+        "public_gallery_status = 'public'",
+        "academy_student_id IS NULL",
+        "upload_context = 'staff_upload'",
+        "(verification_status IN ('approved', 'not_required') OR review_status IN ('approved', 'not_required'))"
+      ];
+    } else {
+      conditions = [
         "verification_status = 'approved'",
         "public_gallery_status = 'public'",
         "academy_student_id IS NULL",
         "(upload_context IN ('photo_review', 'legacy_photo_import', 'staff_upload') OR upload_context IS NULL)"
       ];
+    }
+
     const values = [];
 
     if (category && category !== "all") {
@@ -100,7 +113,7 @@ export default async function getPhotoReviewGallery(req, res) {
         student_confirmed_at
       FROM photo_uploads_review
       ${whereClause}
-      ORDER BY created_at_utc DESC
+      ORDER BY created_at_utc DESC NULLS LAST, id DESC
       LIMIT 300;
     `;
 
