@@ -23,37 +23,271 @@
   <main>
     <section class="subpage-hero" aria-label="Workflow maintenance and development">
       <a class="dashboard-button" href="/automation-dashboard/">Dashboard</a>
-      <p class="eyebrow">Operationeel werkgebied</p>
+      <p class="eyebrow">Onderhoud en ontwikkeling</p>
       <h1>Workflow maintenance and development</h1>
-      <p class="intro-copy">Deze pagina wordt het werkgebied voor diagnose, workflowonderhoud, oude flows en technische opruimvragen.</p>
-      <p class="subpage-note">Workflow maintenance blijft in deze fase nog op de hoofdmenu-pagina staan. De live module wordt pas in fase 3 naar deze pagina verplaatst.</p>
+      <p class="intro-copy">Deze pagina legt vast welke dashboardonderdelen, routes, workflows, URLs, tabellen en ontwikkelbeslissingen bij elkaar horen. Gebruik deze pagina om later terug te vinden waar een toepassing voor dient, welke onderdelen actief zijn en waar onderhoud nodig is.</p>
     </section>
 
-    <section class="subpage-card-grid" aria-label="Workflow maintenance onderdelen">
-      <article class="subpage-card">
-        <strong>Diagnostics</strong>
-        <span>Diagnostische signalen over endpoints, databaseverbindingen en dashboardstatus.</span>
-      </article>
-      <article class="subpage-card">
-        <strong>Workflow maintenance</strong>
-        <span>Registry, dependencies, connections, code assets, runbooks en reviews.</span>
-      </article>
-      <article class="subpage-card">
-        <strong>Old flows</strong>
-        <span>Verouderde of onduidelijke automatiseringen die review nodig hebben.</span>
-      </article>
-      <article class="subpage-card">
-        <strong>Unused tables</strong>
-        <span>Tabellen die mogelijk niet meer door operationele flows worden gebruikt.</span>
-      </article>
-      <article class="subpage-card">
-        <strong>Unused fields</strong>
-        <span>Velden die worden gevuld, verwacht of gelezen zonder duidelijke eigenaar.</span>
-      </article>
-      <article class="subpage-card">
-        <strong>Deprecated endpoints</strong>
-        <span>Endpoints die vervangen, tijdelijk of alleen nog historisch relevant zijn.</span>
-      </article>
+    <section class="panel reference-section" aria-labelledby="workflow-coverage-heading">
+      <div class="panel-heading">
+        <h2 id="workflow-coverage-heading">Workflowdekking en opvolging</h2>
+      </div>
+      <div class="reference-block">
+        <p>Dit onderdeel volgt welke workflows, dashboardonderdelen en open onderhoudsacties nog niet volledig zijn vastgelegd. Operationele follow-up hoort op de Follow-up pagina; technische en ontwikkelgerichte opvolging hoort hier.</p>
+        <div class="reference-list-grid" aria-label="Workflowdekking subcategorieen">
+          <span>Openstaande acties, maintenance/development</span>
+          <span>Auditoverzicht</span>
+          <span>Workflow/audit</span>
+          <span>Te monitoren stromen</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel reference-section" aria-labelledby="development-matrix-heading">
+      <div class="panel-heading">
+        <h2 id="development-matrix-heading">Ontwikkelmatrix dashboard</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="reference-table">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Huidige MVP-stap</th>
+              <th>Operationeel doel</th>
+              <th>Status</th>
+              <th>Volgende stap</th>
+              <th>Nice-to-have later</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>KETSO</strong></td>
+              <td>MVP-1 KETSO hub live</td>
+              <td>gallery viewers centraal beschikbaar maken</td>
+              <td>in gebruik / verfijning zichtbaar</td>
+              <td>nieuwe uploads awaiting approval en puntencontrole</td>
+              <td>echte gallery thumbnails of live preview</td>
+            </tr>
+            <tr>
+              <td><strong>Plant N Boom tree sales</strong></td>
+              <td>nog te operationaliseren</td>
+              <td>boomtoewijzing, aankopen, certificaten en klantmails volgen</td>
+              <td>placeholder</td>
+              <td>tree sales pagina vullen met echte signalen</td>
+              <td>rapportage/export</td>
+            </tr>
+            <tr>
+              <td><strong>Follow-up</strong></td>
+              <td>nog te operationaliseren</td>
+              <td>fouten, retries en missing actions dagelijks tonen</td>
+              <td>placeholder</td>
+              <td>duidelijke categorieen voor operationele follow-up</td>
+              <td>prioriteit, eigenaar en SLA</td>
+            </tr>
+            <tr>
+              <td><strong>Workflow maintenance and development</strong></td>
+              <td>registry first en documentatie</td>
+              <td>terugvinden welke workflows, URLs, files en endpoints bij toepassingen horen</td>
+              <td>in opbouw</td>
+              <td>KETSO route registry en dependencies verder vullen</td>
+              <td>klikbare detailpagina per workflow</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel reference-section" aria-labelledby="ketso-route-registry-heading">
+      <div class="panel-heading">
+        <h2 id="ketso-route-registry-heading">KETSO route registry</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="reference-table route-registry-table">
+          <thead>
+            <tr>
+              <th>Route / toepassing</th>
+              <th>URL</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Operationele plek</th>
+              <th>Onderhoudsnotitie</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Admin Gallery</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/admin-gallery/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/admin-gallery/</a></td>
+              <td>gallery viewer / admin</td>
+              <td><span class="badge orange">onzeker</span></td>
+              <td>KETSO hoofdpagina, hoofdtegel</td>
+              <td>gekoppeld aan Admin review; status moet later worden beoordeeld.</td>
+            </tr>
+            <tr>
+              <td><strong>Admin Review</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/admin-review/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/admin-review/</a></td>
+              <td>reviewroute</td>
+              <td><span class="badge orange">onzeker</span></td>
+              <td>ondersteunende link onder Admin Gallery</td>
+              <td>approve/reject route; later koppelen aan approval workflow.</td>
+            </tr>
+            <tr>
+              <td><strong>Student Gallery</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/student-gallery/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/student-gallery/</a></td>
+              <td>gallery viewer</td>
+              <td><span class="badge green">actief</span></td>
+              <td>KETSO hoofdpagina, hoofdtegel</td>
+              <td>leidend voor KETSO uploads en punten.</td>
+            </tr>
+            <tr>
+              <td><strong>Academy Onboarding</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/academy-onboarding/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/academy-onboarding/</a></td>
+              <td>uploader/onboarding</td>
+              <td><span class="badge green">actief</span></td>
+              <td>ondersteunende link onder Student Gallery</td>
+              <td>student onboarding en uploadportaal.</td>
+            </tr>
+            <tr>
+              <td><strong>Content Uploader</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev" target="_blank" rel="noopener">https://ketso-uploader.pages.dev</a></td>
+              <td>uploader</td>
+              <td><span class="badge green">actief</span></td>
+              <td>ondersteunende link onder Student, Staff en Algemene Gallery</td>
+              <td>algemene content uploader.</td>
+            </tr>
+            <tr>
+              <td><strong>Staff Gallery</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/staff-gallery/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/staff-gallery/</a></td>
+              <td>gallery viewer</td>
+              <td><span class="badge green">actief</span></td>
+              <td>KETSO hoofdpagina, hoofdtegel</td>
+              <td>gallery voor staff uploads.</td>
+            </tr>
+            <tr>
+              <td><strong>Staff Upload Dashboard</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/staff-upload-dashboard/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/staff-upload-dashboard/</a></td>
+              <td>uploader/dashboard</td>
+              <td><span class="badge green">actief</span></td>
+              <td>ondersteunende link onder Staff Gallery</td>
+              <td>staff uploadomgeving.</td>
+            </tr>
+            <tr>
+              <td><strong>Algemene Gallery</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/gallery" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/gallery</a></td>
+              <td>gallery viewer</td>
+              <td><span class="badge green">actief</span></td>
+              <td>KETSO hoofdpagina, hoofdtegel</td>
+              <td>algemene publieke gallery.</td>
+            </tr>
+            <tr>
+              <td><strong>Upload Endpoint</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/upload" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/upload</a></td>
+              <td>upload endpoint</td>
+              <td><span class="badge orange">in ontwikkeling</span></td>
+              <td>niet op KETSO hoofdpagina</td>
+              <td>ontwikkelroute, niet als stabiele workflow behandelen.</td>
+            </tr>
+            <tr>
+              <td><strong>Student Profile</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/student-profile/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/student-profile/</a></td>
+              <td>profielroute</td>
+              <td><span class="badge red">oud</span></td>
+              <td>niet op KETSO hoofdpagina</td>
+              <td>oude profielroute, niet primair gebruiken.</td>
+            </tr>
+            <tr>
+              <td><strong>Academy My Upload</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/academy-my-upload/?review_id=..." target="_blank" rel="noopener">https://ketso-uploader.pages.dev/academy-my-upload/?review_id=...</a></td>
+              <td>student upload view</td>
+              <td><span class="badge red">oud</span></td>
+              <td>niet op KETSO hoofdpagina</td>
+              <td>oude route voor bekijken van eigen upload.</td>
+            </tr>
+            <tr>
+              <td><strong>Anonymous Upload Claims</strong></td>
+              <td><a href="https://ketso-uploader.pages.dev/anonymous-upload-claims/" target="_blank" rel="noopener">https://ketso-uploader.pages.dev/anonymous-upload-claims/</a></td>
+              <td>tijdelijke claimroute</td>
+              <td><span class="badge neutral">tijdelijk gebruik</span></td>
+              <td>niet op KETSO hoofdpagina</td>
+              <td>tijdelijk proces voor anonieme uploads.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel reference-section" aria-labelledby="old-dashboard-placement-heading">
+      <div class="panel-heading">
+        <h2 id="old-dashboard-placement-heading">Plaatsing oude dashboardonderdelen</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="reference-table">
+          <thead>
+            <tr>
+              <th>Onderdeel</th>
+              <th>Nieuwe plek</th>
+              <th>Status</th>
+              <th>Notitie</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Workflowdekking en opvolging</strong></td><td>Workflow maintenance and development</td><td>behouden</td><td>bovenaan maintenancepagina.</td></tr>
+            <tr><td><strong>Openstaande acties</strong></td><td>Workflow maintenance and development voor maintenance-acties; Follow-up voor operationele acties</td><td>later uitsplitsen</td><td>relatie met Follow-up later uitwerken.</td></tr>
+            <tr><td><strong>Auditoverzicht</strong></td><td>Workflow maintenance and development</td><td>behouden</td><td>audit en workflowcontrole.</td></tr>
+            <tr><td><strong>Student uploads oude sectie</strong></td><td>niet op hoofdpagina; toekomstige KETSO superadmin view</td><td>parkeren</td><td>KETSO heeft gallery/onboarding routes.</td></tr>
+            <tr><td><strong>Onboarding oude sectie</strong></td><td>niet op hoofdpagina; toekomstige KETSO superadmin view</td><td>parkeren</td><td>koppeling met Zoho onboarding en PostgreSQL later onderzoeken.</td></tr>
+            <tr><td><strong>Tree allocation</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>hoort bij boomtoewijzing.</td></tr>
+            <tr><td><strong>Shopify aankopen</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>aankopen requiring follow-up.</td></tr>
+            <tr><td><strong>Abonnementen</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>Chargebee/abonnementen.</td></tr>
+            <tr><td><strong>Manual follow-up</strong></td><td>Follow-up</td><td>later</td><td>operationele opvolging.</td></tr>
+            <tr><td><strong>Outbound e-mail</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>klantcommunicatie en bewijs.</td></tr>
+            <tr><td><strong>Certificaten</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>certificaatstatus.</td></tr>
+            <tr><td><strong>Academy onboarding</strong></td><td>KETSO</td><td>al gelinkt via KETSO hub</td><td>niet dubbel tonen.</td></tr>
+            <tr><td><strong>Rapportage</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>rapportage/overzicht.</td></tr>
+            <tr><td><strong>Te monitoren stromen</strong></td><td>Workflow maintenance and development</td><td>behouden</td><td>workflow registry / audit.</td></tr>
+            <tr><td><strong>Workflow registry, Service connections, Code assets, Runbooks, Reviews, Dependencies</strong></td><td>Workflow maintenance and development</td><td>placeholder behouden</td><td>later vullen met echte uitleg en koppelingen.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel reference-section" aria-labelledby="ketso-superadmin-heading">
+      <div class="panel-heading">
+        <h2 id="ketso-superadmin-heading">KETSO toekomstige superadmin monitoring</h2>
+        <span>Later uitwerken</span>
+      </div>
+      <div class="reference-block">
+        <p>Deze onderdelen worden niet op de huidige KETSO hoofdpagina gebouwd. Ze krijgen later een eigen KETSO superadmin monitoringview.</p>
+        <ul class="reference-checklist">
+          <li>Nieuwe uploads awaiting approval</li>
+          <li>Nieuwe registraties / onboarding inbox</li>
+          <li>Student uploads per les</li>
+          <li>Koppeling Zoho onboardingregistratie met PostgreSQL academy_students</li>
+          <li>Check tussen uploadtelling, punten en profielweergave</li>
+          <li>Stoplichten voor mismatch</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel reference-section" aria-labelledby="registry-first-heading">
+      <div class="panel-heading">
+        <h2 id="registry-first-heading">Registry first reminder</h2>
+      </div>
+      <div class="reference-block">
+        <p class="reference-callout">Geen nieuwe Zap, flow, endpoint, databasekoppeling of dashboardrelatie zonder registry entry.</p>
+        <div class="reference-list-grid reference-fields-grid" aria-label="Minimale registry velden">
+          <span>workflow_id</span>
+          <span>doel</span>
+          <span>trigger</span>
+          <span>betrokken systemen</span>
+          <span>input/output</span>
+          <span>dashboardlocatie</span>
+          <span>eigenaar</span>
+          <span>status</span>
+          <span>risico</span>
+          <span>dependencies</span>
+          <span>bewijs/runbook</span>
+        </div>
+      </div>
     </section>
   </main>
 </body>

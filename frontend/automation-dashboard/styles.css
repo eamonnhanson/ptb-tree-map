@@ -834,6 +834,71 @@ td small {
   max-width: 360px;
 }
 
+.reference-section {
+  margin-top: 16px;
+}
+
+.reference-block {
+  padding: 16px;
+}
+
+.reference-block p {
+  margin-bottom: 0;
+  color: var(--muted);
+}
+
+.reference-list-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reference-list-grid span,
+.reference-checklist li {
+  padding: 10px 12px;
+  background: #fbfcfd;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--green);
+  border-radius: 8px;
+}
+
+.reference-table {
+  min-width: 1180px;
+}
+
+.reference-table a {
+  color: var(--green);
+  font-weight: 700;
+}
+
+.route-registry-table {
+  min-width: 1320px;
+}
+
+.reference-checklist {
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reference-callout {
+  padding: 14px;
+  color: var(--ink) !important;
+  background: #fff3df;
+  border: 1px solid #f2cf9b;
+  border-left: 5px solid var(--amber);
+  border-radius: 8px;
+  font-weight: 800;
+}
+
+.reference-fields-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .student-controls {
   margin-top: 0;
   grid-template-columns: minmax(220px, 1fr) 1.5fr 220px 260px;
@@ -932,6 +997,9 @@ tr.student-meer_info_nodig td:first-child {
   .workflow-maintenance-summary,
   .signal-board,
   .ketso-gallery-grid,
+  .reference-list-grid,
+  .reference-checklist,
+  .reference-fields-grid,
   .menu-card-grid,
   .subpage-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -967,6 +1035,9 @@ tr.student-meer_info_nodig td:first-child {
   .workflow-maintenance-summary,
   .signal-board,
   .ketso-gallery-grid,
+  .reference-list-grid,
+  .reference-checklist,
+  .reference-fields-grid,
   .menu-card-grid,
   .subpage-card-grid {
     grid-template-columns: 1fr;
