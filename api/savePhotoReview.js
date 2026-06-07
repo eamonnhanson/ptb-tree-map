@@ -239,6 +239,7 @@ if (!ai_description) {
         upload_type,
         consent_given,
         verification_status,
+        public_gallery_status,
         upload_context,
         academy_student_id,
         academy_cohort,
@@ -254,14 +255,14 @@ if (!ai_description) {
         rejected_reason
       )
       VALUES (
-        $1,$2,$3,$4,$5,
-        $6,$7,$8,$9,$10,
-        $11,$12,$13,$14,$15,
-        $16,$17,$18,$19,$20,
-        $21,$22,$23,$24,$25,
-        $26,$27,$28,$29,$30,
-        $31,$32,$33
-      )
+  $1,$2,$3,$4,$5,
+  $6,$7,$8,$9,$10,
+  $11,$12,$13,$14,$15,
+  $16,$17,$18,$19,$20,
+  $21,$22,$23,$24,$25,
+  $26,$27,$28,$29,$30,
+  $31,$32,$33,$34
+)
       RETURNING id;
     `;
 
@@ -286,6 +287,7 @@ if (!ai_description) {
       upload_type,
       consent_given,
       verification_status,
+      public_gallery_status,
       upload_context,
       academy_student_id,
       academy_cohort,
