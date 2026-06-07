@@ -206,6 +206,130 @@ main {
   margin-top: 16px;
 }
 
+.ketso-gallery-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.ketso-gallery-tile {
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  display: grid;
+}
+
+.ketso-gallery-preview {
+  min-height: 190px;
+  padding: 18px;
+  color: var(--ink);
+  background: linear-gradient(180deg, #f8fafb 0%, #eef3f8 100%);
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  display: grid;
+  align-content: end;
+  gap: 10px;
+}
+
+.ketso-gallery-preview::before {
+  content: "";
+  align-self: start;
+  width: 100%;
+  height: 72px;
+  background:
+    linear-gradient(90deg, #dce4ec 18%, transparent 18% 25%, #dce4ec 25% 48%, transparent 48% 55%, #dce4ec 55% 80%, transparent 80%),
+    linear-gradient(#ffffff, #ffffff);
+  border: 1px solid #cdd7e1;
+  border-radius: 6px;
+}
+
+.ketso-gallery-preview span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ketso-gallery-preview strong {
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.ketso-gallery-preview:hover,
+.ketso-gallery-preview:focus {
+  background: #e9f5f1;
+}
+
+.ketso-gallery-content {
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.ketso-gallery-content h2,
+.ketso-gallery-content p {
+  margin-bottom: 0;
+}
+
+.ketso-gallery-content p {
+  color: var(--muted);
+}
+
+.ketso-primary-link,
+.ketso-supporting-links a {
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ketso-primary-link {
+  justify-self: start;
+  color: #fff;
+  background: var(--green);
+}
+
+.ketso-supporting-links {
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ketso-supporting-links span {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ketso-supporting-links a {
+  color: var(--green);
+  background: #e9f5f1;
+  border: 1px solid #b9ded3;
+}
+
+.ketso-primary-link:hover,
+.ketso-primary-link:focus {
+  background: var(--leaf);
+}
+
+.ketso-supporting-links a:hover,
+.ketso-supporting-links a:focus {
+  background: #dff0ea;
+}
+
 .overview {
   padding: 22px;
   display: grid;
@@ -807,6 +931,7 @@ tr.student-meer_info_nodig td:first-child {
   .module-summary,
   .workflow-maintenance-summary,
   .signal-board,
+  .ketso-gallery-grid,
   .menu-card-grid,
   .subpage-card-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -841,6 +966,7 @@ tr.student-meer_info_nodig td:first-child {
   .module-summary,
   .workflow-maintenance-summary,
   .signal-board,
+  .ketso-gallery-grid,
   .menu-card-grid,
   .subpage-card-grid {
     grid-template-columns: 1fr;
