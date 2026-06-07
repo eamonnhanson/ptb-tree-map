@@ -43,8 +43,8 @@ export default async function savePhotoReview(req, res) {
 
     const consent_given = normalizeBoolean(body.consent_given);
 
-    const verification_status =
-      normalize(body.verification_status) || "pending";
+   let verification_status =
+  normalize(body.verification_status) || "pending";
 
     let ai_status =
       normalize(body.ai_status) || "not_checked";
@@ -54,8 +54,19 @@ export default async function savePhotoReview(req, res) {
       (category === "academy_upload" ? "academy_upload" :
         category === "academy_onboarding" ? "academy_onboarding" :
           "photo_review");
+    const isStaffUpload =
+  category === "staff_upload" ||
+  upload_context === "staff_upload" ||
+  linked_entity_type === "staff";
 
-    const review_status = "pending";
+if (isStaffUpload) {
+  verification_status = "not_required";
+}
+
+const public_gallery_status = isStaffUpload
+  ? "public"
+  : normalize(body.public_gallery_status) || "private";
+    const review_status = isStaffUpload ? "not_required" : "pending";
 
     const file_type = inferFileType(upload_type, cropped_file_url);
     const file_extension = inferFileExtension(cropped_file_url);
