@@ -43,7 +43,7 @@ export default async function savePhotoReview(req, res) {
 
     const consent_given = normalizeBoolean(body.consent_given);
 
-    const verification_status =
+     const raw_verification_status =
       normalize(body.verification_status) || "pending";
 
     let ai_status =
@@ -55,7 +55,22 @@ export default async function savePhotoReview(req, res) {
         category === "academy_onboarding" ? "academy_onboarding" :
           "photo_review");
 
-    const review_status = "pending";
+    const isStaffUpload =
+      category === "staff_upload" ||
+      upload_context === "staff_upload" ||
+      linked_entity_type === "staff";
+
+    const verification_status = isStaffUpload
+      ? "not_required"
+      : raw_verification_status;
+
+    const review_status = isStaffUpload
+      ? "not_required"
+      : "pending";
+
+    const public_gallery_status = isStaffUpload
+      ? "public"
+      : normalize(body.public_gallery_status) || "private";
 
     const file_type = inferFileType(upload_type, cropped_file_url);
     const file_extension = inferFileExtension(cropped_file_url);
@@ -228,6 +243,7 @@ if (!ai_description) {
         upload_type,
         consent_given,
         verification_status,
+        public_gallery_status,
         upload_context,
         academy_student_id,
         academy_cohort,
@@ -249,7 +265,7 @@ if (!ai_description) {
         $16,$17,$18,$19,$20,
         $21,$22,$23,$24,$25,
         $26,$27,$28,$29,$30,
-        $31,$32,$33
+        $31,$32,$33,$34
       )
       RETURNING id;
     `;
@@ -275,6 +291,7 @@ if (!ai_description) {
       upload_type,
       consent_given,
       verification_status,
+      public_gallery_status,
       upload_context,
       academy_student_id,
       academy_cohort,
