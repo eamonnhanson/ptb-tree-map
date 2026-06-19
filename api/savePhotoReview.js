@@ -1,6 +1,14 @@
 import { pool } from "./db.js";
 import { generateImageDescription } from "./generateImageDescription.js";
 
+const VALID_VERIFICATION_STATUSES = new Set([
+  "pending",
+  "submitted_for_review",
+  "approved",
+  "rejected",
+  "not_required"
+]);
+
 export default async function savePhotoReview(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
@@ -43,33 +51,35 @@ export default async function savePhotoReview(req, res) {
 
     const consent_given = normalizeBoolean(body.consent_given);
 
-   let verification_status =
-  normalize(body.verification_status) || "pending";
-
-    let ai_status =
-      normalize(body.ai_status) || "not_checked";
-
     const upload_context =
       normalize(body.upload_context) ||
-      (category === "academy_upload" ? "academy_upload" :
-        category === "academy_onboarding" ? "academy_onboarding" :
-          "photo_review");
+      (category === "academy_upload"
+        ? "academy_upload"
+        : category === "academy_onboarding"
+          ? "academy_onboarding"
+          : "photo_review");
+
     const isStaffUpload =
-  category === "staff_upload" ||
-  upload_context === "staff_upload" ||
-  linked_entity_type === "staff";
+      category === "staff_upload" ||
+      upload_context === "staff_upload" ||
+      linked_entity_type === "staff";
 
-if (isStaffUpload) {
-  verification_status = "not_required";
-}
+    const verification_status = isStaffUpload
+      ? "not_required"
+      : normalizeStatus(body.verification_status, VALID_VERIFICATION_STATUSES, "pending");
 
-const public_gallery_status = isStaffUpload
-  ? "public"
-  : normalize(body.public_gallery_status) || "private";
-    const review_status = isStaffUpload ? "not_required" : "pending";
+    const review_status = isStaffUpload
+      ? "not_required"
+      : "pending";
 
-    const file_type = inferFileType(upload_type, cropped_file_url);
-    const file_extension = inferFileExtension(cropped_file_url);
+    const public_gallery_status = isStaffUpload
+      ? "public"
+      : "private";
+
+    let ai_status = normalize(body.ai_status) || "not_checked";
+
+    const file_type = inferFileType(upload_type, cropped_file_url || original_file_url);
+    const file_extension = inferFileExtension(cropped_file_url || original_file_url);
 
     const points_awarded = 0;
     const is_visible_in_gallery = false;
@@ -183,20 +193,22 @@ const public_gallery_status = isStaffUpload
 
     let ai_description = null;
     let ai_feedback = null;
-    let ai_confidence = null;
+    const ai_confidence = null;
 
     try {
       ai_status = "checking";
 
-    ai_description = await generateImageDescription(cropped_file_url);
+      if (file_type === "image") {
+        ai_description = await generateImageDescription(cropped_file_url);
+      }
 
-if (!ai_description) {
-  ai_description = buildFallbackDescription({
-    upload_type,
-    lesson_key,
-    interest_area
-  });
-}
+      if (!ai_description) {
+        ai_description = buildFallbackDescription({
+          upload_type,
+          lesson_key,
+          interest_area
+        });
+      }
 
       ai_feedback = buildAcademyFeedback({
         category,
@@ -210,7 +222,6 @@ if (!ai_description) {
 
       console.log("AI description:", ai_description);
       console.log("AI feedback:", ai_feedback);
-
     } catch (err) {
       ai_status = "failed";
       ai_feedback = null;
@@ -255,14 +266,14 @@ if (!ai_description) {
         rejected_reason
       )
       VALUES (
-  $1,$2,$3,$4,$5,
-  $6,$7,$8,$9,$10,
-  $11,$12,$13,$14,$15,
-  $16,$17,$18,$19,$20,
-  $21,$22,$23,$24,$25,
-  $26,$27,$28,$29,$30,
-  $31,$32,$33,$34
-)
+        $1,$2,$3,$4,$5,
+        $6,$7,$8,$9,$10,
+        $11,$12,$13,$14,$15,
+        $16,$17,$18,$19,$20,
+        $21,$22,$23,$24,$25,
+        $26,$27,$28,$29,$30,
+        $31,$32,$33,$34
+      )
       RETURNING id;
     `;
 
@@ -303,6 +314,16 @@ if (!ai_description) {
       rejected_reason
     ];
 
+    console.log("savePhotoReview staff status check =", {
+      isStaffUpload,
+      category,
+      linked_entity_type,
+      upload_context,
+      public_gallery_status,
+      verification_status,
+      review_status
+    });
+
     console.log("savePhotoReview query values =", values);
 
     const result = await pool.query(query, values);
@@ -312,11 +333,13 @@ if (!ai_description) {
       ok: true,
       success: true,
       review_id: reviewId,
+      public_gallery_status,
+      verification_status,
+      review_status,
       ai_status,
       ai_description,
       ai_feedback
     });
-
   } catch (err) {
     console.error("savePhotoReview error:", err);
 
@@ -356,6 +379,15 @@ function normalizeBoolean(value) {
   }
 
   return false;
+}
+
+function normalizeStatus(value, validValues, fallback) {
+  const normalized = normalize(value);
+
+  if (!normalized) return fallback;
+  if (!validValues.has(normalized)) return fallback;
+
+  return normalized;
 }
 
 function inferFileExtension(url) {
@@ -480,6 +512,7 @@ function improvementHintFromLesson(value) {
 
   return map[value] || "Improvement suggestion: make the connection to the selected lesson clearer.";
 }
+
 function buildFallbackDescription({ upload_type, lesson_key, interest_area }) {
   const uploadLabel = uploadLabelFromKey(upload_type);
   const lessonLabel = lessonLabelFromKey(lesson_key);
