@@ -27,11 +27,11 @@ export default async function savePhotoReview(req, res) {
 
     const original_file_url = normalize(body.original_file_url);
 
-    const linked_entity_type = normalize(body.linked_entity_type);
-    const linked_entity_name = normalize(body.linked_entity_name);
+const linked_entity_type = normalize(body.linked_entity_type);
+let linked_entity_name = normalize(body.linked_entity_name);
 
-    const uploader_name = normalize(body.uploader_name);
-    const uploader_email = normalize(body.uploader_email);
+let uploader_name = normalize(body.uploader_name);
+let uploader_email = normalize(body.uploader_email);
 
     const user_id = normalizeNumber(body.user_id);
     const tree_id = normalizeNumber(body.tree_id);
@@ -42,13 +42,12 @@ export default async function savePhotoReview(req, res) {
     let academy_student_id = normalizeNumber(body.academy_student_id);
     let academy_cohort = normalize(body.academy_cohort);
 
-    const academy_whatsapp = normalize(body.academy_whatsapp);
-    const academy_track = normalize(body.academy_track);
+    let academy_whatsapp = normalize(body.academy_whatsapp);
+    let academy_track = normalize(body.academy_track);
 
     const upload_type = normalize(body.upload_type);
     const lesson_key = normalize(body.lesson_key);
-    const interest_area = normalize(body.interest_area) || academy_track;
-
+    let interest_area = normalize(body.interest_area) || academy_track;
     const consent_given = normalizeBoolean(body.consent_given);
 
     const upload_context =
@@ -110,7 +109,97 @@ export default async function savePhotoReview(req, res) {
       }
     }
 
-    if (category === "academy_onboarding" || category === "academy_upload") {
+       if (category === "academy_onboarding" || category === "academy_upload") {
+      try {
+        let studentLookup = { rows: [] };
+
+        if (academy_student_id) {
+          studentLookup = await pool.query(
+            `
+            SELECT
+              s.id,
+              s.full_name,
+              s.email,
+              s.cohort,
+              s.track,
+              COALESCE(
+                NULLIF(TRIM(to_jsonb(s)->>'whatsapp_number'), ''),
+                NULLIF(TRIM(to_jsonb(s)->>'whatsapp'), ''),
+                NULLIF(TRIM(to_jsonb(s)->>'academy_whatsapp'), '')
+              ) AS whatsapp
+            FROM academy_students s
+            WHERE s.id = $1
+            LIMIT 1
+            `,
+            [academy_student_id]
+          );
+        }
+
+        if (studentLookup.rows.length === 0 && uploader_email) {
+          studentLookup = await pool.query(
+            `
+            SELECT
+              s.id,
+              s.full_name,
+              s.email,
+              s.cohort,
+              s.track,
+              COALESCE(
+                NULLIF(TRIM(to_jsonb(s)->>'whatsapp_number'), ''),
+                NULLIF(TRIM(to_jsonb(s)->>'whatsapp'), ''),
+                NULLIF(TRIM(to_jsonb(s)->>'academy_whatsapp'), '')
+              ) AS whatsapp
+            FROM academy_students s
+            WHERE s.email IS NOT NULL
+              AND LOWER(TRIM(s.email)) = LOWER(TRIM($1))
+            ORDER BY s.id ASC
+            LIMIT 2
+            `,
+            [uploader_email]
+          );
+        }
+
+        if (studentLookup.rows.length === 1) {
+          const student = studentLookup.rows[0];
+
+          const officialName = normalize(student.full_name);
+          const officialEmail = normalize(student.email);
+
+          academy_student_id =
+            academy_student_id || student.id;
+
+          academy_cohort =
+            academy_cohort || normalize(student.cohort);
+
+          academy_whatsapp =
+            academy_whatsapp || normalize(student.whatsapp);
+
+          academy_track =
+            academy_track || normalize(student.track);
+
+          interest_area =
+            interest_area || academy_track;
+
+          uploader_name =
+            officialName || uploader_name;
+
+          uploader_email =
+            officialEmail || uploader_email;
+
+          linked_entity_name =
+            officialName ||
+            linked_entity_name ||
+            uploader_name;
+        } else if (!linked_entity_name && uploader_name) {
+          linked_entity_name = uploader_name;
+        }
+      } catch (err) {
+        console.warn(
+          "Could not resolve academy student details:",
+          err.message
+        );
+      }
+
       if (!uploader_name) {
         return res.status(400).json({
           ok: false,
@@ -125,11 +214,18 @@ export default async function savePhotoReview(req, res) {
         });
       }
 
+      /*
+       * WhatsApp is useful, but a missing number must not
+       * prevent a student upload from being saved.
+       */
       if (!academy_whatsapp) {
-        return res.status(400).json({
-          ok: false,
-          error: `${category} requires academy_whatsapp`
-        });
+        console.warn(
+          `${category} upload saved without academy_whatsapp`,
+          {
+            academy_student_id,
+            uploader_email
+          }
+        );
       }
 
       if (!academy_track && !interest_area) {
@@ -152,42 +248,12 @@ export default async function savePhotoReview(req, res) {
           error: `${category} requires consent_given`
         });
       }
-    }
 
-    if (category === "academy_upload" && !lesson_key) {
-      return res.status(400).json({
-        ok: false,
-        error: "academy_upload requires lesson_key"
-      });
-    }
-
-    if (
-      (category === "academy_onboarding" || category === "academy_upload") &&
-      !academy_student_id &&
-      uploader_email
-    ) {
-      try {
-        const studentLookup = await pool.query(
-          `
-          SELECT id, cohort
-          FROM academy_students
-          WHERE email IS NOT NULL
-            AND LOWER(TRIM(email)) = LOWER(TRIM($1))
-          ORDER BY id ASC
-          LIMIT 2
-          `,
-          [uploader_email]
-        );
-
-        if (studentLookup.rows.length === 1) {
-          academy_student_id = studentLookup.rows[0].id;
-
-          if (!academy_cohort) {
-            academy_cohort = studentLookup.rows[0].cohort;
-          }
-        }
-      } catch (err) {
-        console.warn("Could not resolve academy_student_id by email:", err.message);
+      if (category === "academy_upload" && !lesson_key) {
+        return res.status(400).json({
+          ok: false,
+          error: "academy_upload requires lesson_key"
+        });
       }
     }
 
