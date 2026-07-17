@@ -3,7 +3,10 @@ import { generateImageDescription } from "./generateImageDescription.js";
 
 export default async function savePhotoReview(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
+    return res.status(405).json({
+      ok: false,
+      error: "Method not allowed"
+    });
   }
 
   try {
@@ -20,40 +23,58 @@ export default async function savePhotoReview(req, res) {
     const original_file_url = normalize(body.original_file_url);
 
     const linked_entity_type = normalize(body.linked_entity_type);
-    const linked_entity_name = normalize(body.linked_entity_name);
+    let linked_entity_name = normalize(body.linked_entity_name);
 
-    const uploader_name = normalize(body.uploader_name);
-    const uploader_email = normalize(body.uploader_email);
+    let uploader_name = normalize(body.uploader_name);
+    let uploader_email = normalize(body.uploader_email);
 
     const user_id = normalizeNumber(body.user_id);
     const tree_id = normalizeNumber(body.tree_id);
 
-    const original_file_size_bytes = normalizeNumber(body.original_file_size_bytes);
-    const cropped_file_size_bytes = normalizeNumber(body.cropped_file_size_bytes);
+    const original_file_size_bytes = normalizeNumber(
+      body.original_file_size_bytes
+    );
 
-    let academy_student_id = normalizeNumber(body.academy_student_id);
+    const cropped_file_size_bytes = normalizeNumber(
+      body.cropped_file_size_bytes
+    );
+
+    let academy_student_id = normalizeNumber(
+      body.academy_student_id
+    );
+
     let academy_cohort = normalize(body.academy_cohort);
-
-    const academy_whatsapp = normalize(body.academy_whatsapp);
-    const academy_track = normalize(body.academy_track);
+    let academy_whatsapp = normalize(body.academy_whatsapp);
+    let academy_track = normalize(body.academy_track);
 
     const upload_type = normalize(body.upload_type);
     const lesson_key = normalize(body.lesson_key);
-    const interest_area = normalize(body.interest_area) || academy_track;
 
-    const consent_given = normalizeBoolean(body.consent_given);
+    let interest_area =
+      normalize(body.interest_area) ||
+      academy_track;
 
-     const raw_verification_status =
-      normalize(body.verification_status) || "pending";
+    const consent_given = normalizeBoolean(
+      body.consent_given
+    );
+
+    const raw_verification_status =
+      normalize(body.verification_status) ||
+      "pending";
 
     let ai_status =
-      normalize(body.ai_status) || "not_checked";
+      normalize(body.ai_status) ||
+      "not_checked";
 
     const upload_context =
       normalize(body.upload_context) ||
-      (category === "academy_upload" ? "academy_upload" :
-        category === "academy_onboarding" ? "academy_onboarding" :
-          "photo_review");
+      (
+        category === "academy_upload"
+          ? "academy_upload"
+          : category === "academy_onboarding"
+            ? "academy_onboarding"
+            : "photo_review"
+      );
 
     const isStaffUpload =
       category === "staff_upload" ||
@@ -70,10 +91,17 @@ export default async function savePhotoReview(req, res) {
 
     const public_gallery_status = isStaffUpload
       ? "public"
-      : normalize(body.public_gallery_status) || "private";
+      : normalize(body.public_gallery_status) ||
+        "private";
 
-    const file_type = inferFileType(upload_type, cropped_file_url);
-    const file_extension = inferFileExtension(cropped_file_url);
+    const file_type = inferFileType(
+      upload_type,
+      cropped_file_url
+    );
+
+    const file_extension = inferFileExtension(
+      cropped_file_url
+    );
 
     const points_awarded = 0;
     const is_visible_in_gallery = false;
@@ -95,16 +123,161 @@ export default async function savePhotoReview(req, res) {
       });
     }
 
-    if (category === "forest_hero") {
-      if (!user_id || !tree_id) {
-        return res.status(400).json({
-          ok: false,
-          error: "forest_hero requires user_id and tree_id"
-        });
-      }
+    if (
+      category === "forest_hero" &&
+      (!user_id || !tree_id)
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: "forest_hero requires user_id and tree_id"
+      });
     }
 
-    if (category === "academy_onboarding" || category === "academy_upload") {
+    if (
+      category === "academy_onboarding" ||
+      category === "academy_upload"
+    ) {
+      try {
+        let studentLookup = {
+          rows: []
+        };
+
+        if (academy_student_id) {
+          studentLookup = await pool.query(
+            `
+            SELECT
+              s.id,
+              s.full_name,
+              s.email,
+              s.cohort,
+              s.track,
+              COALESCE(
+                NULLIF(
+                  TRIM(
+                    to_jsonb(s)->>'whatsapp_number'
+                  ),
+                  ''
+                ),
+                NULLIF(
+                  TRIM(
+                    to_jsonb(s)->>'whatsapp'
+                  ),
+                  ''
+                ),
+                NULLIF(
+                  TRIM(
+                    to_jsonb(s)->>'academy_whatsapp'
+                  ),
+                  ''
+                )
+              ) AS whatsapp
+            FROM academy_students s
+            WHERE s.id = $1
+            LIMIT 1
+            `,
+            [academy_student_id]
+          );
+        }
+
+        if (
+          studentLookup.rows.length === 0 &&
+          uploader_email
+        ) {
+          studentLookup = await pool.query(
+            `
+            SELECT
+              s.id,
+              s.full_name,
+              s.email,
+              s.cohort,
+              s.track,
+              COALESCE(
+                NULLIF(
+                  TRIM(
+                    to_jsonb(s)->>'whatsapp_number'
+                  ),
+                  ''
+                ),
+                NULLIF(
+                  TRIM(
+                    to_jsonb(s)->>'whatsapp'
+                  ),
+                  ''
+                ),
+                NULLIF(
+                  TRIM(
+                    to_jsonb(s)->>'academy_whatsapp'
+                  ),
+                  ''
+                )
+              ) AS whatsapp
+            FROM academy_students s
+            WHERE s.email IS NOT NULL
+              AND LOWER(TRIM(s.email)) =
+                  LOWER(TRIM($1))
+            ORDER BY s.id ASC
+            LIMIT 2
+            `,
+            [uploader_email]
+          );
+        }
+
+        if (studentLookup.rows.length === 1) {
+          const student =
+            studentLookup.rows[0];
+
+          const officialName =
+            normalize(student.full_name);
+
+          const officialEmail =
+            normalize(student.email);
+
+          academy_student_id =
+            academy_student_id ||
+            student.id;
+
+          academy_cohort =
+            academy_cohort ||
+            normalize(student.cohort);
+
+          academy_whatsapp =
+            academy_whatsapp ||
+            normalize(student.whatsapp);
+
+          academy_track =
+            academy_track ||
+            normalize(student.track);
+
+          interest_area =
+            interest_area ||
+            academy_track;
+
+          uploader_name =
+            officialName ||
+            uploader_name;
+
+          uploader_email =
+            officialEmail ||
+            uploader_email;
+
+          linked_entity_name =
+            officialName ||
+            linked_entity_name ||
+            uploader_name;
+        } else if (
+          !linked_entity_name &&
+          uploader_name
+        ) {
+          linked_entity_name =
+            uploader_name;
+        }
+      } catch (err) {
+        console.warn(
+          "Could not resolve academy student details:",
+          err.message
+        );
+      }
+
       if (!uploader_name) {
         return res.status(400).json({
           ok: false,
@@ -119,69 +292,56 @@ export default async function savePhotoReview(req, res) {
         });
       }
 
+      /*
+       * Missing WhatsApp must not block
+       * an image or lesson upload.
+       */
       if (!academy_whatsapp) {
-        return res.status(400).json({
-          ok: false,
-          error: `${category} requires academy_whatsapp`
-        });
+        console.warn(
+          `${category} upload saved without academy_whatsapp`,
+          {
+            academy_student_id,
+            uploader_email
+          }
+        );
       }
 
-      if (!academy_track && !interest_area) {
+      if (
+        !academy_track &&
+        !interest_area
+      ) {
         return res.status(400).json({
           ok: false,
-          error: `${category} requires academy_track or interest_area`
+          error:
+            `${category} requires academy_track or interest_area`
         });
       }
 
       if (!upload_type) {
         return res.status(400).json({
           ok: false,
-          error: `${category} requires upload_type`
+          error:
+            `${category} requires upload_type`
         });
       }
 
       if (!consent_given) {
         return res.status(400).json({
           ok: false,
-          error: `${category} requires consent_given`
+          error:
+            `${category} requires consent_given`
         });
       }
-    }
 
-    if (category === "academy_upload" && !lesson_key) {
-      return res.status(400).json({
-        ok: false,
-        error: "academy_upload requires lesson_key"
-      });
-    }
-
-    if (
-      (category === "academy_onboarding" || category === "academy_upload") &&
-      !academy_student_id &&
-      uploader_email
-    ) {
-      try {
-        const studentLookup = await pool.query(
-          `
-          SELECT id, cohort
-          FROM academy_students
-          WHERE email IS NOT NULL
-            AND LOWER(TRIM(email)) = LOWER(TRIM($1))
-          ORDER BY id ASC
-          LIMIT 2
-          `,
-          [uploader_email]
-        );
-
-        if (studentLookup.rows.length === 1) {
-          academy_student_id = studentLookup.rows[0].id;
-
-          if (!academy_cohort) {
-            academy_cohort = studentLookup.rows[0].cohort;
-          }
-        }
-      } catch (err) {
-        console.warn("Could not resolve academy_student_id by email:", err.message);
+      if (
+        category === "academy_upload" &&
+        !lesson_key
+      ) {
+        return res.status(400).json({
+          ok: false,
+          error:
+            "academy_upload requires lesson_key"
+        });
       }
     }
 
@@ -192,33 +352,48 @@ export default async function savePhotoReview(req, res) {
     try {
       ai_status = "checking";
 
-    ai_description = await generateImageDescription(cropped_file_url);
+      ai_description =
+        await generateImageDescription(
+          cropped_file_url
+        );
 
-if (!ai_description) {
-  ai_description = buildFallbackDescription({
-    upload_type,
-    lesson_key,
-    interest_area
-  });
-}
+      if (!ai_description) {
+        ai_description =
+          buildFallbackDescription({
+            upload_type,
+            lesson_key,
+            interest_area
+          });
+      }
 
-      ai_feedback = buildAcademyFeedback({
-        category,
-        upload_type,
-        lesson_key,
-        interest_area,
-        ai_description
-      });
+      ai_feedback =
+        buildAcademyFeedback({
+          category,
+          upload_type,
+          lesson_key,
+          interest_area,
+          ai_description
+        });
 
       ai_status = "checked";
 
-      console.log("AI description:", ai_description);
-      console.log("AI feedback:", ai_feedback);
+      console.log(
+        "AI description:",
+        ai_description
+      );
 
+      console.log(
+        "AI feedback:",
+        ai_feedback
+      );
     } catch (err) {
       ai_status = "failed";
       ai_feedback = null;
-      console.log("AI failed:", err.message);
+
+      console.log(
+        "AI failed:",
+        err.message
+      );
     }
 
     const query = `
@@ -307,10 +482,19 @@ if (!ai_description) {
       rejected_reason
     ];
 
-    console.log("savePhotoReview query values =", values);
+    console.log(
+      "savePhotoReview query values =",
+      values
+    );
 
-    const result = await pool.query(query, values);
-    const reviewId = result.rows[0]?.id;
+    const result =
+      await pool.query(
+        query,
+        values
+      );
+
+    const reviewId =
+      result.rows[0]?.id;
 
     return res.status(200).json({
       ok: true,
@@ -320,9 +504,11 @@ if (!ai_description) {
       ai_description,
       ai_feedback
     });
-
   } catch (err) {
-    console.error("savePhotoReview error:", err);
+    console.error(
+      "savePhotoReview error:",
+      err
+    );
 
     return res.status(500).json({
       ok: false,
@@ -333,26 +519,79 @@ if (!ai_description) {
 }
 
 function normalize(value) {
-  if (value === undefined || value === null) return null;
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  return trimmed === "" ? null : trimmed;
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return null;
+  }
+
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed =
+    value.trim();
+
+  return trimmed === ""
+    ? null
+    : trimmed;
 }
 
 function normalizeNumber(value) {
-  if (value === undefined || value === null || value === "") return null;
+  if (
+    value === undefined ||
+    value === null ||
+    value === ""
+  ) {
+    return null;
+  }
+
   const n = Number(value);
-  return Number.isFinite(n) ? n : null;
+
+  return Number.isFinite(n)
+    ? n
+    : null;
 }
 
 function normalizeBoolean(value) {
-  if (value === true) return true;
-  if (value === false) return false;
+  if (value === true) {
+    return true;
+  }
+
+  if (value === false) {
+    return false;
+  }
 
   if (typeof value === "string") {
-    const normalized = value.trim().toLowerCase();
-    if (["true", "1", "yes", "y", "on"].includes(normalized)) return true;
-    if (["false", "0", "no", "n", "off"].includes(normalized)) return false;
+    const normalized =
+      value
+        .trim()
+        .toLowerCase();
+
+    if (
+      [
+        "true",
+        "1",
+        "yes",
+        "y",
+        "on"
+      ].includes(normalized)
+    ) {
+      return true;
+    }
+
+    if (
+      [
+        "false",
+        "0",
+        "no",
+        "n",
+        "off"
+      ].includes(normalized)
+    ) {
+      return false;
+    }
   }
 
   if (typeof value === "number") {
@@ -363,36 +602,105 @@ function normalizeBoolean(value) {
 }
 
 function inferFileExtension(url) {
-  if (!url || typeof url !== "string") return null;
+  if (
+    !url ||
+    typeof url !== "string"
+  ) {
+    return null;
+  }
 
-  const cleanUrl = url.split("?")[0];
-  const lastPart = cleanUrl.split("/").pop() || "";
-  const dotIndex = lastPart.lastIndexOf(".");
+  const cleanUrl =
+    url.split("?")[0];
 
-  if (dotIndex === -1) return null;
+  const lastPart =
+    cleanUrl
+      .split("/")
+      .pop() || "";
 
-  return lastPart.slice(dotIndex + 1).toLowerCase();
+  const dotIndex =
+    lastPart.lastIndexOf(".");
+
+  if (dotIndex === -1) {
+    return null;
+  }
+
+  return lastPart
+    .slice(dotIndex + 1)
+    .toLowerCase();
 }
 
-function inferFileType(uploadType, url) {
-  const normalizedUploadType = normalize(uploadType);
+function inferFileType(
+  uploadType,
+  url
+) {
+  const normalizedUploadType =
+    normalize(uploadType);
 
-  if (normalizedUploadType === "image_photo") return "image";
-  if (normalizedUploadType === "text") return "text";
-  if (normalizedUploadType === "document") return "document";
-  if (normalizedUploadType === "video") return "video";
-
-  const ext = inferFileExtension(url);
-
-  if (["jpg", "jpeg", "png", "webp", "gif", "heic", "heif"].includes(ext)) {
+  if (
+    normalizedUploadType ===
+    "image_photo"
+  ) {
     return "image";
   }
 
-  if (["pdf", "doc", "docx", "txt"].includes(ext)) {
-    return ext === "txt" ? "text" : "document";
+  if (
+    normalizedUploadType ===
+    "text"
+  ) {
+    return "text";
   }
 
-  if (["mp4", "mov", "webm"].includes(ext)) {
+  if (
+    normalizedUploadType ===
+    "document"
+  ) {
+    return "document";
+  }
+
+  if (
+    normalizedUploadType ===
+    "video"
+  ) {
+    return "video";
+  }
+
+  const ext =
+    inferFileExtension(url);
+
+  if (
+    [
+      "jpg",
+      "jpeg",
+      "png",
+      "webp",
+      "gif",
+      "heic",
+      "heif"
+    ].includes(ext)
+  ) {
+    return "image";
+  }
+
+  if (
+    [
+      "pdf",
+      "doc",
+      "docx",
+      "txt"
+    ].includes(ext)
+  ) {
+    return ext === "txt"
+      ? "text"
+      : "document";
+  }
+
+  if (
+    [
+      "mp4",
+      "mov",
+      "webm"
+    ].includes(ext)
+  ) {
     return "video";
   }
 
@@ -406,19 +714,37 @@ function buildAcademyFeedback({
   interest_area,
   ai_description
 }) {
-  if (category !== "academy_upload" && category !== "academy_onboarding") {
+  if (
+    category !== "academy_upload" &&
+    category !== "academy_onboarding"
+  ) {
     return null;
   }
 
-  const lessonLabel = lessonLabelFromKey(lesson_key);
-  const interestLabel = interestLabelFromKey(interest_area);
-  const uploadLabel = uploadLabelFromKey(upload_type);
+  const lessonLabel =
+    lessonLabelFromKey(
+      lesson_key
+    );
 
-  const detected = ai_description
-    ? `AI detection: ${ai_description}`
-    : "AI detection: no clear description was generated.";
+  const interestLabel =
+    interestLabelFromKey(
+      interest_area
+    );
 
-  const improvementHint = improvementHintFromLesson(lesson_key);
+  const uploadLabel =
+    uploadLabelFromKey(
+      upload_type
+    );
+
+  const detected =
+    ai_description
+      ? `AI detection: ${ai_description}`
+      : "AI detection: no clear description was generated.";
+
+  const improvementHint =
+    improvementHintFromLesson(
+      lesson_key
+    );
 
   return [
     `Upload type: ${uploadLabel}.`,
@@ -431,63 +757,133 @@ function buildAcademyFeedback({
 
 function lessonLabelFromKey(value) {
   const map = {
-    onboarding: "Onboarding",
-    lesson_1_climate_change: "Lesson 1 Climate Change",
-    lesson_2_tree_health: "Lesson 2 Tree Health",
-    lesson_3_tree_planting: "Lesson 3 Tree Planting",
-    lesson_4_co2_increase: "Lesson 4 We cause Carbon Dioxide Increase",
-    evaluation: "Evaluation"
+    onboarding:
+      "Onboarding",
+
+    lesson_1_climate_change:
+      "Lesson 1 Climate Change",
+
+    lesson_2_tree_health:
+      "Lesson 2 Tree Health",
+
+    lesson_3_tree_planting:
+      "Lesson 3 Tree Planting",
+
+    lesson_4_co2_increase:
+      "Lesson 4 We cause Carbon Dioxide Increase",
+
+    evaluation:
+      "Evaluation"
   };
 
-  return map[value] || value || "Not selected";
+  return (
+    map[value] ||
+    value ||
+    "Not selected"
+  );
 }
 
 function interestLabelFromKey(value) {
   const map = {
-    online_tree_planting: "Online tree planting",
-    distance_certificate_course: "Distance certificate course",
-    donor_investor_funding: "Donor and investor funding",
-    networking_advocacy: "Networking & Advocacy"
+    online_tree_planting:
+      "Online tree planting",
+
+    distance_certificate_course:
+      "Distance certificate course",
+
+    donor_investor_funding:
+      "Donor and investor funding",
+
+    networking_advocacy:
+      "Networking & Advocacy"
   };
 
-  return map[value] || value || "Not selected";
+  return (
+    map[value] ||
+    value ||
+    "Not selected"
+  );
 }
 
 function uploadLabelFromKey(value) {
   const map = {
-    image_photo: "Image or photo",
-    text: "Text",
-    document: "Document",
-    video: "Video",
-    selfie: "Selfie",
-    favourite_object: "Favourite object"
+    image_photo:
+      "Image or photo",
+
+    text:
+      "Text",
+
+    document:
+      "Document",
+
+    video:
+      "Video",
+
+    selfie:
+      "Selfie",
+
+    favourite_object:
+      "Favourite object"
   };
 
-  return map[value] || value || "Unknown upload type";
+  return (
+    map[value] ||
+    value ||
+    "Unknown upload type"
+  );
 }
 
 function improvementHintFromLesson(value) {
   const map = {
     onboarding:
       "Improvement suggestion: make sure your upload clearly introduces who you are or what object represents your learning journey.",
+
     lesson_1_climate_change:
       "Improvement suggestion: connect your answer more clearly to climate change, local observations, rainfall, heat, flooding or farming conditions.",
+
     lesson_2_tree_health:
       "Improvement suggestion: show or explain signs of tree health more clearly, such as leaf colour, new growth, pests, water stress or soil condition.",
+
     lesson_3_tree_planting:
       "Improvement suggestion: make the planting method clearer, including spacing, hole preparation, watering, mulch or protection from animals.",
+
     lesson_4_co2_increase:
       "Improvement suggestion: explain more clearly how human activities increase carbon dioxide, such as burning fuel, deforestation or charcoal making.",
+
     evaluation:
       "Improvement suggestion: reflect more clearly on what you learned, what changed in your thinking and what you want to do next."
   };
 
-  return map[value] || "Improvement suggestion: make the connection to the selected lesson clearer.";
+  return (
+    map[value] ||
+    "Improvement suggestion: make the connection to the selected lesson clearer."
+  );
 }
-function buildFallbackDescription({ upload_type, lesson_key, interest_area }) {
-  const uploadLabel = uploadLabelFromKey(upload_type);
-  const lessonLabel = lessonLabelFromKey(lesson_key);
-  const interestLabel = interestLabelFromKey(interest_area);
 
-  return `Upload received. AI could not confidently describe the content yet. Upload type: ${uploadLabel}. Topic: ${lessonLabel}. Interest area: ${interestLabel}.`;
+function buildFallbackDescription({
+  upload_type,
+  lesson_key,
+  interest_area
+}) {
+  const uploadLabel =
+    uploadLabelFromKey(
+      upload_type
+    );
+
+  const lessonLabel =
+    lessonLabelFromKey(
+      lesson_key
+    );
+
+  const interestLabel =
+    interestLabelFromKey(
+      interest_area
+    );
+
+  return (
+    "Upload received. AI could not confidently describe the content yet. " +
+    `Upload type: ${uploadLabel}. ` +
+    `Topic: ${lessonLabel}. ` +
+    `Interest area: ${interestLabel}.`
+  );
 }
