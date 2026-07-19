@@ -1,4 +1,8 @@
-export async function generateImageDescription(imageUrl) {
+export async function generateImageDescription(imageUrl, context = {}) {
+  const courseName = context.courseKey === "arboriculture_1"
+    ? "Arboriculture I"
+    : "Online tree planting";
+  const lessonKey = String(context.lessonKey || "general activity");
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -13,7 +17,7 @@ export async function generateImageDescription(imageUrl) {
           content: [
             {
               type: "input_text",
-              text: "Describe this image in one short sentence for a tree planting project. Focus on trees, people, and activity."
+              text: `Describe this image in one short factual sentence for the ${courseName} course, assignment ${lessonKey}. Focus on visible tree features, people, tools, soil and activity. Do not claim that unseen work was completed.`
             },
             {
               type: "input_image",

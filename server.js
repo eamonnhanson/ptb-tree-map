@@ -14,6 +14,7 @@ import savePhotoReview from "./api/savePhotoReview.js";
 import getPhotoReviewGallery from "./api/getPhotoReviewGallery.js";
 import getStudentGallery from "./api/getStudentGallery.js";
 import { pool } from "./api/db.js";
+import { ACADEMY_COURSES, DEFAULT_ACADEMY_COURSE, normalizeCourseKey } from "./api/academyCourses.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -136,6 +137,7 @@ async function notifyApproval(upload) {
         email: upload.uploader_email,
         academy_track: upload.academy_track,
         academy_cohort: upload.academy_cohort,
+        course_key: upload.course_key || DEFAULT_ACADEMY_COURSE,
         gallery_url: "https://ketso-uploader.pages.dev/student-gallery/",
         approved_at: new Date().toISOString()
       })
@@ -176,7 +178,8 @@ async function syncApprovedUploadPoint(upload) {
           JSON.stringify({
             review_id: upload.id,
             category: upload.category || null,
-            upload_context: upload.upload_context || null
+            upload_context: upload.upload_context || null,
+            course_key: upload.course_key || DEFAULT_ACADEMY_COURSE
           })
         ]
       );
@@ -214,7 +217,8 @@ async function syncApprovedUploadPoint(upload) {
           JSON.stringify({
             review_id: upload.id,
             category: upload.category || null,
-            upload_context: upload.upload_context || null
+            upload_context: upload.upload_context || null,
+            course_key: upload.course_key || DEFAULT_ACADEMY_COURSE
           })
         ]
       );
@@ -256,6 +260,7 @@ app.get("/api/academy-upload-review", async (req, res) => {
         uploader_email,
         academy_track,
         academy_cohort,
+        course_key,
         cropped_file_url,
         original_file_url,
         verification_status
@@ -355,6 +360,41 @@ app.get("/api/academy-student", async (req, res) => {
   }
 
   try {
+    try {
+      const enrollmentResult = await pool.query(
+        `
+        SELECT
+          s.id, s.zoho_contact_id, s.ketso_student_id, s.full_name,
+          s.first_name, s.last_name, s.email, s.whatsapp, s.track,
+          s.primary_stream, s.cohort, s.status, s.upload_token,
+          e.id AS enrollment_id, e.course_key, e.cohort AS enrollment_cohort,
+          e.status AS enrollment_status
+        FROM public.academy_course_enrollments e
+        JOIN public.academy_students s ON s.id = e.academy_student_id
+        WHERE e.enrollment_token = $1
+        LIMIT 1
+        `,
+        [token]
+      );
+
+      if (enrollmentResult.rows.length) {
+        const row = enrollmentResult.rows[0];
+        return res.json({
+          ok: true,
+          student: row,
+          enrollment: {
+            id: row.enrollment_id,
+            course_key: row.course_key,
+            cohort: row.enrollment_cohort,
+            status: row.enrollment_status
+          }
+        });
+      }
+    } catch (enrollmentError) {
+      if (enrollmentError.code !== "42P01") throw enrollmentError;
+      console.warn("academy_course_enrollments is not installed yet; using legacy token lookup");
+    }
+
     const result = await pool.query(
       `
       SELECT
@@ -387,7 +427,14 @@ app.get("/api/academy-student", async (req, res) => {
 
     return res.json({
       ok: true,
-      student: result.rows[0]
+      student: result.rows[0],
+      enrollment: {
+        id: null,
+        course_key: DEFAULT_ACADEMY_COURSE,
+        cohort: result.rows[0].cohort,
+        status: result.rows[0].status,
+        legacy: true
+      }
     });
 
   } catch (e) {
@@ -479,6 +526,10 @@ app.get("/api/academy-student-search", async (req, res) => {
       message: e.message || null
     });
   }
+});
+
+app.get("/api/academy-courses", (_req, res) => {
+  res.json({ ok: true, default_course_key: DEFAULT_ACADEMY_COURSE, courses: ACADEMY_COURSES });
 });
 
 // =====================================================
@@ -658,6 +709,7 @@ app.post("/api/academy-approve-upload", async (req, res) => {
         academy_student_id,
         academy_track,
         academy_cohort,
+        course_key,
         verification_status,
         public_gallery_status,
         cropped_file_url
@@ -698,6 +750,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
 
   try {
     const status = String(req.query.status || "pending").trim();
+    const requestedCourse = String(req.query.course_key || "all").trim();
 
     const values = [];
     const conditions = [];
@@ -707,6 +760,11 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
       conditions.push(`verification_status = $${values.length}`);
     }
 
+    if (requestedCourse !== "all") {
+      values.push(normalizeCourseKey(requestedCourse));
+      conditions.push(`COALESCE(p.course_key, '${DEFAULT_ACADEMY_COURSE}') = $${values.length}`);
+    }
+
     const whereClause = conditions.length
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
@@ -714,11 +772,14 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
     const query = `
       SELECT
         p.id,
+        p.category,
+        p.upload_context,
         p.uploader_name,
         p.uploader_email,
         p.academy_student_id,
         p.academy_track,
         p.academy_cohort,
+        COALESCE(p.course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         p.interest_area,
         p.lesson_key,
         p.upload_type,
@@ -891,6 +952,7 @@ app.post("/api/academy-hide-upload", async (req, res) => {
 app.get("/api/student-profile/:id", async (req, res) => {
   try {
     const studentId = Number(req.params.id);
+    const courseKey = normalizeCourseKey(req.query.course_key);
 
     if (!Number.isFinite(studentId)) {
       return res.status(400).json({
@@ -909,7 +971,9 @@ app.get("/api/student-profile/:id", async (req, res) => {
         s.track,
         s.cohort,
         s.status,
-        COALESCE(SUM(p.points_awarded), 0)::int AS total_points
+        COALESCE(SUM(p.points_awarded) FILTER (
+          WHERE COALESCE(p.course_key, '${DEFAULT_ACADEMY_COURSE}') = $2
+        ), 0)::int AS total_points
       FROM academy_students s
       LEFT JOIN photo_uploads_review p
         ON p.academy_student_id = s.id
@@ -918,7 +982,7 @@ app.get("/api/student-profile/:id", async (req, res) => {
       GROUP BY s.id
       LIMIT 1
       `,
-      [studentId]
+      [studentId, courseKey]
     );
 
     if (!studentResult.rows.length) {
@@ -932,6 +996,7 @@ app.get("/api/student-profile/:id", async (req, res) => {
       `
       SELECT
         id,
+        COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         lesson_key,
         interest_area,
         upload_type,
@@ -945,17 +1010,40 @@ app.get("/api/student-profile/:id", async (req, res) => {
         created_at_utc
       FROM photo_uploads_review
       WHERE academy_student_id = $1
+        AND COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') = $2
         AND review_status = 'approved'
         AND is_visible_in_gallery = true
       ORDER BY approved_at DESC NULLS LAST, created_at_utc DESC
       `,
-      [studentId]
+      [studentId, courseKey]
     );
+
+    const pointEventsResult = await pool.query(
+      `
+      SELECT event_key, event_label, points, metadata, source_id
+      FROM academy_point_events
+      WHERE academy_student_id = $1
+        AND COALESCE(metadata->>'course_key', '${DEFAULT_ACADEMY_COURSE}') = $2
+      ORDER BY source_id DESC NULLS LAST
+      `,
+      [studentId, courseKey]
+    );
+
+    const course = ACADEMY_COURSES[courseKey];
+    const approvedLessonKeys = [...new Set(uploadsResult.rows.map(row => row.lesson_key).filter(Boolean))];
+    const requiredLessonKeys = course.requiredLessons;
 
     return res.json({
       ok: true,
       student: studentResult.rows[0],
-      uploads: uploadsResult.rows
+      course: { course_key: courseKey, name: course.name },
+      progress: {
+        approved_lesson_keys: approvedLessonKeys,
+        approved_lessons: approvedLessonKeys.filter(key => requiredLessonKeys.includes(key)).length,
+        required_lessons: requiredLessonKeys.length
+      },
+      uploads: uploadsResult.rows,
+      point_events: pointEventsResult.rows
     });
 
   } catch (err) {
