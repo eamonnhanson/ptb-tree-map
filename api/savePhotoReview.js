@@ -1,5 +1,12 @@
 import { pool } from "./db.js";
 import { generateImageDescription } from "./generateImageDescription.js";
+import {
+  DEFAULT_ACADEMY_COURSE,
+  isKnownCourse,
+  isKnownLesson,
+  lessonName,
+  normalizeCourseKey
+} from "./academyCourses.js";
 
 const VALID_VERIFICATION_STATUSES = new Set([
   "pending",
@@ -47,6 +54,8 @@ let uploader_email = normalize(body.uploader_email);
 
     const upload_type = normalize(body.upload_type);
     const lesson_key = normalize(body.lesson_key);
+    const submitted_course_key = normalize(body.course_key);
+    let course_key = normalizeCourseKey(submitted_course_key);
     let interest_area = normalize(body.interest_area) || academy_track;
     const consent_given = normalizeBoolean(body.consent_given);
 
@@ -109,7 +118,23 @@ let uploader_email = normalize(body.uploader_email);
       }
     }
 
-       if (category === "academy_onboarding" || category === "academy_upload") {
+    const isAcademyUpload = Boolean(
+      academy_student_id ||
+      category === "academy_onboarding" ||
+      category === "academy_upload" ||
+      category === "student_onboarding" ||
+      String(category || "").startsWith("academy_lesson_") ||
+      String(category || "").startsWith("student_lesson_") ||
+      String(upload_context || "").startsWith("academy_")
+    );
+
+    if (submitted_course_key && !isKnownCourse(submitted_course_key)) {
+      return res.status(400).json({ ok: false, error: "Unknown academy course" });
+    }
+
+    if (!isAcademyUpload) course_key = null;
+
+    if (isAcademyUpload) {
       try {
         let studentLookup = { rows: [] };
 
@@ -249,10 +274,17 @@ let uploader_email = normalize(body.uploader_email);
         });
       }
 
-      if (category === "academy_upload" && !lesson_key) {
+      if (!lesson_key) {
         return res.status(400).json({
           ok: false,
-          error: "academy_upload requires lesson_key"
+          error: "Academy uploads require lesson_key"
+        });
+      }
+
+      if (!isKnownLesson(course_key, lesson_key)) {
+        return res.status(400).json({
+          ok: false,
+          error: `Lesson ${lesson_key} does not belong to ${course_key}`
         });
       }
     }
@@ -265,7 +297,10 @@ let uploader_email = normalize(body.uploader_email);
       ai_status = "checking";
 
       if (file_type === "image") {
-        ai_description = await generateImageDescription(cropped_file_url);
+        ai_description = await generateImageDescription(cropped_file_url, {
+          courseKey: course_key || DEFAULT_ACADEMY_COURSE,
+          lessonKey: lesson_key
+        });
       }
 
       if (!ai_description) {
@@ -281,6 +316,7 @@ let uploader_email = normalize(body.uploader_email);
         upload_type,
         lesson_key,
         interest_area,
+        course_key,
         ai_description
       });
 
@@ -329,7 +365,8 @@ let uploader_email = normalize(body.uploader_email);
         is_visible_in_gallery,
         reviewed_by_admin,
         approved_at,
-        rejected_reason
+        rejected_reason,
+        course_key
       )
       VALUES (
         $1,$2,$3,$4,$5,
@@ -338,7 +375,7 @@ let uploader_email = normalize(body.uploader_email);
         $16,$17,$18,$19,$20,
         $21,$22,$23,$24,$25,
         $26,$27,$28,$29,$30,
-        $31,$32,$33,$34
+        $31,$32,$33,$34,$35
       )
       RETURNING id;
     `;
@@ -377,7 +414,8 @@ let uploader_email = normalize(body.uploader_email);
       is_visible_in_gallery,
       reviewed_by_admin,
       approved_at,
-      rejected_reason
+      rejected_reason,
+      course_key
     ];
 
     console.log("savePhotoReview staff status check =", {
@@ -404,7 +442,8 @@ let uploader_email = normalize(body.uploader_email);
       review_status,
       ai_status,
       ai_description,
-      ai_feedback
+      ai_feedback,
+      course_key
     });
   } catch (err) {
     console.error("savePhotoReview error:", err);
@@ -498,13 +537,14 @@ function buildAcademyFeedback({
   upload_type,
   lesson_key,
   interest_area,
+  course_key,
   ai_description
 }) {
-  if (category !== "academy_upload" && category !== "academy_onboarding") {
+  if (!course_key) {
     return null;
   }
 
-  const lessonLabel = lessonLabelFromKey(lesson_key);
+  const lessonLabel = lessonName(course_key, lesson_key);
   const interestLabel = interestLabelFromKey(interest_area);
   const uploadLabel = uploadLabelFromKey(upload_type);
 
@@ -512,11 +552,12 @@ function buildAcademyFeedback({
     ? `AI detection: ${ai_description}`
     : "AI detection: no clear description was generated.";
 
-  const improvementHint = improvementHintFromLesson(lesson_key);
+  const improvementHint = improvementHintFromLesson(course_key, lesson_key);
 
   return [
     `Upload type: ${uploadLabel}.`,
     `Topic: ${lessonLabel}.`,
+    `Course: ${course_key === "arboriculture_1" ? "Arboriculture I" : "Online tree planting"}.`,
     `Interest area: ${interestLabel}.`,
     detected,
     improvementHint
@@ -560,7 +601,23 @@ function uploadLabelFromKey(value) {
   return map[value] || value || "Unknown upload type";
 }
 
-function improvementHintFromLesson(value) {
+function improvementHintFromLesson(courseKey, value) {
+  if (courseKey === "arboriculture_1") {
+    const arboricultureHints = {
+      onboarding: "Improvement suggestion: introduce yourself and explain why you want to learn about trees.",
+      arb1_module_1_tree_biology: "Improvement suggestion: identify the tree part or biological process and explain how it affects tree survival.",
+      arb1_module_2_tree_identification: "Improvement suggestion: show identifying features such as leaves, bark, buds, fruit or tree form.",
+      arb1_module_3_soil_and_roots: "Improvement suggestion: describe soil texture, drainage, root condition and available oxygen.",
+      arb1_module_4_tree_selection: "Improvement suggestion: connect the selected species to the site, available space, soil and intended purpose.",
+      arb1_module_5_tree_planting: "Improvement suggestion: show planting depth, root position, backfill, watering and protection.",
+      arb1_module_6_tree_care: "Improvement suggestion: explain watering, mulching, weed control and protection during establishment.",
+      arb1_module_7_tree_health: "Improvement suggestion: support your assessment with visible signs from leaves, stem, roots, soil and surroundings.",
+      arb1_module_8_pruning: "Improvement suggestion: identify the pruning objective and show where a correct cut should be made.",
+      evaluation: "Improvement suggestion: explain what you learned and how you will apply it in practical tree care."
+    };
+    return arboricultureHints[value] || "Improvement suggestion: connect the evidence more clearly to the selected Arboriculture I module.";
+  }
+
   const map = {
     onboarding:
       "Improvement suggestion: make sure your upload clearly introduces who you are or what object represents your learning journey.",

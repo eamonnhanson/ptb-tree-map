@@ -1,4 +1,5 @@
 import { pool } from "./db.js";
+import { DEFAULT_ACADEMY_COURSE, normalizeCourseKey } from "./academyCourses.js";
 
 export default async function getPhotoReviewGallery(req, res) {
   if (req.method !== "GET") {
@@ -12,6 +13,8 @@ export default async function getPhotoReviewGallery(req, res) {
     const search = normalize(req.query.search);
     const anonymousOnboarding = req.query.anonymous_onboarding === "1";
     const uploadContext = normalize(req.query.upload_context);
+    const requestedCourse = normalize(req.query.course_key);
+    const studentUploads = req.query.student_uploads === "1";
 
     console.log("photo-review-gallery endpoint called");
     console.log("photo-review-gallery selected category:", category || "all");
@@ -29,6 +32,12 @@ export default async function getPhotoReviewGallery(req, res) {
           OR upload_context = 'academy_onboarding'
           OR lesson_key = 'onboarding'
         )`
+      ];
+    } else if (studentUploads) {
+      conditions = [
+        "verification_status = 'approved'",
+        "public_gallery_status = 'public'",
+        "academy_student_id IS NOT NULL"
       ];
     } else if (uploadContext === "staff_upload") {
       conditions = [
@@ -51,6 +60,11 @@ export default async function getPhotoReviewGallery(req, res) {
     if (category && category !== "all") {
       values.push(category);
       conditions.push(`category = $${values.length}`);
+    }
+
+    if (requestedCourse && requestedCourse !== "all") {
+      values.push(normalizeCourseKey(requestedCourse));
+      conditions.push(`COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') = $${values.length}`);
     }
 
     if (date_from) {
@@ -102,6 +116,7 @@ export default async function getPhotoReviewGallery(req, res) {
         academy_student_id,
         academy_track,
         academy_cohort,
+        COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         lesson_key,
         uploader_name,
         uploader_email,
