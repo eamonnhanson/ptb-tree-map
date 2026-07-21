@@ -372,6 +372,12 @@ app.get("/api/academy-student", async (req, res) => {
         FROM public.academy_course_enrollments e
         JOIN public.academy_students s ON s.id = e.academy_student_id
         WHERE e.enrollment_token = $1
+           OR s.upload_token = $1
+        ORDER BY
+          CASE WHEN e.enrollment_token = $1 THEN 0 ELSE 1 END,
+          CASE WHEN e.status = 'active' THEN 0 ELSE 1 END,
+          e.enrolled_at DESC,
+          e.id DESC
         LIMIT 1
         `,
         [token]
