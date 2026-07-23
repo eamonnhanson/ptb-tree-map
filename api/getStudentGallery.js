@@ -15,7 +15,7 @@ export default async function getStudentGallery(req, res) {
         FROM photo_uploads_review p
         WHERE p.academy_student_id IS NOT NULL
           AND p.verification_status = 'approved'
-          AND p.public_gallery_status = 'public'
+          AND p.public_gallery_status = 'public' AND p.upload_type IS DISTINCT FROM 'question_to_tutor' AND p.lesson_key IS DISTINCT FROM 'tutor_question'
           AND COALESCE(p.course_key, '${DEFAULT_ACADEMY_COURSE}') = $1
       ),
       representatives AS (
