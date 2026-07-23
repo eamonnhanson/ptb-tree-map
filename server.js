@@ -696,20 +696,30 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       SET
       verification_status = 'approved',
       review_status = 'approved',
-      public_gallery_status = $3,
-      is_visible_in_gallery = $3 = 'public',
+      public_gallery_status = CASE
+      WHEN upload_type = 'question_to_tutor' THEN 'private'
+      ELSE $3
+      END,
+      is_visible_in_gallery = CASE
+      WHEN upload_type = 'question_to_tutor' THEN false
+      ELSE $3 = 'public'
+      END,
       reviewed_at_utc = NOW(),
       approved_at = NOW(),
       reviewed_by = $2,
       points_awarded = CASE
-        WHEN academy_student_id IS NOT NULL AND $3 = 'public' THEN 1
-        ELSE 0
+      WHEN academy_student_id IS NOT NULL
+      AND upload_type IS DISTINCT FROM 'question_to_tutor'
+      AND $3 = 'public'
+      THEN 1
+      ELSE 0
       END
       WHERE id = $1
       RETURNING
         id,
         category,
         upload_context,
+        upload_type,
         uploader_name,
         uploader_email,
         academy_student_id,
@@ -734,7 +744,7 @@ app.post("/api/academy-approve-upload", async (req, res) => {
 
     await syncApprovedUploadPoint(upload);
 
-    if (nextGalleryStatus === "public") {
+    if (upload.public_gallery_status === "public") {
       await notifyApproval(upload);
     }
 
