@@ -697,11 +697,11 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       verification_status = 'approved',
       review_status = 'approved',
       public_gallery_status = CASE
-      WHEN upload_type = 'question_to_tutor' THEN 'private'
+      WHEN upload_type = 'question_to_tutor' OR lesson_key = 'tutor_question' THEN 'private'
       ELSE $3
       END,
       is_visible_in_gallery = CASE
-      WHEN upload_type = 'question_to_tutor' THEN false
+      WHEN upload_type = 'question_to_tutor' OR lesson_key = 'tutor_question' THEN false
       ELSE $3 = 'public'
       END,
       reviewed_at_utc = NOW(),
@@ -709,7 +709,7 @@ app.post("/api/academy-approve-upload", async (req, res) => {
       reviewed_by = $2,
       points_awarded = CASE
       WHEN academy_student_id IS NOT NULL
-      AND upload_type IS DISTINCT FROM 'question_to_tutor'
+      AND upload_type IS DISTINCT FROM 'question_to_tutor' AND lesson_key IS DISTINCT FROM 'tutor_question'
       AND $3 = 'public'
       THEN 1
       ELSE 0
