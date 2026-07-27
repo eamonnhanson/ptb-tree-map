@@ -55,6 +55,11 @@ export default async function getPhotoReviewGallery(req, res) {
       ];
     }
 
+    conditions.push(
+      "upload_type IS DISTINCT FROM 'question_to_tutor'",
+      "lesson_key IS DISTINCT FROM 'tutor_question'"
+    );
+
     const values = [];
 
     if (category && category !== "all") {
