@@ -1,6 +1,5 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
 import express from "express";
 import { createTutorQuestionsRouter } from "../api/tutorQuestions.js";
 
@@ -51,6 +50,29 @@ function createFakePool() {
       if (compact.startsWith("SELECT * FROM academy_tutor_questions") &&
           compact.includes("academy_student_id = $1 AND course_key = $2")) {
         return { rows: questions.filter(q => q.academy_student_id === params[0] && q.course_key === params[1]).map(q => ({ ...q })) };
+      }
+      if (compact.startsWith("SELECT id, academy_student_id, student_name") &&
+          compact.includes("BTRIM(answer_text) <> ''")) {
+        return {
+          rows: questions
+            .filter(q => ["answered", "closed"].includes(q.status))
+            .filter(q => q.answer_text !== null && q.answer_text.trim() !== "")
+            .filter(q => q.answered_at !== null)
+            .filter(q => params[0] === null || q.course_key === params[0])
+            .sort((a, b) => String(b.answered_at).localeCompare(String(a.answered_at)))
+            .slice(0, 300)
+            .map(q => ({
+              id: q.id,
+              academy_student_id: q.academy_student_id,
+              student_name: q.student_name,
+              course_key: q.course_key,
+              module_key: q.module_key,
+              question_text: q.question_text,
+              answer_text: q.answer_text,
+              created_at: q.created_at,
+              answered_at: q.answered_at
+            }))
+        };
       }
       if (compact.startsWith("SELECT * FROM academy_tutor_questions") &&
           compact.includes("ORDER BY CASE status")) {
@@ -217,13 +239,71 @@ test("failed webhook does not lose a saved question", async t => {
   assert.equal(app.pool.questions.length, 1);
 });
 
-test("gallery query excludes tutor questions", async () => {
-  const studentGallery = await readFile(new URL("../api/getStudentGallery.js", import.meta.url), "utf8");
-  const generalGallery = await readFile(new URL("../api/getPhotoReviewGallery.js", import.meta.url), "utf8");
-  const server = await readFile(new URL("../server.js", import.meta.url), "utf8");
-  for (const source of [studentGallery, generalGallery, server]) {
-    assert.match(source, /upload_type IS DISTINCT FROM 'question_to_tutor'|upload_type === "question_to_tutor"/);
-    assert.match(source, /lesson_key IS DISTINCT FROM 'tutor_question'|lesson_key === "tutor_question"/);
-  }
-  assert.match(studentGallery, /public_gallery_status = 'public'/);
+test("public gallery exposes only answered tutor questions and /my remains private", async t => {
+  const app = await startTestApp();
+  t.after(app.close);
+
+  await api(app.baseUrl, "/api/academy-tutor-questions", { body: questionA });
+  await api(app.baseUrl, "/api/academy-tutor-questions", {
+    body: { ...questionA, token: "token-b", request_id: "question_request_b_0002" }
+  });
+
+  const beforeAnswer = await api(app.baseUrl, "/api/academy-tutor-questions/public", {
+    method: "GET"
+  });
+  assert.equal(beforeAnswer.status, 200);
+  assert.deepEqual(beforeAnswer.data.questions, []);
+
+  const answerText = "The leaf looks healthy; keep monitoring its colour.";
+  await api(app.baseUrl, "/api/academy-tutor-questions/1/answer", {
+    admin: true,
+    body: {
+      answer: answerText,
+      answered_by: "Tutor",
+      request_id: "public_answer_request_0001"
+    }
+  });
+
+  const publicResult = await api(app.baseUrl, "/api/academy-tutor-questions/public", {
+    method: "GET"
+  });
+  assert.equal(publicResult.status, 200);
+  assert.equal(publicResult.data.questions.length, 1);
+  assert.equal(publicResult.data.questions[0].question_text, questionA.question);
+  assert.equal(publicResult.data.questions[0].answer_text, answerText);
+  assert.equal(publicResult.data.questions[0].type, "tutor_question");
+  assert.deepEqual(
+    Object.keys(publicResult.data.questions[0]).sort(),
+    [
+      "answer_text", "answered_at", "course_key", "course_name", "created_at", "id",
+      "module_key", "module_name", "question_text", "student_id", "student_name", "type"
+    ]
+  );
+
+  const matchingCourse = await api(
+    app.baseUrl,
+    "/api/academy-tutor-questions/public?course_key=ONLINE_TREE_PLANTING",
+    { method: "GET" }
+  );
+  assert.equal(matchingCourse.data.questions.length, 1);
+  const otherCourse = await api(
+    app.baseUrl,
+    "/api/academy-tutor-questions/public?course_key=arboriculture_1",
+    { method: "GET" }
+  );
+  assert.deepEqual(otherCourse.data.questions, []);
+  const invalidCourse = await api(
+    app.baseUrl,
+    "/api/academy-tutor-questions/public?course_key=unknown",
+    { method: "GET" }
+  );
+  assert.equal(invalidCourse.status, 400);
+
+  const mine = await api(app.baseUrl, "/api/academy-tutor-questions/my", {
+    body: { token: "token-b" }
+  });
+  assert.equal(mine.status, 200);
+  assert.equal(mine.data.questions.length, 1);
+  assert.equal(mine.data.questions[0].status, "new");
+  assert.equal(mine.data.questions[0].answer_text, null);
 });
