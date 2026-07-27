@@ -1,6 +1,7 @@
 "use strict";
 
-const API_BASE = "/automation-dashboard/api/ketso/admin-review";
+const API_BASE =
+  "/.netlify/functions/ketso-admin/admin-review";
 const statusFilter = document.getElementById("statusFilter");
 const courseFilter = document.getElementById("courseFilter");
 const loadBtn = document.getElementById("loadBtn");
