@@ -5,7 +5,8 @@ import {
   DEFAULT_ACADEMY_COURSE,
   isKnownCourse,
   isKnownLesson,
-  lessonName
+  lessonName,
+  normalizeCourseKey
 } from "./academyCourses.js";
 
 const QUESTION_MAX_LENGTH = 5000;
@@ -37,6 +38,23 @@ function publicQuestion(row) {
     closed_at: row.closed_at,
     tutor_notification_status: row.tutor_notification_status,
     student_notification_status: row.student_notification_status
+  };
+}
+
+function galleryQuestion(row) {
+  return {
+    id: row.id,
+    student_id: row.academy_student_id,
+    student_name: row.student_name,
+    course_key: row.course_key,
+    course_name: ACADEMY_COURSES[row.course_key]?.name || row.course_key,
+    module_key: row.module_key,
+    module_name: lessonName(row.course_key, row.module_key),
+    question_text: row.question_text,
+    answer_text: row.answer_text,
+    created_at: row.created_at,
+    answered_at: row.answered_at,
+    type: "tutor_question"
   };
 }
 
@@ -290,6 +308,36 @@ export function createTutorQuestionsRouter({
       return res.json({ ok: true, questions: result.rows.map(publicQuestion) });
     } catch (error) {
       logger.error("Student tutor question list failed", { code: error?.code || "unknown" });
+      return res.status(500).json({ ok: false, error: "Questions could not be loaded" });
+    }
+  });
+
+  router.get("/public", async (req, res) => {
+    try {
+      const submittedCourse = String(req.query.course_key || "").trim();
+      if (submittedCourse && !isKnownCourse(submittedCourse)) {
+        return res.status(400).json({ ok: false, error: "Course is not valid" });
+      }
+      const courseKey = submittedCourse ? normalizeCourseKey(submittedCourse) : null;
+      const result = await pool.query(
+        `
+        SELECT
+          id, academy_student_id, student_name, course_key, module_key,
+          question_text, answer_text, created_at, answered_at
+        FROM academy_tutor_questions
+        WHERE status IN ('answered', 'closed')
+          AND answer_text IS NOT NULL
+          AND BTRIM(answer_text) <> ''
+          AND answered_at IS NOT NULL
+          AND ($1::text IS NULL OR course_key = $1)
+        ORDER BY answered_at DESC
+        LIMIT 300
+        `,
+        [courseKey]
+      );
+      return res.json({ ok: true, questions: result.rows.map(galleryQuestion) });
+    } catch (error) {
+      logger.error("Public tutor question list failed", { code: error?.code || "unknown" });
       return res.status(500).json({ ok: false, error: "Questions could not be loaded" });
     }
   });
