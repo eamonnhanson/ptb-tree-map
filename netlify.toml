@@ -8,6 +8,12 @@ to = "/automation-dashboard/"
 status = 308
 force = true
 
+[[redirects]]
+from = "/automation-dashboard/api/ketso/*"
+to = "/.netlify/functions/ketso-admin/:splat"
+status = 200
+force = true
+
 [[edge_functions]]
 path = "/automation-dashboard"
 function = "protect-automation-dashboard"

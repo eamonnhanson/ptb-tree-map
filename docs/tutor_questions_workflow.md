@@ -16,7 +16,7 @@ Do not send a real test email until the recipient and test moment have been conf
 
 Required:
 
-- `ADMIN_GALLERY_KEY`: existing tutor/admin key. The frontend sends it in `X-Admin-Key`, never in the URL.
+- `ADMIN_GALLERY_KEY`: existing tutor/admin key. Only the server-side dashboard proxy sends it in `X-Admin-Key`.
 - `TUTOR_QUESTION_WEBHOOK_URL`: Zapier Catch Hook URL for new questions.
 - `TUTOR_ANSWER_WEBHOOK_URL`: Zapier Catch Hook URL for tutor answers.
 - `TUTOR_NOTIFICATION_EMAIL`: `eamonn@planteenboom.nu`.
@@ -26,8 +26,26 @@ Required:
 Optional:
 
 - `TUTOR_WEBHOOK_TIMEOUT_MS`: webhook timeout in milliseconds. Default `5000`; accepted range `1000` through `15000`.
+- `TUTOR_QUEUE_URL`: dashboard queue URL, for example `https://map.planteenboom.nu/automation-dashboard/follow-up/tutor-questions/`.
 
 After saving the variables, redeploy the Render service. Never place a webhook URL or admin key in frontend code.
+
+## Netlify dashboard environment variables
+
+Required:
+
+- `AUTOMATION_DASHBOARD_USER`: existing dashboard Basic Auth username.
+- `AUTOMATION_DASHBOARD_PASSWORD`: existing dashboard Basic Auth password.
+- `ADMIN_GALLERY_KEY`: the same existing admin key that is configured on Render.
+
+Optional:
+
+- `KETSO_API_BASE_URL`: Render API origin. Defaults to `https://ptb-tree-map.onrender.com`.
+- `KETSO_ADMIN_PROXY_TIMEOUT_MS`: timeout for dashboard proxy requests to Render. Defaults to `10000`; accepted range `1000` through `30000`. Missing, invalid or out-of-range values use the default.
+
+The dashboard pages and the KETSO proxy both verify the existing dashboard Basic Auth. The proxy accepts only the explicitly implemented Admin review and Tutor questions routes and adds `X-Admin-Key` only in its server-side request to Render.
+If the proxy times out a mutation, it returns HTTP `504` and warns that the change may already have been processed. Refresh the queue before deciding whether another action is needed.
+Unexpected Render `5xx` responses are replaced with a fixed `502 UPSTREAM_ERROR` response. Only explicitly allowlisted safe `4xx` messages are passed through; response bodies and internal error details are never logged or returned.
 
 ## Zap 1: new question to tutor
 
@@ -130,8 +148,8 @@ The apply run is idempotent through the unique `source_review_id`. It also makes
 4. Confirm that the page says the question was saved privately and never says `Waiting for approval`.
 5. Confirm that only one database question exists and it has zero points.
 6. Confirm it is absent from student, general and moderation galleries.
-7. Open `/tutor-questions/`; verify that no data loads with a wrong admin key.
-8. Load with the correct key and filter New, Answered, Closed and All.
+7. Open `/automation-dashboard/follow-up/tutor-questions/` after one dashboard login and verify that no second key is requested.
+8. Filter New, Answered, Closed and All.
 9. Verify student name, student ID, course, module, date, full question and tutor notification status.
 10. Send a checked answer and confirm that the answer is stored even if the answer webhook is deliberately disabled.
 11. Confirm the student page shows the answer only with the correct personal token.

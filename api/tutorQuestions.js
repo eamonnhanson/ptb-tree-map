@@ -257,7 +257,8 @@ export function createTutorQuestionsRouter({
           module_name: lessonName(question.course_key, question.module_key),
           question: question.question_text,
           created_at: question.created_at,
-          tutor_queue_url: `${env.KETSO_UPLOADER_BASE_URL || "https://ketso-uploader.pages.dev"}/tutor-questions/`
+          tutor_queue_url: env.TUTOR_QUEUE_URL ||
+            `${env.KETSO_UPLOADER_BASE_URL || "https://ketso-uploader.pages.dev"}/tutor-questions/`
         }
       });
       const effectiveNotification = tutorEmail
@@ -386,40 +387,14 @@ export function createTutorQuestionsRouter({
         return res.status(400).json({ ok: false, error: "Answer is too long" });
       }
 
-      const existing = await pool.query(
-        "SELECT * FROM academy_tutor_questions WHERE id = $1 LIMIT 1",
-        [questionId]
-      );
-      if (!existing.rows.length) {
-        return res.status(404).json({ ok: false, error: "Question not found" });
-      }
-      if (existing.rows[0].answer_request_id === answerRequestId) {
-        return res.json({
-          ok: true,
-          duplicate: true,
-          question: publicQuestion(existing.rows[0]),
-          notification_sent: existing.rows[0].student_notification_status === "accepted"
-        });
-      }
-      if (existing.rows[0].status === "closed") {
-        return res.status(409).json({
-          ok: false,
-          error: "This question is closed"
-        });
-      }
-      if (existing.rows[0].answer_text) {
-        return res.status(409).json({
-          ok: false,
-          error: "This question already has an answer"
-        });
-      }
-
       const update = await pool.query(
         `
         UPDATE academy_tutor_questions
         SET answer_text = $2, status = 'answered', answered_by = $3,
             answered_at = NOW(), answer_request_id = $4
-        WHERE id = $1 AND answer_text IS NULL
+        WHERE id = $1
+          AND answer_text IS NULL
+          AND status = 'new'
         RETURNING *
         `,
         [
@@ -429,7 +404,31 @@ export function createTutorQuestionsRouter({
         ]
       );
       if (!update.rows.length) {
-        return res.status(409).json({ ok: false, error: "Question was already answered" });
+        const current = await pool.query(
+          "SELECT * FROM academy_tutor_questions WHERE id = $1 LIMIT 1",
+          [questionId]
+        );
+        if (!current.rows.length) {
+          return res.status(404).json({ ok: false, error: "Question not found" });
+        }
+        if (current.rows[0].answer_request_id === answerRequestId) {
+          return res.json({
+            ok: true,
+            duplicate: true,
+            question: publicQuestion(current.rows[0]),
+            notification_sent: current.rows[0].student_notification_status === "accepted"
+          });
+        }
+        if (current.rows[0].status === "closed") {
+          return res.status(409).json({ ok: false, error: "This question is closed" });
+        }
+        if (current.rows[0].answer_text || current.rows[0].status === "answered") {
+          return res.status(409).json({
+            ok: false,
+            error: "This question already has an answer"
+          });
+        }
+        return res.status(409).json({ ok: false, error: "This question cannot be answered" });
       }
 
       const question = update.rows[0];

@@ -330,6 +330,140 @@ main {
   background: #dff0ea;
 }
 
+.admin-review-controls,
+.tutor-controls {
+  margin-top: 16px;
+}
+
+.primary-action,
+.danger-action,
+.secondary-action,
+.review-actions button {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.primary-action {
+  color: #fff;
+  background: var(--green);
+  border-color: var(--green);
+}
+
+.danger-action {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+.secondary-action {
+  color: var(--green);
+  background: #e9f5f1;
+  border-color: #b9ded3;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.operation-status {
+  margin: 16px 0;
+  font-weight: 800;
+}
+
+.upload-card {
+  margin-bottom: 16px;
+  padding: 16px;
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.upload-preview img,
+.upload-preview video {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  background: #eef2f4;
+  border-radius: 8px;
+}
+
+.upload-content h2,
+.tutor-question-card h2 {
+  margin-top: 0;
+}
+
+.upload-meta,
+.question-meta {
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.upload-feedback,
+.question-text,
+.duplicate-warning {
+  margin-top: 12px;
+  padding: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  background: #fbfcfd;
+  border-left: 4px solid var(--line);
+}
+
+.duplicate-warning {
+  background: #fff7e6;
+  border-left-color: #d98200;
+}
+
+.review-actions {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tutor-question-card {
+  margin-bottom: 16px;
+  padding: 18px;
+}
+
+.question-status {
+  padding: 4px 9px;
+  color: var(--green);
+  background: #e9f5f1;
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.notification-status {
+  font-weight: 800;
+}
+
+.answer-field {
+  width: 100%;
+  min-height: 120px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  resize: vertical;
+}
+
+@media (max-width: 800px) {
+  .upload-card {
+    grid-template-columns: 1fr;
+  }
+}
+
 .overview {
   padding: 22px;
   display: grid;
