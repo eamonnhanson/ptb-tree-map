@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>KETSO Academy admin review</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/automation-dashboard/" aria-label="Back to automation dashboard">
+      <img src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160" alt="Plant N Boom">
+      <span>Automatiseringen</span>
+    </a>
+    <nav class="top-actions" aria-label="Dashboard navigation">
+      <a class="status-pill" href="/automation-dashboard/">Dashboard</a>
+      <a class="status-pill" href="/automation-dashboard/tree-sales/">Tree sales</a>
+      <a class="status-pill" href="/automation-dashboard/ketso/">KETSO</a>
+      <a class="status-pill" href="/automation-dashboard/follow-up/">Follow-up</a>
+      <a class="status-pill" href="/automation-dashboard/workflow-maintenance/">Workflow maintenance</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="subpage-hero" aria-label="KETSO Academy admin review">
+      <a class="dashboard-button" href="/automation-dashboard/ketso/">KETSO</a>
+      <p class="eyebrow">KETSO Academy</p>
+      <h1>Admin review</h1>
+      <p class="intro-copy">Review Academy uploads. Public approval makes an upload visible in the student gallery and awards one point. Private approval does not award a point.</p>
+    </section>
+
+    <section class="controls admin-review-controls" aria-label="Upload filters">
+      <div class="filter-heading">
+        <strong>Upload filters</strong>
+        <span>Load only the uploads you want to review.</span>
+      </div>
+      <label>
+        <span>Status</span>
+        <select id="statusFilter">
+          <option value="pending">Pending</option>
+          <option value="submitted_for_review">Submitted for review</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="all">All</option>
+        </select>
+      </label>
+      <label>
+        <span>Course</span>
+        <select id="courseFilter">
+          <option value="all">All courses</option>
+          <option value="online_tree_planting">Online tree planting</option>
+          <option value="arboriculture_1">Arboriculture I</option>
+        </select>
+      </label>
+      <button class="primary-action" id="loadBtn" type="button">Load uploads</button>
+    </section>
+
+    <p class="operation-status" id="status" aria-live="polite">Load uploads to start reviewing.</p>
+    <section id="uploads" aria-label="Uploads"></section>
+  </main>
+  <script src="admin-review.js"></script>
+</body>
+</html>
