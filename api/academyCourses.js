@@ -30,20 +30,23 @@ export const ACADEMY_COURSES = Object.freeze({
     name: "Arboriculture I",
     requiredLessons: [
       "arb1_module_1_tree_biology", "arb1_module_2_tree_identification",
+      "arb1_basic_chemistry_plant_growth", "arb1_tree_physiology",
       "arb1_module_3_soil_and_roots", "arb1_module_4_tree_selection",
       "arb1_module_5_tree_planting", "arb1_module_6_tree_care",
       "arb1_module_7_tree_health", "arb1_module_8_pruning"
     ],
     lessons: {
       onboarding: "Onboarding",
-      arb1_module_1_tree_biology: "Module 1: Tree biology and young tree failure",
-      arb1_module_2_tree_identification: "Module 2: Tree identification",
-      arb1_module_3_soil_and_roots: "Module 3: Soil and roots",
-      arb1_module_4_tree_selection: "Module 4: Choosing the right tree",
-      arb1_module_5_tree_planting: "Module 5: Tree planting",
-      arb1_module_6_tree_care: "Module 6: Young tree care",
-      arb1_module_7_tree_health: "Module 7: Tree health assessment",
-      arb1_module_8_pruning: "Module 8: Basic pruning",
+      arb1_module_1_tree_biology: "Module 1: Introduction to Arboriculture",
+      arb1_module_2_tree_identification: "Module 2: Observing trees",
+      arb1_basic_chemistry_plant_growth: "Module 3: Basic chemistry for plant growth",
+      arb1_tree_physiology: "Module 4: Tree physiology",
+      arb1_module_3_soil_and_roots: "Module 5: Soil and roots",
+      arb1_module_4_tree_selection: "Module 6: Choosing the right tree",
+      arb1_module_5_tree_planting: "Module 7: Tree planting",
+      arb1_module_6_tree_care: "Module 8: Young tree care",
+      arb1_module_7_tree_health: "Module 9: Tree health assessment",
+      arb1_module_8_pruning: "Module 10: Basic pruning",
       tutor_question: "Question to the tutor",
       evaluation: "Evaluation"
     }

@@ -4,6 +4,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { timingSafeEqual } from "crypto";
 
 import treesHandler from "./api/trees.js";
 import treesByCodesHandler from "./api/treesByCodes.js";
@@ -15,6 +16,7 @@ import getPhotoReviewGallery from "./api/getPhotoReviewGallery.js";
 import getStudentGallery from "./api/getStudentGallery.js";
 import { pool } from "./api/db.js";
 import { ACADEMY_COURSES, DEFAULT_ACADEMY_COURSE, normalizeCourseKey } from "./api/academyCourses.js";
+import { createTutorQuestionsRouter } from "./api/tutorQuestions.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -103,6 +105,26 @@ function requireAdmin(req, res) {
   return true;
 }
 
+function secureTextEqual(left, right) {
+  const leftBuffer = Buffer.from(String(left || ""));
+  const rightBuffer = Buffer.from(String(right || ""));
+  return leftBuffer.length === rightBuffer.length &&
+    timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+app.post("/api/academy-staff-auth", (req, res) => {
+  const configuredPassword = process.env.STAFF_UPLOAD_KEY;
+  const password = String(req.body?.password || "");
+  if (!configuredPassword) {
+    return res.status(500).json({ ok: false, error: "Staff access is not configured" });
+  }
+  if (!password || password.length > 128 ||
+      !secureTextEqual(password, configuredPassword)) {
+    return res.status(401).json({ ok: false, error: "Wrong password" });
+  }
+  return res.json({ ok: true });
+});
+
 app.get("/api/trees", treesHandler);
 
 app.get("/api/trees/by-codes", treesByCodesHandler);
@@ -117,6 +139,7 @@ app.get("/api/student-gallery", getStudentGallery);
 app.post("/api/save-photo-review", savePhotoReview);
 
 app.use("/api/forest-heroes", forestHeroes);
+app.use("/api/academy-tutor-questions", createTutorQuestionsRouter({ pool }));
 
 async function notifyApproval(upload) {
   if (!process.env.ZAPIER_APPROVAL_WEBHOOK_URL) {
@@ -263,6 +286,8 @@ app.get("/api/academy-upload-review", async (req, res) => {
         course_key,
         cropped_file_url,
         original_file_url,
+        upload_type,
+        lesson_key,
         verification_status
       FROM photo_uploads_review
       WHERE id = $1
@@ -399,6 +424,16 @@ app.get("/api/academy-student", async (req, res) => {
     } catch (enrollmentError) {
       if (enrollmentError.code !== "42P01") throw enrollmentError;
       console.warn("academy_course_enrollments is not installed yet; using legacy token lookup");
+    }
+
+    if (
+      result.rows[0].upload_type === "question_to_tutor" ||
+      result.rows[0].lesson_key === "tutor_question"
+    ) {
+      return res.status(404).json({
+        ok: false,
+        error: "Upload not found"
+      });
     }
 
     const result = await pool.query(
@@ -769,7 +804,10 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
     const requestedCourse = String(req.query.course_key || "all").trim();
 
     const values = [];
-    const conditions = [];
+    const conditions = [
+      "p.upload_type IS DISTINCT FROM 'question_to_tutor'",
+      "p.lesson_key IS DISTINCT FROM 'tutor_question'"
+    ];
 
     if (status !== "all") {
       values.push(status);
@@ -1070,6 +1108,7 @@ app.get("/api/student-profile/:id", async (req, res) => {
     });
   }
 });
+
 // =====================================================
 // 404 guard
 // =====================================================
