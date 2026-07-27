@@ -1,6 +1,7 @@
 "use strict";
 
-const API_BASE = "/automation-dashboard/api/ketso/tutor-questions";
+const API_BASE =
+  "/.netlify/functions/ketso-admin/tutor-questions";
 const statusEl = document.getElementById("statusFilter");
 const messageEl = document.getElementById("message");
 const questionsEl = document.getElementById("questions");
