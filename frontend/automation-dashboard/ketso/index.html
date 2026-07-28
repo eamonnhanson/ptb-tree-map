@@ -6,8 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>KETSO</title>
   <link rel="stylesheet" href="../styles.css">
+  <script type="module" src="ketso-shell.js"></script>
 </head>
-<body>
+<body class="ketso-shell-body">
   <header class="topbar">
     <a class="brand" href="/automation-dashboard/" aria-label="Terug naar automation dashboard">
       <img src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160" alt="Plant N Boom">
@@ -29,55 +30,74 @@
       <p class="intro-copy">Deze pagina bundelt de belangrijkste KETSO gallery viewers. Onder elke gallery staan de upload- of reviewroutes die daarbij horen.</p>
     </section>
 
-<section class="ketso-gallery-grid" aria-label="KETSO gallery viewers">
-  <article class="ketso-gallery-tile">
-    <a class="ketso-gallery-preview" href="https://ketso-uploader.pages.dev/admin-gallery/" target="_blank" rel="noopener">
-      <img src="https://pub-146513161ecf43ebbf81dda0cf702fde.r2.dev/staff_uploads/eamonn_hanson/1785256398588/image_1785256398607_ketso_admin_gallery_icon.png" alt="Admin Gallery">
-    </a>
-    <div class="ketso-gallery-content">
-      <h2>Admin Gallery</h2>
-      <p>centrale beheer- en reviewtoegang voor KETSO uploads.</p>
-      <a class="ketso-primary-link" href="https://ketso-uploader.pages.dev/admin-gallery/" target="_blank" rel="noopener">Open gallery</a>
-      <div class="ketso-supporting-links">
-        <span>Reviewroute</span>
-        <a href="/automation-dashboard/ketso/admin-review/">Admin review</a>
-      </div>
-    </div>
-  </article>
+    <section class="ketso-gallery-grid" aria-label="KETSO gallery viewers">
+      <article class="ketso-gallery-tile">
+        <a class="ketso-gallery-preview" data-ketso-view="admin-gallery" href="?view=admin-gallery">
+          <img src="https://pub-146513161ecf43ebbf81dda0cf702fde.r2.dev/staff_uploads/eamonn_hanson/1785256398588/image_1785256398607_ketso_admin_gallery_icon.png" alt="Admin Gallery">
+        </a>
+        <div class="ketso-gallery-content">
+          <h2>Admin Gallery</h2>
+          <p>centrale beheer- en reviewtoegang voor KETSO uploads.</p>
+          <a class="ketso-primary-link" data-ketso-view="admin-gallery" href="?view=admin-gallery">Open gallery</a>
+          <div class="ketso-supporting-links">
+            <span>Reviewroute</span>
+            <a data-ketso-view="admin-review" href="?view=admin-review">Admin review</a>
+          </div>
+        </div>
+      </article>
 
-  <article class="ketso-gallery-tile">
-    <a class="ketso-gallery-preview" href="https://ketso-uploader.pages.dev/student-gallery/" target="_blank" rel="noopener">
-      <img src="https://pub-146513161ecf43ebbf81dda0cf702fde.r2.dev/staff_uploads/eamonn_hanson/1785256371937/image_1785256371950_ketso_student_gallery_icon.png" alt="Student Gallery">
-    </a>
-    <div class="ketso-gallery-content">
-      <h2>Student Gallery</h2>
-      <p>leidende studentgallery voor KETSO uploads en punten.</p>
-      <a class="ketso-primary-link" href="https://ketso-uploader.pages.dev/student-gallery/" target="_blank" rel="noopener">Open gallery</a>
-      <div class="ketso-supporting-links">
-        <span>Uploadroutes</span>
-        <a href="https://ketso-uploader.pages.dev/academy-onboarding/" target="_blank" rel="noopener">Academy onboarding</a>
-        <a href="https://ketso-uploader.pages.dev" target="_blank" rel="noopener">Content uploader</a>
-      </div>
-    </div>
-  </article>
+      <article class="ketso-gallery-tile">
+        <a class="ketso-gallery-preview" data-ketso-view="student-gallery" href="?view=student-gallery">
+          <img src="https://pub-146513161ecf43ebbf81dda0cf702fde.r2.dev/staff_uploads/eamonn_hanson/1785256371937/image_1785256371950_ketso_student_gallery_icon.png" alt="Student Gallery">
+        </a>
+        <div class="ketso-gallery-content">
+          <h2>Student Gallery</h2>
+          <p>leidende studentgallery voor KETSO uploads en punten.</p>
+          <a class="ketso-primary-link" data-ketso-view="student-gallery" href="?view=student-gallery">Open gallery</a>
+          <div class="ketso-supporting-links">
+            <span>Uploadroutes</span>
+            <a data-ketso-view="academy-onboarding" href="?view=academy-onboarding">Academy onboarding</a>
+            <a data-ketso-view="content-uploader" href="?view=content-uploader">Content uploader</a>
+          </div>
+        </div>
+      </article>
 
-  <article class="ketso-gallery-tile">
-    <a class="ketso-gallery-preview" href="https://ketso-uploader.pages.dev/gallery" target="_blank" rel="noopener">
-      <img src="https://pub-146513161ecf43ebbf81dda0cf702fde.r2.dev/staff_uploads/amara_abdulai_sesay/1785256338757/image_1785256338845_ketso_public_gallery_icon.png" alt="KETSO Gallery">
-    </a>
-    <div class="ketso-gallery-content">
-      <h2>KETSO Gallery</h2>
-      <p>publieke KETSO gallery met staff uploads en algemene uploads.</p>
-      <a class="ketso-primary-link" href="https://ketso-uploader.pages.dev/gallery" target="_blank" rel="noopener">Open gallery</a>
-      <div class="ketso-supporting-links">
-        <span>Uploadroutes</span>
-        <a href="https://ketso-uploader.pages.dev" target="_blank" rel="noopener">Content uploader</a>
-        <a href="https://ketso-uploader.pages.dev/staff-upload-dashboard/" target="_blank" rel="noopener">Staff upload dashboard</a>
-      </div>
-    </div>
-  </article>
-</section>
+      <article class="ketso-gallery-tile">
+        <a class="ketso-gallery-preview" data-ketso-view="ketso-gallery" href="?view=ketso-gallery">
+          <img src="https://pub-146513161ecf43ebbf81dda0cf702fde.r2.dev/staff_uploads/amara_abdulai_sesay/1785256338757/image_1785256338845_ketso_public_gallery_icon.png" alt="KETSO Gallery">
+        </a>
+        <div class="ketso-gallery-content">
+          <h2>KETSO Gallery</h2>
+          <p>publieke KETSO gallery met staff uploads en algemene uploads.</p>
+          <a class="ketso-primary-link" data-ketso-view="ketso-gallery" href="?view=ketso-gallery">Open gallery</a>
+          <div class="ketso-supporting-links">
+            <span>Uploadroutes</span>
+            <a data-ketso-view="content-uploader" href="?view=content-uploader">Content uploader</a>
+            <a data-ketso-view="staff-upload" href="?view=staff-upload">Staff upload dashboard</a>
+          </div>
+        </div>
+      </article>
+    </section>
 
+    <section class="ketso-content-view" data-ketso-content hidden aria-labelledby="ketso-view-title">
+      <div class="ketso-content-toolbar">
+        <div>
+          <p class="eyebrow">KETSO functie</p>
+          <h2 id="ketso-view-title" data-ketso-title></h2>
+        </div>
+        <div class="ketso-content-actions">
+          <a class="secondary-action" data-ketso-external target="_blank" rel="noopener">Open in new tab</a>
+          <a class="secondary-action" href="/automation-dashboard/ketso/">Terug naar KETSO home</a>
+        </div>
+      </div>
+      <div class="ketso-frame-wrap">
+        <p class="ketso-frame-status" data-ketso-loading role="status">Pagina laden…</p>
+        <p class="ketso-frame-help" data-ketso-help hidden>
+          De pagina kon niet zichtbaar worden geladen. Gebruik “Open in new tab” om de zelfstandige pagina te openen.
+        </p>
+        <iframe data-ketso-frame title="KETSO functie" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+      </div>
+    </section>
   </main>
 </body>
 </html>
