@@ -37,6 +37,12 @@ body {
   gap: 16px;
 }
 
+.ketso-shell-body .topbar {
+  position: sticky;
+  z-index: 10;
+  top: 0;
+}
+
 .brand {
   color: var(--ink);
   text-decoration: none;
@@ -243,7 +249,8 @@ main {
 }
 
 .ketso-gallery-preview:hover,
-.ketso-gallery-preview:focus {
+.ketso-gallery-preview:focus,
+.ketso-gallery-preview.is-active {
   background: #e9f5f1;
 }
 
@@ -311,13 +318,77 @@ main {
 }
 
 .ketso-primary-link:hover,
-.ketso-primary-link:focus {
+.ketso-primary-link:focus,
+.ketso-primary-link.is-active {
   background: var(--leaf);
 }
 
 .ketso-supporting-links a:hover,
-.ketso-supporting-links a:focus {
+.ketso-supporting-links a:focus,
+.ketso-supporting-links a.is-active {
   background: #dff0ea;
+}
+
+.ketso-content-view {
+  margin-top: 16px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ketso-content-toolbar {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ketso-content-toolbar h2,
+.ketso-content-toolbar p {
+  margin: 0;
+}
+
+.ketso-content-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ketso-frame-wrap {
+  position: relative;
+  min-height: 680px;
+  background: #fbfcfd;
+}
+
+.ketso-frame-wrap iframe {
+  display: block;
+  width: 100%;
+  min-height: 680px;
+  border: 0;
+}
+
+.ketso-frame-status,
+.ketso-frame-help {
+  position: absolute;
+  z-index: 1;
+  top: 16px;
+  left: 50%;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 5px 20px rgb(20 33 61 / 12%);
+  transform: translateX(-50%);
+}
+
+.ketso-frame-help {
+  color: var(--red);
+  border-color: #f1b4ae;
 }
 
 .admin-review-controls,
@@ -1165,6 +1236,16 @@ tr.student-meer_info_nodig td:first-child {
   .menu-card-grid,
   .subpage-card-grid {
     grid-template-columns: 1fr;
+  }
+
+  .ketso-content-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ketso-frame-wrap,
+  .ketso-frame-wrap iframe {
+    min-height: 70vh;
   }
 
   .overview {
