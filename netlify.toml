@@ -2,6 +2,12 @@
 publish = "frontend"
 functions = "netlify/functions"
 
+[functions."tree-allocated"]
+included_files = ["certs/ca.pem"]
+
+[functions."monitoring-ingest"]
+included_files = ["certs/ca.pem"]
+
 [[redirects]]
 from = "/automation-dashboard"
 to = "/automation-dashboard/"
