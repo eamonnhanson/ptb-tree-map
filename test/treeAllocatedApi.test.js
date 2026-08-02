@@ -134,4 +134,6 @@ test("monitoringbewijs maakt Shopify-, Creator- en e-mailresultaat controleerbaa
   assert.equal(body.orders[0].creator_record_count, 1);
   assert.equal(body.orders[0].email_submission_status, "submitted");
   assert.equal(body.orders[0].final_status.status, "completed");
+  assert.equal(body.orders[0].final_status.label, "Gift-claim afgerond");
+  assert.equal(Object.hasOwn(body.orders[0], "certificate_sent"), false);
 });
