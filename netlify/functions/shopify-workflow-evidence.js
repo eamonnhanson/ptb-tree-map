@@ -1,8 +1,10 @@
 export const SHOPIFY_GIFT_WORKFLOW = Object.freeze({
   key: "shopify_gift_tree_sku01_374491281",
   zapId: "374491281",
-  publishedVersion: "374491282",
-  name: "DEV - Shopify → Tokenized Gift Tree Link - Multilingual"
+  name: "DEV - Shopify → Tokenized Gift Tree Link - Multilingual",
+  displayedPublishedVersion: "v4",
+  internalZapierVersionId: null,
+  editorState: "unpublished draft of Zap 374491281"
 });
 
 export const EVIDENCE_EVENT_TYPES = Object.freeze([
@@ -22,7 +24,7 @@ export function normalizeLanguage(value) {
   return ["nl", "en", "fr"].includes(language) ? language : null;
 }
 
-const common = new Set(["event_type", "order_id", "occurred_at", "workflow_key", "zap_id", "zap_version"]);
+const common = new Set(["event_type", "order_id", "occurred_at", "workflow_key", "zap_id"]);
 const fields = {
   shopify_order_received: new Set([...common, "created_at", "customer_email", "customer_locale", "sku", "ordered_quantity", "product_title"]),
   gift_claim_created: new Set([...common, "creator_record_id", "creator_record_count", "status"]),
@@ -36,13 +38,14 @@ export function validateEvidencePayload(payload) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return { error: "Ongeldige JSON-payload" };
   const type = payload.event_type;
   if (!EVIDENCE_EVENT_TYPES.includes(type)) return { error: "Onbekend event_type" };
+  if (Object.hasOwn(payload, "zap_version")) return { error: "zap_version wordt niet geaccepteerd zolang de interne Zapier-versie-ID niet is geverifieerd" };
   if (Object.keys(payload).some(key => !fields[type].has(key))) return { error: "Payload bevat niet-toegestane velden" };
   const orderId = normalizeShopifyOrderId(payload.order_id);
   const occurredAt = iso(payload.occurred_at);
   if (!orderId || !occurredAt) return { error: "Ongeldig order-ID of tijdstip" };
-  if (payload.workflow_key !== SHOPIFY_GIFT_WORKFLOW.key || String(payload.zap_id) !== SHOPIFY_GIFT_WORKFLOW.zapId || String(payload.zap_version) !== SHOPIFY_GIFT_WORKFLOW.publishedVersion) return { error: "Onbekende workflow-identiteit" };
+  if (payload.workflow_key !== SHOPIFY_GIFT_WORKFLOW.key || String(payload.zap_id) !== SHOPIFY_GIFT_WORKFLOW.zapId) return { error: "Onbekende workflow-identiteit" };
 
-  const base = { event_type: type, order_id: orderId, occurred_at: occurredAt, workflow_key: SHOPIFY_GIFT_WORKFLOW.key, zap_id: SHOPIFY_GIFT_WORKFLOW.zapId, zap_version: SHOPIFY_GIFT_WORKFLOW.publishedVersion };
+  const base = { event_type: type, order_id: orderId, occurred_at: occurredAt, workflow_key: SHOPIFY_GIFT_WORKFLOW.key, zap_id: SHOPIFY_GIFT_WORKFLOW.zapId };
   if (type === "shopify_order_received") {
     const quantity = Number(payload.ordered_quantity);
     const data = { ...base, created_at: iso(payload.created_at), customer_email: email(payload.customer_email), customer_locale: cleanText(payload.customer_locale, 35), language: normalizeLanguage(payload.customer_locale), sku: cleanText(payload.sku, 40), ordered_quantity: quantity, product_title: cleanText(payload.product_title, 200) };

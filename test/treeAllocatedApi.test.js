@@ -120,10 +120,10 @@ test("API groepeert orderresultaten en geeft bronstatus terug", async () => {
   assert.equal(calls[0].values.at(-2), 25);
 });
 
-test("monitoringbewijs maakt Shopify-, Creator- en e-mailresultaat controleerbaar", async () => {
+test("historisch zap_version-veld blijft leesbaar en monitoringbewijs blijft controleerbaar", async () => {
   const allocation = { shopify_order_id: "90000000000003", allocation_observed_at: "2026-07-29T18:31:00Z", user_id: 2978, email: "customer@example.test", customer_name: "Test", allocated_count: 1, trees: [], total_count: 1 };
   const events = [
-    { category: "shopify_order_received", entity_id: "gid://shopify/Order/90000000000003", customer_email: "customer@example.test", status: "confirmed", changed_fields: { order_id: "90000000000003", workflow_key: "shopify_gift_tree_sku01_374491281", created_at: "2026-07-29T18:29:34Z", ordered_quantity: 1, sku: "01", language: "fr" } },
+    { category: "shopify_order_received", entity_id: "gid://shopify/Order/90000000000003", customer_email: "customer@example.test", status: "confirmed", changed_fields: { order_id: "90000000000003", workflow_key: "shopify_gift_tree_sku01_374491281", zap_version: "374491282", created_at: "2026-07-29T18:29:34Z", ordered_quantity: 1, sku: "01", language: "fr" } },
     { category: "gift_claim_created", entity_id: "90000000000003", status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", creator_record_count: 1, creator_record_id: "creator-test-1" } },
     { category: "gift_claim_email_submitted", entity_id: "90000000000003", status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", submission_status: "submitted" } }
   ];
