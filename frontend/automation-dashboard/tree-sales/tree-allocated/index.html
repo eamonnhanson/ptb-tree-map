@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tree allocated | Plant N Boom</title>
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/automation-dashboard/"><img src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160" alt="Plant N Boom"><span>Automatiseringen</span></a>
+    <nav class="top-actions" aria-label="Dashboard navigatie"><a class="status-pill" href="/automation-dashboard/">Dashboard</a><a class="status-pill" href="/automation-dashboard/tree-sales/">Tree sales</a><a class="status-pill" href="/automation-dashboard/workflow-maintenance/">Workflow maintenance</a></nav>
+  </header>
+  <main class="allocated-page">
+    <section class="allocated-heading">
+      <div><a class="dashboard-button" href="/automation-dashboard/tree-sales/">← Tree sales</a><p class="eyebrow">Operationeel overzicht</p><h1>Tree allocated</h1><p class="intro-copy">Controleer per Shopify-order of klant, bomen, Creator-record en certificaatmail aantoonbaar compleet zijn.</p></div>
+      <div class="refresh-meta"><button class="primary-action" id="reload" type="button">Gegevens opnieuw laden</button><span id="last-updated">Nog niet vernieuwd</span></div>
+    </section>
+
+    <section class="source-banner" id="source-banner" aria-live="polite">Bronnen controleren…</section>
+    <section class="summary-grid allocated-summary" id="summary" aria-label="Samenvatting"><div class="metric"><strong>–</strong><span>Nieuwe boomverkopen</span></div><div class="metric"><strong>–</strong><span>Volledig afgehandeld</span></div><div class="metric"><strong>–</strong><span>In verwerking</span></div><div class="metric"><strong>–</strong><span>Niet volledig controleerbaar</span></div><div class="metric"><strong>–</strong><span>Actie nodig</span></div></section>
+
+    <form class="allocated-filters" id="filters">
+      <label class="wide-filter"><span>Zoeken</span><input id="search" name="search" type="search" placeholder="Klant, e-mail, order-ID, user-ID of boomcode"></label>
+      <label><span>Eindstatus</span><select name="status"><option value="all">Alle statussen</option><option value="completed">Afgerond</option><option value="processing">In verwerking</option><option value="unverifiable">Niet volledig controleerbaar</option><option value="action_required">Actie nodig</option></select></label>
+      <label class="source-disabled"><span>Taal</span><select name="language" disabled aria-describedby="shopify-filter-note"><option>Beschikbaar na Shopify-koppeling</option></select></label>
+      <label class="source-disabled"><span>SKU</span><input name="sku" value="Beschikbaar na Shopify-koppeling" disabled aria-describedby="shopify-filter-note"></label>
+      <label><span>Allocatieperiode</span><select name="period" id="period"><option value="today">Vandaag</option><option value="7d" selected>Laatste 7 dagen</option><option value="30d">Laatste 30 dagen</option><option value="custom">Aangepaste periode</option></select></label>
+      <label class="custom-date" hidden><span>Van</span><input name="from" type="date"></label><label class="custom-date" hidden><span>Tot</span><input name="to" type="date"></label>
+      <button class="secondary-action" type="reset">Filters wissen</button>
+      <p class="filter-source-note" id="shopify-filter-note">Taal- en SKU-filters worden beschikbaar zodra Shopify als betrouwbare bron is gekoppeld.</p>
+    </form>
+
+    <section class="panel allocated-results" aria-labelledby="results-title">
+      <div class="panel-heading"><div><h2 id="results-title">Verkoopoverzicht</h2><span id="period-label">Allocatieperiode: laatste 7 dagen</span></div><span id="result-count">Laden…</span></div>
+      <div id="state" class="allocated-state" aria-live="polite">Gegevens laden…</div>
+      <div class="table-wrap" id="table-wrap" hidden><table class="allocated-table"><thead><tr><th>Klant</th><th>Shopify-order</th><th>Datum</th><th>SKU</th><th>Bomen</th><th>Toewijzing</th><th>Creator</th><th>Certificaat</th><th>E-mail</th><th>Eindstatus</th><th>Actie</th></tr></thead><tbody id="orders"></tbody></table></div>
+      <div class="pagination" id="pagination" hidden><button class="secondary-action" id="previous" type="button">Vorige</button><span id="page-label"></span><button class="secondary-action" id="next" type="button">Volgende</button></div>
+    </section>
+  </main>
+  <script type="module" src="tree-allocated.js"></script>
+</body>
+</html>
