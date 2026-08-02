@@ -163,7 +163,6 @@ export function createHandler({ env = process.env, getPool = () => db(env), getM
           ordered_count: null,
           creator_record_count: null,
           creator_record_id: null,
-          certificate_sent: null,
           email_submitted: null,
           email_submission_status: null,
           mismatched_order_count: 0,

@@ -4,6 +4,20 @@ Tree allocated leest geen Shopify API. Zap `374491281` (versie `374491282`) schr
 
 Vaste velden in elke request: `workflow_key=shopify_gift_tree_sku01_374491281`, `zap_id=374491281` en `zap_version=374491282`. De server maakt de idempotency key uit workflow, eventtype en het genormaliseerde order-ID.
 
+## Betekenis van het bewijs
+
+| Controle | Bewijsbron | Wat hiermee is bewezen |
+|---|---|---|
+| Shopify-order | `shopify_order_received` | Geldige Shopify-ordergegevens zijn ontvangen. |
+| Klantkoppeling | `public.users1` | Een PostgreSQL-gebruiker is aan de toegewezen bomen gekoppeld. |
+| Boomtoewijzing | `public.trees1` | Het werkelijke aantal bomen en hun Shopify order-ID; dit komt niet uit een monitoringevent. |
+| GiftClaims-record | `gift_claim_created` | Eén Zoho Creator GiftClaims-record is aangemaakt. |
+| Gift-claim e-mail | `gift_claim_email_submitted` | De gift-claim e-mail is geaccepteerd voor aanbieding aan de verzendactie. |
+| Certificaatgeneratie | Niet gemonitord | Het huidige contract bevat hiervoor geen bewijs. |
+| Certificaatmail | Niet gemonitord | Het huidige contract bevat hiervoor geen bewijs. |
+
+De interne status `completed` betekent uitsluitend dat de gemonitorde gift-claimworkflow compleet is: Shopify-bewijs, klantkoppeling, een exact passende PostgreSQL-boomtoewijzing, precies één GiftClaims-record en een aangeboden gift-claim e-mail zijn bevestigd, zonder geregistreerde technische fout. Deze status bewijst geen certificaatgeneratie en geen certificaatmail. Certificatevidence vereist later een afzonderlijke registrydefinitie met een eigen betrouwbare bron en contract; bestaande gift-claimevents mogen daarvoor niet worden hergebruikt.
+
 ## Na Shopify-trigger/filter
 
 Voeg **Webhooks by Zapier → Custom Request** toe, stel `Method` in op `POST` en map de JSON-body:
