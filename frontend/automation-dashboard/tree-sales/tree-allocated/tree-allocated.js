@@ -37,6 +37,15 @@ function renderOrder(order, index, links) {
   return `<tr><td><strong>${escapeHtml(order.customer_name || "Onbekende klant")}</strong><small>${escapeHtml(order.email || "E-mail ontbreekt")}</small></td><td><strong>${escapeHtml(order.shopify_order_id)}</strong></td><td>${formatDate(order.order_date)}<small>Toewijzing waargenomen op: ${formatDate(order.allocation_observed_at)}</small></td><td>${escapeHtml(order.sku || "–")}</td><td><strong>${order.allocated_count} van ${order.ordered_count ?? "?"}</strong></td><td>${badge(order.allocated_count ? "green" : "red", order.allocated_count ? "✓" : "!", order.allocated_count ? "Toegewezen" : "Ontbreekt")}</td><td>${order.creator_record_count === 1 ? badge("green", "✓", "1 GiftClaims-record") : order.creator_source_available ? badge("red", "!", `${order.creator_record_count} GiftClaims-records`) : badge("neutral", "?", "Bron niet gekoppeld")}</td><td>${badge("neutral", "i", "Niet gemonitord")}</td><td>${order.email_submission_status === "submitted" ? badge("green", "✓", "Aangeboden voor verzending") : order.email_submission_status === "failed" ? badge("red", "!", "Mislukt") : badge("neutral", "?", "Niet geregistreerd")}</td><td>${badge(tone, icon, status.label)}<small>${escapeHtml(reason)}</small></td><td><button class="detail-toggle" type="button" aria-expanded="false" aria-controls="detail-${index}">Details</button></td></tr>${renderDetail(order, links).replace('<tr class="order-detail"', `<tr id="detail-${index}" class="order-detail" hidden`)} `;
 }
 
+function renderOperationalChecks(order, row) {
+  row.cells[0].insertAdjacentHTML("beforeend", `<small>${order.user_id ? badge("green", "✓", "Gelukt") : badge("red", "!", "Ontbreekt")}</small>`);
+  row.cells[1].insertAdjacentHTML("beforeend", `<small>${order.shopify_source_available ? badge("green", "✓", "Gelukt") : badge("neutral", "?", "Niet gecontroleerd")}</small>`);
+  const allocationMatches = order.ordered_count != null && order.allocated_count === order.ordered_count;
+  row.cells[5].innerHTML = allocationMatches ? badge("green", "✓", "Gelukt") : badge("red", "!", order.allocated_count ? "Afwijking" : "Ontbreekt");
+  row.cells[6].innerHTML = order.creator_record_count === 1 ? badge("green", "✓", "Gelukt") : badge("red", "!", order.creator_record_count == null ? "Ontbreekt" : "Afwijking");
+  row.cells[8].innerHTML = order.email_submission_status === "submitted" ? badge("green", "✓", "Gelukt") : badge("red", "!", order.email_submission_status == null ? "Ontbreekt" : "Afwijking");
+}
+
 async function load() {
   state.hidden = false; state.innerHTML = "Gegevens laden…"; tableWrap.hidden = true;
   const params = new URLSearchParams(new FormData(form)); params.set("page", page); params.set("page_size", "25");
@@ -46,12 +55,13 @@ async function load() {
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `Status ${response.status}`);
     document.getElementById("last-updated").textContent = `Laatst vernieuwd: ${formatDate(data.generated_at)}`;
-    document.getElementById("period-label").textContent = `Allocatieperiode: ${data.period.from} t/m ${data.period.to}`;
+    document.getElementById("period-label").textContent = data.period.key === "all" ? "Periode: alle perioden" : `Periode: ${data.period.from} t/m ${data.period.to}`;
     document.getElementById("source-banner").innerHTML = `<strong>Bronstatus:</strong> PostgreSQL ${sourceLabel(data.source_status.postgresql)} · Shopify ${sourceLabel(data.source_status.shopify)} · Zoho Creator ${sourceLabel(data.source_status.creator)}${data.limitations?.length ? `<span>${escapeHtml(data.limitations.join(" "))}</span>` : ""}`;
-    summary.innerHTML = [[data.counts.new,"Nieuwe boomverkopen"],[data.counts.completed,"Gift-claim afgehandeld"],[data.counts.processing,"In verwerking"],[data.counts.unverifiable,"Niet volledig controleerbaar"],[data.counts.action_required,"Actie nodig"]].map(([value,label]) => `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join("");
+    summary.innerHTML = [[data.counts.new,"Nieuwe boomverkopen"],[data.counts.completed,"Volledig"],[data.counts.processing,"In verwerking"],[data.counts.unverifiable,"Niet volledig controleerbaar"],[data.counts.action_required,"Actie nodig"]].map(([value,label]) => `<div class="metric"><strong>${value}</strong><span>${label}</span></div>`).join("");
     document.getElementById("result-count").textContent = `${data.pagination.total} orders`;
     if (!data.orders.length) { state.innerHTML = "Geen orders gevonden voor deze filters. Pas de periode of filters aan."; return; }
     tbody.innerHTML = data.orders.map((order,index) => renderOrder(order,index,data.workflow_links)).join("");
+    [...tbody.children].filter(row => !row.classList.contains("order-detail")).forEach((row, index) => renderOperationalChecks(data.orders[index], row));
     state.hidden = true; tableWrap.hidden = false;
     document.querySelectorAll(".detail-toggle").forEach(button => button.addEventListener("click", () => { const detail = document.getElementById(button.getAttribute("aria-controls")); const open = button.getAttribute("aria-expanded") === "true"; button.setAttribute("aria-expanded", String(!open)); button.textContent = open ? "Details" : "Sluiten"; detail.hidden = open; }));
     const pages = Math.max(1, Math.ceil(data.pagination.total / data.pagination.page_size)); document.getElementById("pagination").hidden = pages === 1; document.getElementById("page-label").textContent = `Pagina ${page} van ${pages}`; document.getElementById("previous").disabled = page === 1; document.getElementById("next").disabled = page >= pages;

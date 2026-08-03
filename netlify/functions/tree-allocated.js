@@ -8,7 +8,7 @@ const { Pool } = pg;
 let pool;
 let monitoringPool;
 const headers = { "Content-Type": "application/json", "Cache-Control": "no-store" };
-const allowedPeriods = new Set(["today", "7d", "30d", "custom"]);
+const allowedPeriods = new Set(["all", "today", "7d", "30d", "custom"]);
 const allowedStatuses = new Set(["all", "completed", "processing", "unverifiable", "action_required"]);
 
 function json(statusCode, body, extra = {}) { return { statusCode, headers: { ...headers, ...extra }, body: JSON.stringify(body) }; }
@@ -90,7 +90,7 @@ function evidenceByOrder(rows) {
     if (!orderId) continue;
     const item = evidence.get(orderId) || {};
     const data = typeof row.changed_fields === "string" ? JSON.parse(row.changed_fields) : (row.changed_fields || {});
-    if (row.category === "shopify_order_received") Object.assign(item, { shopify_source_available: true, order_date: data.created_at, ordered_count: Number(data.ordered_quantity), sku: data.sku, language: data.language, email: row.customer_email || item.email });
+    if (row.category === "shopify_order_received") Object.assign(item, { shopify_order_id: orderId, shopify_source_available: true, order_date: data.created_at, ordered_count: Number(data.ordered_quantity), sku: data.sku, language: data.language, email: row.customer_email || item.email });
     if (row.category === "gift_claim_created") Object.assign(item, { creator_source_available: true, creator_record_count: Number(data.creator_record_count), creator_record_id: data.creator_record_id || null });
     if (row.category === "gift_claim_email_submitted") Object.assign(item, { email_submission_status: data.submission_status, email_submitted: data.submission_status === "submitted" });
     if (row.status === "failed" || row.action_required === true) item.technical_error = "Geregistreerde technische workflowfout";
@@ -115,48 +115,68 @@ export function createHandler({ env = process.env, getPool = () => db(env), getM
     if (!database) return json(503, { ok: false, error: "PostgreSQL-bron is niet geconfigureerd", source_status: { postgresql: "unavailable", shopify: "not_configured", creator: "not_configured" } });
 
     try {
-      const values = [];
-      const where = ["t.order_id is not null", "btrim(t.order_id::text) <> ''"];
       const search = String(q.search || "").trim().slice(0, 120);
-      if (search) { values.push(`%${search}%`); where.push(`(u.first_name ilike $${values.length} or u.last_name ilike $${values.length} or u.email ilike $${values.length} or t.order_id::text ilike $${values.length} or t.tree_code ilike $${values.length} or u.id::text ilike $${values.length})`); }
       let from = q.from, to = q.to;
-      if (period !== "custom") {
+      if (period === "all") {
+        from = null;
+        to = null;
+      } else if (period !== "custom") {
         const days = period === "today" ? 0 : period === "7d" ? 6 : 29;
         const d = now(); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() - days); from = d.toISOString().slice(0, 10); to = now().toISOString().slice(0, 10);
       }
-      values.push(from); where.push(`coalesce(t.claimed_at, t.updated_at, t.created_at)::date >= $${values.length}::date`);
-      values.push(to); where.push(`coalesce(t.claimed_at, t.updated_at, t.created_at)::date <= $${values.length}::date`);
-      values.push(pageSize); const limitAt = values.length;
-      values.push((page - 1) * pageSize); const offsetAt = values.length;
-      const sql = `select t.order_id::text as shopify_order_id, null::timestamptz as order_date,
-        max(coalesce(t.claimed_at,t.updated_at,t.created_at)) as allocation_observed_at,
-        max(u.id)::int as user_id, max(u.email) as email, max(concat_ws(' ',u.first_name,u.last_name)) as customer_name,
-        null::text as sku, null::text as language, count(*)::int as allocated_count,
-        json_agg(json_build_object('id',t.id,'tree_code',t.tree_code,'tree_type',t.tree_type,'lat',t.lat,'long',t.long,'planted_date',t.planted_date,'claimed_at',t.claimed_at,'user_id',t.user_id,'order_id',t.order_id) order by t.id) as trees,
-        count(*) over()::int as total_count
-        from public.trees1 t left join public.users1 u on u.id=t.user_id where ${where.join(" and ")}
-        group by t.order_id order by max(coalesce(t.claimed_at,t.updated_at,t.created_at)) desc limit $${limitAt} offset $${offsetAt}`;
-      const result = await database.query(sql, values);
       let monitoringStatus = "not_configured";
       let evidence = new Map();
       const monitoring = getMonitoringPool();
-      if (monitoring && result.rows.length) {
+      if (monitoring) {
         try {
-          const orderIds = result.rows.map(row => normalizeShopifyOrderId(row.shopify_order_id)).filter(Boolean);
-          const eventResult = await monitoring.query(`select event_time,category,status,entity_id,customer_email,changed_fields,action_required
-            from monitoring.automation_events
-            where entity_type='shopify_order' and entity_id=any($1::text[]) and category=any($2::text[])
-              and changed_fields->>'workflow_key'=$3
-            order by event_time,id`, [orderIds, EVIDENCE_EVENT_TYPES, SHOPIFY_GIFT_WORKFLOW.key]);
+          const eventValues = [EVIDENCE_EVENT_TYPES, SHOPIFY_GIFT_WORKFLOW.key];
+          const orderWhere = ["entity_type='shopify_order'", "category='shopify_order_received'", "changed_fields->>'workflow_key'=$2"];
+          if (from) { eventValues.push(from); orderWhere.push(`(changed_fields->>'created_at')::timestamptz >= $${eventValues.length}::date`); }
+          if (to) { eventValues.push(to); orderWhere.push(`(changed_fields->>'created_at')::timestamptz < ($${eventValues.length}::date + interval '1 day')`); }
+          if (search) {
+            eventValues.push(`%${search}%`);
+            orderWhere.push(`(entity_id ilike $${eventValues.length} or customer_email ilike $${eventValues.length} or changed_fields->>'sku' ilike $${eventValues.length} or changed_fields->>'language' ilike $${eventValues.length})`);
+          }
+          const eventResult = await monitoring.query(`with matching_orders as (
+            select distinct entity_id from monitoring.automation_events where ${orderWhere.join(" and ")}
+          )
+          select event_time,category,status,entity_id,customer_email,changed_fields,action_required
+          from monitoring.automation_events
+          where entity_type='shopify_order' and entity_id in (select entity_id from matching_orders)
+            and category=any($1::text[]) and changed_fields->>'workflow_key'=$2
+          order by event_time,id`, eventValues);
           evidence = evidenceByOrder(eventResult.rows);
           monitoringStatus = "available";
         } catch (error) {
           monitoringStatus = "unavailable";
           logger.error("Tree allocated monitoring query failed", postgresDiagnostics(error));
         }
-      } else if (monitoring) monitoringStatus = "available";
-      const orders = result.rows.map(row => {
-        const workflowEvidence = evidence.get(normalizeShopifyOrderId(row.shopify_order_id)) || {};
+      }
+
+      const monitoredOrderIds = [...evidence.keys()];
+      const values = [];
+      const where = ["t.order_id is not null", "btrim(t.order_id::text) <> ''"];
+      const allocationFilters = [];
+      if (search) { values.push(`%${search}%`); allocationFilters.push(`(u.first_name ilike $${values.length} or u.last_name ilike $${values.length} or u.email ilike $${values.length} or t.order_id::text ilike $${values.length} or t.tree_code ilike $${values.length} or u.id::text ilike $${values.length})`); }
+      if (from) { values.push(from); allocationFilters.push(`coalesce(t.claimed_at, t.updated_at, t.created_at)::date >= $${values.length}::date`); }
+      if (to) { values.push(to); allocationFilters.push(`coalesce(t.claimed_at, t.updated_at, t.created_at)::date <= $${values.length}::date`); }
+      if (monitoredOrderIds.length && allocationFilters.length) {
+        values.push(monitoredOrderIds);
+        where.push(`(t.order_id::text=any($${values.length}::text[]) or (${allocationFilters.join(" and ")}))`);
+      } else if (allocationFilters.length) where.push(...allocationFilters);
+      const sql = `select t.order_id::text as shopify_order_id, null::timestamptz as order_date,
+        max(coalesce(t.claimed_at,t.updated_at,t.created_at)) as allocation_observed_at,
+        max(u.id)::int as user_id, max(u.email) as email, max(concat_ws(' ',u.first_name,u.last_name)) as customer_name,
+        null::text as sku, null::text as language, count(*)::int as allocated_count,
+        json_agg(json_build_object('id',t.id,'tree_code',t.tree_code,'tree_type',t.tree_type,'lat',t.lat,'long',t.long,'planted_date',t.planted_date,'claimed_at',t.claimed_at,'user_id',t.user_id,'order_id',t.order_id) order by t.id) as trees
+        from public.trees1 t left join public.users1 u on u.id=t.user_id where ${where.join(" and ")}
+        group by t.order_id order by max(coalesce(t.claimed_at,t.updated_at,t.created_at)) desc`;
+      const result = await database.query(sql, values);
+      const allocations = new Map(result.rows.map(row => [normalizeShopifyOrderId(row.shopify_order_id), row]));
+      const orderIds = new Set([...evidence.keys(), ...allocations.keys()].filter(Boolean));
+      const orders = [...orderIds].map(orderId => {
+        const row = allocations.get(orderId) || { shopify_order_id: orderId, allocation_observed_at: null, user_id: null, customer_name: null, allocated_count: 0, trees: [] };
+        const workflowEvidence = evidence.get(orderId) || {};
         const order = {
           ...row,
           order_date: null,
@@ -173,11 +193,14 @@ export function createHandler({ env = process.env, getPool = () => db(env), getM
         return { ...order, final_status: determineTreeAllocatedStatus(order, now()) };
       });
       const filtered = status === "all" ? orders : orders.filter(order => order.final_status.status === status);
+      filtered.sort((a, b) => new Date(b.order_date || b.allocation_observed_at || 0) - new Date(a.order_date || a.allocation_observed_at || 0));
+      const total = filtered.length;
+      const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
       const counts = { new: orders.length, completed: 0, processing: 0, unverifiable: 0, action_required: 0 };
       orders.forEach(order => { counts[order.final_status.status] += 1; });
       const hasShopify = orders.some(order => order.shopify_source_available);
       const hasCreator = orders.some(order => order.creator_source_available);
-      return json(200, { ok: true, generated_at: now().toISOString(), period: { key: period, from, to }, processing_window_hours: DEFAULT_PROCESSING_WINDOW_HOURS, source_status: { postgresql: "available", shopify: hasShopify ? "available" : monitoringStatus === "available" ? "connected_no_evidence" : monitoringStatus, creator: hasCreator ? "available" : monitoringStatus === "available" ? "connected_no_evidence" : monitoringStatus, monitoring: monitoringStatus }, limitations: monitoringStatus === "available" ? ["Historische orders zonder workflowevents blijven niet volledig controleerbaar."] : ["Monitoringevents zijn niet beschikbaar; Shopify- en Creator-bewijs kan niet worden gecontroleerd."], counts, orders: filtered, pagination: { page, page_size: pageSize, total: Number(result.rows[0]?.total_count || 0) }, workflow_links: { zap: env.ZAP_C_URL || null, history: env.ZAP_C_HISTORY_URL || null } });
+      return json(200, { ok: true, generated_at: now().toISOString(), period: { key: period, from, to }, processing_window_hours: DEFAULT_PROCESSING_WINDOW_HOURS, source_status: { postgresql: "available", shopify: hasShopify ? "available" : monitoringStatus === "available" ? "connected_no_evidence" : monitoringStatus, creator: hasCreator ? "available" : monitoringStatus === "available" ? "connected_no_evidence" : monitoringStatus, monitoring: monitoringStatus }, limitations: monitoringStatus === "available" ? ["Historische orders zonder workflowevents blijven niet volledig controleerbaar."] : ["Monitoringevents zijn niet beschikbaar; Shopify- en Creator-bewijs kan niet worden gecontroleerd."], counts, orders: paged, pagination: { page, page_size: pageSize, total }, workflow_links: { zap: env.ZAP_C_URL || null, history: env.ZAP_C_HISTORY_URL || null } });
     } catch (error) {
       logger.error("Tree allocated query failed", postgresDiagnostics(error));
       return json(503, { ok: false, error: "Tree allocated data is tijdelijk niet bereikbaar", source_status: { postgresql: "unavailable", shopify: "not_configured", creator: "not_configured" } });

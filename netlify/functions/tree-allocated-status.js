@@ -23,6 +23,8 @@ export function determineTreeAllocatedStatus(order, now = new Date(), windowHour
   if (creatorCount > 1) reasons.push(`${creatorCount} Creator-records gevonden`);
   if (creatorCount === 0) reasons.push("Creator-record ontbreekt");
   if (order.email_submitted === false) reasons.push("E-mailaanbieding is mislukt");
+  if (order.shopify_source_available === true && creatorCount === null) reasons.push("GiftClaims-record ontbreekt");
+  if (order.shopify_source_available === true && order.email_submitted === null) reasons.push("Gift-claimmail ontbreekt");
   if (order.technical_error) reasons.push(order.technical_error);
 
   const sourcesComplete = ordered !== null && creatorCount !== null && order.email_submitted !== null;
@@ -33,7 +35,7 @@ export function determineTreeAllocatedStatus(order, now = new Date(), windowHour
     order.mismatched_order_count === 0 && creatorCount === 1 &&
     order.email_submitted === true && !order.technical_error;
 
-  if (complete) return { status: "completed", label: "Gift-claim afgerond", reasons: [] };
+  if (complete) return { status: "completed", label: "Volledig", reasons: [] };
   if (reasons.length) return { status: "action_required", label: "Actie nodig", reasons };
   if (requiredSourceUnavailable) {
     return {
