@@ -11,11 +11,11 @@ test("Tree allocated-tegel en directe route bestaan binnen beveiligde dashboards
   assert.match(page, /<h1>Tree allocated<\/h1>/);
   assert.match(page, /tree-allocated\.js/);
   assert.match(page, /Niet volledig controleerbaar/);
-  assert.match(page, /Allocatieperiode/);
+  assert.match(page, />Periode</);
+  assert.match(page, /<option value="all">Alle perioden<\/option>/);
   assert.match(page, /name="language" disabled/);
   assert.match(page, /name="sku"[^>]*disabled/);
-  assert.match(page, /Gift-claim afgehandeld/);
-  assert.match(page, /Gift-claim afgerond/);
+  assert.match(page, /<option value="completed">Volledig<\/option>/);
   assert.match(page, /Gift-claim e-mail/);
   assert.match(page, /certificaatmail worden nog niet gemonitord/);
   assert.match(script, /Shopify orderdatum<\/dt><dd>\$\{formatDate\(order\.order_date\)\}/);
@@ -23,6 +23,8 @@ test("Tree allocated-tegel en directe route bestaan binnen beveiligde dashboards
   assert.match(script, /Bron niet gekoppeld/);
   assert.match(script, /Gift-claim e-mail aangeboden/);
   assert.match(script, /Aangeboden voor verzending/);
+  assert.match(script, /function renderOperationalChecks/);
+  assert.match(script, /shopify_source_available \? badge\("green", "✓", "Gelukt"\)/);
   assert.match(script, /Certificaat gegenereerd", "Niet gemonitord", "Niet gemonitord"/);
   assert.match(script, /Certificaatmail aangeboden", "Niet gemonitord", "Niet gemonitord"/);
   assert.doesNotMatch(script, /Volledig afgehandeld|E-mail aangeboden voor verzending/);

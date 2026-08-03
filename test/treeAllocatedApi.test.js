@@ -117,7 +117,7 @@ test("API groepeert orderresultaten en geeft bronstatus terug", async () => {
   assert.match(calls[0].sql, /null::text as language/i);
   assert.match(calls[0].sql, /null::timestamptz as order_date/i);
   assert.doesNotMatch(calls[0].sql, /max\([^)]*claimed_at[^)]*\) as order_date/i);
-  assert.equal(calls[0].values.at(-2), 25);
+  assert.equal(body.pagination.total, 1);
 });
 
 test("historisch zap_version-veld blijft leesbaar en monitoringbewijs blijft controleerbaar", async () => {
@@ -134,6 +134,52 @@ test("historisch zap_version-veld blijft leesbaar en monitoringbewijs blijft con
   assert.equal(body.orders[0].creator_record_count, 1);
   assert.equal(body.orders[0].email_submission_status, "submitted");
   assert.equal(body.orders[0].final_status.status, "completed");
-  assert.equal(body.orders[0].final_status.label, "Gift-claim afgerond");
+  assert.equal(body.orders[0].final_status.label, "Volledig");
   assert.equal(Object.hasOwn(body.orders[0], "certificate_sent"), false);
+});
+
+test("Shopify-monitoringevent zonder boomtoewijzing levert toch precies één actieregel op", async () => {
+  const orderId = "90000000000004";
+  const events = [
+    { category: "shopify_order_received", entity_id: orderId, customer_email: "synthetic@example.test", status: "confirmed", changed_fields: { order_id: orderId, workflow_key: "shopify_gift_tree_sku01_374491281", created_at: "2026-07-29T18:29:34Z", ordered_quantity: 1, sku: "01", language: "fr" } },
+    { category: "gift_claim_created", entity_id: orderId, status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", creator_record_count: 1, creator_record_id: "creator-synthetic-1" } },
+    { category: "gift_claim_email_submitted", entity_id: orderId, status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", submission_status: "submitted" } }
+  ];
+  const databaseCalls = [];
+  const monitoringCalls = [];
+  const handler = createHandler({
+    env,
+    getPool: () => ({ query: async (sql, values) => { databaseCalls.push({ sql, values }); return { rows: [] }; } }),
+    getMonitoringPool: () => ({ query: async (sql, values) => { monitoringCalls.push({ sql, values }); return { rows: events }; } }),
+    now: () => new Date("2026-08-02T12:00:00Z")
+  });
+
+  const body = JSON.parse((await handler(event({ period: "all", search: orderId }))).body);
+  assert.equal(body.orders.length, 1);
+  assert.equal(body.pagination.total, 1);
+  assert.equal(body.orders[0].shopify_order_id, orderId);
+  assert.equal(body.orders[0].shopify_source_available, true);
+  assert.equal(body.orders[0].creator_record_count, 1);
+  assert.equal(body.orders[0].email_submission_status, "submitted");
+  assert.equal(body.orders[0].allocated_count, 0);
+  assert.equal(body.orders[0].final_status.status, "action_required");
+  assert.match(body.orders[0].final_status.reasons.join(" "), /0 van 1 bomen toegewezen/);
+  assert.match(monitoringCalls[0].sql, /category='shopify_order_received'/);
+  assert.match(databaseCalls[0].sql, /t\.order_id::text=any/);
+});
+
+test("monitoring- en boomgegevens voor hetzelfde order-ID worden gededupliceerd", async () => {
+  const orderId = "90000000000005";
+  const allocation = { shopify_order_id: orderId, allocation_observed_at: "2026-08-02T10:00:00Z", user_id: 2978, email: "synthetic@example.test", customer_name: "Test", allocated_count: 1, trees: [{ tree_code: "SYNTHETIC-1" }] };
+  const events = [
+    { category: "shopify_order_received", entity_id: orderId, customer_email: "synthetic@example.test", status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", created_at: "2026-08-02T09:00:00Z", ordered_quantity: 1, sku: "01", language: "nl" } },
+    { category: "gift_claim_created", entity_id: orderId, status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", creator_record_count: 1 } },
+    { category: "gift_claim_email_submitted", entity_id: orderId, status: "confirmed", changed_fields: { workflow_key: "shopify_gift_tree_sku01_374491281", submission_status: "submitted" } }
+  ];
+  const handler = createHandler({ env, getPool: () => ({ query: async () => ({ rows: [allocation] }) }), getMonitoringPool: () => ({ query: async () => ({ rows: events }) }), now: () => new Date("2026-08-02T12:00:00Z") });
+  const body = JSON.parse((await handler(event({ period: "all" }))).body);
+  assert.equal(body.orders.length, 1);
+  assert.equal(body.pagination.total, 1);
+  assert.equal(body.orders[0].allocated_count, 1);
+  assert.equal(body.orders[0].final_status.status, "completed");
 });

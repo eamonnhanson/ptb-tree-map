@@ -13,7 +13,7 @@ const complete = {
 test("exact aantal, één GiftClaims-record en aangeboden gift-claim e-mail is afgerond", () => {
   const result = determineTreeAllocatedStatus(complete, now);
   assert.equal(result.status, "completed");
-  assert.equal(result.label, "Gift-claim afgerond");
+  assert.equal(result.label, "Volledig");
 });
 
 test("te weinig bomen geeft concrete actie", () => {
@@ -64,7 +64,7 @@ test("bewezen aantalsverschil blijft actie nodig wanneer andere bronnen ontbreke
 });
 
 test("bevestigde gift-claim e-mail is vereist voor gemonitorde afronding", () => {
-  assert.equal(determineTreeAllocatedStatus({ ...complete, email_submitted: null }, now).status, "processing");
+  assert.equal(determineTreeAllocatedStatus({ ...complete, email_submitted: null }, now).status, "action_required");
   assert.equal(determineTreeAllocatedStatus({ ...complete, email_submitted: false }, now).status, "action_required");
 });
 
@@ -75,4 +75,19 @@ test("geregistreerde technische fout verhindert afronding", () => {
 test("Creator-aantal nul is een bewezen afwijking", () => {
   const result = determineTreeAllocatedStatus({ ...complete, creator_record_count: 0, email_submitted: true }, now);
   assert.equal(result.status, "action_required");
+});
+
+test("ontbrekende vervolgevents na een ontvangen Shopify-order vereisen actie", () => {
+  const result = determineTreeAllocatedStatus({
+    ...complete,
+    user_id: null,
+    allocated_count: 0,
+    creator_record_count: null,
+    email_submitted: null
+  }, now);
+  assert.equal(result.status, "action_required");
+  assert.match(result.reasons.join(" "), /Geen gekoppelde klant/);
+  assert.match(result.reasons.join(" "), /0 van 2 bomen toegewezen/);
+  assert.match(result.reasons.join(" "), /GiftClaims-record ontbreekt/);
+  assert.match(result.reasons.join(" "), /Gift-claimmail ontbreekt/);
 });
