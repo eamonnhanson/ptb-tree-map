@@ -70,10 +70,10 @@
             </tr>
             <tr>
               <td><strong>Plant N Boom tree sales</strong></td>
-              <td>nog te operationaliseren</td>
+              <td>Tree allocated minimaal operationeel voor SKU 01</td>
               <td>boomtoewijzing, aankopen, certificaten en klantmails volgen</td>
-              <td>placeholder</td>
-              <td>tree sales pagina vullen met echte signalen</td>
+              <td><span class="badge orange">Gedeeltelijk gemonitord</span></td>
+              <td>SKU 01 volledig volgen en SKU 02-keten onderzoeken</td>
               <td>rapportage/export</td>
             </tr>
             <tr>
@@ -94,6 +94,79 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <section class="panel reference-section" aria-labelledby="plant-n-boom-workflows-heading">
+      <div class="panel-heading">
+        <div>
+          <h2 id="plant-n-boom-workflows-heading">Plant N Boom verkoopworkflows</h2>
+          <span>Centraal register voor huidige en toekomstige boomproducten</span>
+        </div>
+        <div>
+          <a class="secondary-action" href="/automation-dashboard/tree-sales/">Tree sales</a>
+          <a class="secondary-action" href="/automation-dashboard/tree-sales/tree-allocated/">Tree allocated</a>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="reference-table">
+          <thead>
+            <tr><th>Workflow</th><th>Product/SKU</th><th>Trigger</th><th>Betrokken systemen</th><th>Primaire koppelsleutel</th><th>Monitoringstatus</th><th>Dashboardlocatie</th><th>Volgende stap</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Cadeauboom</strong></td><td>SKU 01</td><td>Shopify-bestelling</td><td>Shopify, Zapier, monitoring, PostgreSQL, Zoho, Tree allocated</td><td>Genormaliseerd Shopify-order-ID</td><td><span class="badge orange">Gedeeltelijk gemonitord</span></td><td><a href="/automation-dashboard/tree-sales/tree-allocated/">Tree allocated</a></td><td>Echte bestelling door de volledige keten volgen.</td>
+            </tr>
+            <tr>
+              <td><strong>Eigen boom</strong></td><td>SKU 02</td><td>Betaalde Shopify-bestelling</td><td>Shopify, Zap C, PostgreSQL, Zoho Creator</td><td>Shopify-order-ID; exacte keten verifiëren</td><td><span class="badge orange">Onderzoek nodig</span></td><td><a href="/automation-dashboard/tree-sales/">Tree sales</a></td><td>Zap C en de volledige SKU 02-keten inventariseren.</td>
+            </tr>
+            <tr>
+              <td><strong>Boomabonnement Shopify → Chargebee</strong></td><td>Nog te inventariseren</td><td>Aankoop of handmatige/gratis toekenning</td><td>Shopify, Chargebee, PostgreSQL, certificaat- en e-mailketen</td><td>E-mailadres</td><td><span class="badge neutral">Gepland</span></td><td><a href="/automation-dashboard/tree-sales/">Tree sales</a></td><td>Producten en Chargebee-plannen inventariseren.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="subpage-note">Een toekomstige SKU krijgt een nieuwe registerrij en een compacte detailsectie volgens dezelfde velden. Hiervoor is geen generieke workflow-engine nodig.</p>
+
+      <div class="reference-block">
+        <div class="panel-heading"><h3>Cadeauboom, SKU 01</h3><span class="badge orange">Gedeeltelijk gemonitord</span></div>
+        <p>De verkoopworkflow is actief; de keten is gedeeltelijk gemonitord en daarom niet als volledig bewezen gemarkeerd.</p>
+        <p><strong>Keten:</strong> Shopify-bestelling → Zapier SKU 01-workflow → <code>shopify_order_received</code> → Zoho Creator GiftClaims-record → <code>gift_claim_created</code> → gift-claimmail aangeboden → <code>gift_claim_email_submitted</code> → ontvanger claimt de boom → klant en bomen worden in PostgreSQL gekoppeld → certificaat wordt gegenereerd en verzonden.</p>
+        <p><strong>Systemen:</strong> Shopify, Zapier, <code>ptb_monitoring_test</code>, PostgreSQL <code>defaultdb</code>, Zoho Creator, Zoho Mail, Zoho Writer en het Tree allocated-dashboard.</p>
+        <p><strong>Koppelsleutels:</strong> genormaliseerd Shopify-order-ID als primaire proceskoppeling; e-mailadres voor klantkoppeling; PostgreSQL user-ID voor klant en bomen; Creator record-ID als bewijs van het GiftClaims-record.</p>
+        <ul class="reference-checklist">
+          <li>Tree allocated gebruikt <code>shopify_order_received</code> als basis voor iedere geregistreerde orderregel.</li>
+          <li>De drie monitoringevents uit <code>ptb_monitoring_test</code> worden op het genormaliseerde order-ID samengevoegd.</li>
+          <li>Klant en boomtoewijzingen komen uit <code>defaultdb</code>.</li>
+          <li>Bij reservering krijgt iedere geselecteerde boom hetzelfde genormaliseerde interne Shopify-order-ID in <code>trees1.order_id</code>; de latere claim wijzigt de gebruiker en claimvelden maar behoudt dit order-ID.</li>
+          <li>Certificaatgeneratie en de uiteindelijke certificaatmail worden nog niet automatisch gemonitord.</li>
+          <li><code>gift_claim_email_submitted</code> bewijst alleen aanbieding aan de verzendactie, niet dat de ontvanger de e-mail heeft ontvangen.</li>
+        </ul>
+        <p class="reference-callout"><strong>Volgende stap:</strong> Echte SKU 01-bestelling door de volledige keten volgen en daarna certificaatmonitoring ontwerpen.</p>
+      </div>
+
+      <div class="reference-block">
+        <div class="panel-heading"><h3>Eigen boom, SKU 02</h3><span class="badge orange">Onderzoek nodig</span></div>
+        <p>SKU 02 loopt via een andere Zapier-workflow, bekend als Zap C. De repository bevat een gedeeltelijk geaudite SKU 02-route, maar de actuele productie-identiteit en volledige procesketen moeten nog worden bevestigd.</p>
+        <ul class="reference-checklist">
+          <li>De drie SKU 01-monitoringwebhooks zijn nog niet aan Zap C toegevoegd.</li>
+          <li>SKU 02 heeft geen identieke GiftClaims-workflow; de SKU 01-monitoringlogica mag niet blind worden gekopieerd.</li>
+          <li>Eerst wordt de echte SKU 02-keten onderzocht; daarna worden passende events en controlepunten vastgesteld.</li>
+          <li>Tree allocated kan tot die tijd historische PostgreSQL-gegevens tonen, maar niet alle processtappen betrouwbaar controleren.</li>
+        </ul>
+        <p class="reference-callout"><strong>Volgende stap:</strong> Zap C en de volledige SKU 02-keten inventariseren, daarna een minimale eigen monitoringregistratie ontwerpen en testen.</p>
+      </div>
+
+      <div class="reference-block">
+        <div class="panel-heading"><h3>Boomabonnement via Shopify en Chargebee</h3><span class="badge neutral">Gepland</span></div>
+        <p>De technische implementatie is nog niet gestart. Chargebee wordt de leidende bron voor abonnementen. Een via Shopify gekocht boomabonnement en een gratis of handmatig toegekend abonnement moeten beide als abonnement in Chargebee worden geregistreerd.</p>
+        <ul class="reference-checklist">
+          <li>E-mailadres is de primaire klantkoppeling. Een ontbrekend, gewijzigd of dubbel e-mailadres blokkeert automatische verwerking en maakt een handmatige controletaak.</li>
+          <li>Volledig betekent: klant gekoppeld, Chargebee-abonnement aanwezig, juiste boom of bomen toegewezen, certificaat gegenereerd en bijbehorende e-mail succesvol aangeboden voor verzending.</li>
+          <li>Plan-ID’s, Shopify-SKU’s, interval, prijs, taal en foutafhandeling moeten nog worden geïnventariseerd.</li>
+        </ul>
+        <p class="reference-callout"><strong>Volgende stap:</strong> Bestaande Shopify-abonnementsproducten en Chargebee-plannen inventariseren voordat de koppeling wordt gebouwd.</p>
       </div>
     </section>
 
@@ -235,9 +308,9 @@
             <tr><td><strong>Auditoverzicht</strong></td><td>Workflow maintenance and development</td><td>behouden</td><td>audit en workflowcontrole.</td></tr>
             <tr><td><strong>Student uploads oude sectie</strong></td><td>niet op hoofdpagina; toekomstige KETSO superadmin view</td><td>parkeren</td><td>KETSO heeft gallery/onboarding routes.</td></tr>
             <tr><td><strong>Onboarding oude sectie</strong></td><td>niet op hoofdpagina; toekomstige KETSO superadmin view</td><td>parkeren</td><td>koppeling met Zoho onboarding en PostgreSQL later onderzoeken.</td></tr>
-            <tr><td><strong>Tree allocation</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>hoort bij boomtoewijzing.</td></tr>
-            <tr><td><strong>Shopify aankopen</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>aankopen requiring follow-up.</td></tr>
-            <tr><td><strong>Abonnementen</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>Chargebee/abonnementen.</td></tr>
+            <tr><td><strong>Tree allocation</strong></td><td>Plant N Boom tree sales</td><td>Gedeeltelijk gemonitord</td><td>Tree allocated verwerkt de drie SKU 01-events en PostgreSQL-toewijzingen.</td></tr>
+            <tr><td><strong>Shopify aankopen</strong></td><td>Plant N Boom tree sales</td><td>Gedeeltelijk gemonitord</td><td>SKU 01-orders zijn geregistreerd; SKU 02 vereist onderzoek.</td></tr>
+            <tr><td><strong>Abonnementen</strong></td><td>Plant N Boom tree sales</td><td>Gepland</td><td>Shopify → Chargebee-koppeling eerst inventariseren.</td></tr>
             <tr><td><strong>Manual follow-up</strong></td><td>Follow-up</td><td>later</td><td>operationele opvolging.</td></tr>
             <tr><td><strong>Outbound e-mail</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>klantcommunicatie en bewijs.</td></tr>
             <tr><td><strong>Certificaten</strong></td><td>Plant N Boom tree sales</td><td>later</td><td>certificaatstatus.</td></tr>
@@ -268,6 +341,35 @@
       </div>
     </section>
 
+    <section class="panel reference-section" aria-labelledby="workflow-dependencies-heading">
+      <div class="panel-heading">
+        <div>
+          <h2 id="workflow-dependencies-heading">Workflow dependencies</h2>
+          <span>Read-only overzicht uit het centrale workflowregister</span>
+        </div>
+      </div>
+      <div id="dependencies-state" class="dependency-state" role="status" aria-live="polite">Dependencies laden…</div>
+      <div id="dependencies-table-wrap" class="table-wrap" hidden>
+        <table class="reference-table dependencies-table">
+          <thead>
+            <tr>
+              <th>Workflow ID</th>
+              <th>Volgorde</th>
+              <th>Type</th>
+              <th>Bronsysteem</th>
+              <th>Doelsysteem</th>
+              <th>Trigger / input</th>
+              <th>Actie</th>
+              <th>Output</th>
+              <th>Onzekerheid</th>
+              <th>Ontbrekende informatie</th>
+            </tr>
+          </thead>
+          <tbody id="dependencies"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="panel reference-section" aria-labelledby="registry-first-heading">
       <div class="panel-heading">
         <h2 id="registry-first-heading">Registry first reminder</h2>
@@ -276,19 +378,24 @@
         <p class="reference-callout">Geen nieuwe Zap, flow, endpoint, databasekoppeling of dashboardrelatie zonder registry entry.</p>
         <div class="reference-list-grid reference-fields-grid" aria-label="Minimale registry velden">
           <span>workflow_id</span>
+          <span>product en SKU</span>
           <span>doel</span>
           <span>trigger</span>
           <span>betrokken systemen</span>
+          <span>primaire koppelsleutel</span>
           <span>input/output</span>
+          <span>monitoringevents</span>
           <span>dashboardlocatie</span>
           <span>eigenaar</span>
           <span>status</span>
           <span>risico</span>
           <span>dependencies</span>
           <span>bewijs/runbook</span>
+          <span>volgende actie</span>
         </div>
       </div>
     </section>
   </main>
+  <script src="workflow-maintenance.js" defer></script>
 </body>
 </html>

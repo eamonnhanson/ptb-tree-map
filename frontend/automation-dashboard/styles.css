@@ -1119,6 +1119,25 @@ td small {
   max-width: 360px;
 }
 
+.dependencies-table {
+  min-width: 1700px;
+}
+
+.dependencies-table td {
+  max-width: 280px;
+  white-space: pre-wrap;
+}
+
+.dependency-state {
+  padding: 18px 16px;
+  color: var(--muted);
+}
+
+.dependency-state.error {
+  color: var(--red);
+  background: #ffebe8;
+}
+
 .reference-section {
   margin-top: 16px;
 }
