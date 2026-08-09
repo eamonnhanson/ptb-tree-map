@@ -1,42 +1,49 @@
 <!doctype html>
-<html lang="nl">
+<html lang="en" data-map-locale="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Plant N Boom • Mijn bomen</title>
- <link rel="stylesheet" href="/styles.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plant N Boom • My trees</title>
+
+  <link rel="stylesheet" href="/styles.css">
+
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
-  <style>
-    body { margin:0; font:16px system-ui, -apple-system, Segoe UI, Roboto; }
-    header { padding:12px 16px; border-bottom:1px solid #eee; }
-    form { display:flex; gap:8px; flex-wrap:wrap; }
-    input[type="text"]{ padding:8px 10px; min-width:260px; border:1px solid #ccc; border-radius:8px; }
-    button{ padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; color:white; cursor:pointer; }
-    #map { height: calc(100vh - 70px); }
-    #msg { padding:8px 16px; color:#555; }
-  </style>
+
+  <link rel="icon" type="image/png" sizes="32x32"
+        href="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=64">
+  <meta property="og:title" content="Plant N Boom • My trees">
+  <meta property="og:image" content="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=600">
+  <meta property="og:url" content="https://map.planteenboom.nu/en/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0a7b66">
 </head>
 <body>
   <header>
-    <form id="finder">
-      <input id="email" type="text" placeholder="your e-mail or user ID" />
+    <img id="brand-logo"
+         src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160"
+         alt="Plant N Boom">
+    <form id="finder" autocomplete="off">
+      <label for="email" class="sr-only">email or user ID</label>
+      <input id="email" type="text" placeholder="your email or user ID" inputmode="text" />
       <button type="submit">show my trees</button>
-      <span id="msg"></span>
+      <button type="button" id="show-heroes" class="heroes-btn">
+        show Forest Heroes
+      </button>
+      <span id="msg" aria-live="polite"></span>
     </form>
   </header>
-  <div id="map"></div>
+  <div id="map" role="application" aria-label="map showing tree locations"></div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
 
-  <!-- Your main app code -->
-<script src="/app.js"></script>
+  <script src="/app.js"></script>
 </body>
 </html>
