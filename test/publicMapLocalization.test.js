@@ -75,6 +75,43 @@ test("Dutch, English, and French shells expose the same public-map feature contr
   assert.doesNotMatch(fr, /Mijn bomen|My trees|toon mijn bomen|show my trees|jouw e-mail|your email|kaart met boomlocaties|map showing tree locations/);
 });
 
+test("each locale uses the approved header logo and shared donation URL", async () => {
+  const [nl, en, fr, app, css] = await Promise.all([
+    source("frontend/index.html"),
+    source("frontend/en/index.html"),
+    source("frontend/fr/index.html"),
+    source("frontend/app.js"),
+    source("frontend/styles.css")
+  ]);
+
+  const dutchLogo = "https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160";
+  const englishLogo = "https://cdn.shopify.com/s/files/1/0555/9966/1149/files/Plant_a_Tree_Now_495_x_280.png?v=1714900469";
+  const frenchLogo = "https://cdn.shopify.com/s/files/1/0555/9966/1149/files/plantez_un_arbre_logo_correct_250.png?v=1781612956";
+  const donationUrl = "https://www.planteenboom.nu/products/doneer";
+
+  assert.match(nl, new RegExp(`id="brand-logo"[\\s\\S]*src="${dutchLogo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+  assert.match(en, new RegExp(`id="brand-logo"[\\s\\S]*src="${englishLogo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+  assert.match(fr, new RegExp(`id="brand-logo"[\\s\\S]*src="${frenchLogo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
+
+  assert.match(app, /const PUBLIC_MAP_DONATION_URL = 'https:\/\/www\.planteenboom\.nu\/products\/doneer'/);
+  assert.equal((app.match(/donateUrl: PUBLIC_MAP_DONATION_URL/g) || []).length, 3);
+  for (const publicSource of [nl, en, fr, app]) {
+    assert.doesNotMatch(publicSource, /https:\/\/www\.planteenboom\.nu\/pages\/particulier/);
+  }
+
+  const registryEnd = app.indexOf("const requestedLocale");
+  const registrySource = app
+    .slice(0, registryEnd)
+    .replace("const PUBLIC_MAP_LOCALES", "globalThis.PUBLIC_MAP_LOCALES");
+  const context = {};
+  vm.runInNewContext(registrySource, context);
+  assert.equal(context.PUBLIC_MAP_LOCALES.nl.donateUrl, donationUrl);
+  assert.equal(context.PUBLIC_MAP_LOCALES.en.donateUrl, donationUrl);
+  assert.equal(context.PUBLIC_MAP_LOCALES.fr.donateUrl, donationUrl);
+
+  assert.match(css, /#brand-logo \{[^}]*height:34px;[^}]*width:auto;[^}]*max-width:160px;[^}]*object-fit:contain;/);
+});
+
 test("locale registry is closed, complete, and produces localized count forms", async () => {
   const app = await source("frontend/app.js");
   const registryEnd = app.indexOf("const requestedLocale");

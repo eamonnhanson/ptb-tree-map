@@ -152,7 +152,7 @@ button { padding:8px 14px; border:0; border-radius:8px; background:#0a7b66; colo
 
 /* header met logo */
 header { display:flex; align-items:center; gap:12px; }
-#brand-logo { height:34px; width:auto; display:block; }
+#brand-logo { height:34px; width:auto; max-width:160px; object-fit:contain; display:block; }
 
 /* inputs iets netter */
 input[type="text"] { border-color:#cbd5e1; }
