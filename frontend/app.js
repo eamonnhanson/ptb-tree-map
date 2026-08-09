@@ -50,11 +50,42 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     donate: 'donate',
     donateUrl: 'https://www.planteenboom.nu/pages/particulier',
     homeUrl: 'https://www.planteenboom.nu/'
+  }),
+  fr: Object.freeze({
+    intlLocale: 'fr-FR',
+    mapLayer: 'Carte (OSM)',
+    satelliteLayer: 'Satellite (Esri)',
+    serverError: status => `erreur du serveur ${status}`,
+    treeCount: count => `${count} ${count === 1 ? 'arbre' : 'arbres'}`,
+    treesFound: count => `${count} ${count === 1 ? 'arbre trouvé' : 'arbres trouvés'}`,
+    treesLoaded: count => `${count} ${count === 1 ? 'arbre chargé…' : 'arbres chargés…'}`,
+    treesTotal: count => `${count} ${count === 1 ? 'arbre au total' : 'arbres au total'}`,
+    treeFallback: 'arbre',
+    nameLabel: 'Nom :',
+    copyCode: 'copier le code',
+    openMaps: 'ouvrir dans Maps',
+    panelCollapse: 'réduire le panneau',
+    panelExpand: 'développer le panneau',
+    panelHeading: 'codes des arbres • noms des arbres',
+    filterPlaceholder: 'filtrer par code ou nom',
+    noTreeCodes: 'Aucun code d’arbre',
+    enterQuery: 'saisissez votre adresse e-mail ou votre identifiant',
+    loading: 'chargement…',
+    loadTreesError: 'impossible de charger les arbres',
+    loadHeroesError: 'impossible de charger les Forest Heroes',
+    donate: 'faire un don',
+    donateUrl: 'https://www.planteenboom.nu/pages/particulier',
+    homeUrl: 'https://www.planteenboom.nu/'
   })
 });
 
+function resolvePublicMapLocale(requestedLocale) {
+  const normalizedLocale = (requestedLocale || '').toLowerCase();
+  return Object.hasOwn(PUBLIC_MAP_LOCALES, normalizedLocale) ? normalizedLocale : 'nl';
+}
+
 const requestedLocale = (document.documentElement.dataset.mapLocale || '').toLowerCase();
-const localeKey = Object.hasOwn(PUBLIC_MAP_LOCALES, requestedLocale) ? requestedLocale : 'nl';
+const localeKey = resolvePublicMapLocale(requestedLocale);
 const text = PUBLIC_MAP_LOCALES[localeKey];
 
 // 🌍 Init map
