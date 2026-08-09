@@ -1,3 +1,5 @@
+const PUBLIC_MAP_DONATION_URL = 'https://www.planteenboom.nu/products/doneer';
+
 const PUBLIC_MAP_LOCALES = Object.freeze({
   nl: Object.freeze({
     intlLocale: 'nl-NL',
@@ -22,7 +24,7 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     loadTreesError: 'kan bomen niet laden',
     loadHeroesError: 'kan Forest Heroes niet laden',
     donate: 'doneren',
-    donateUrl: 'https://www.planteenboom.nu/pages/particulier',
+    donateUrl: PUBLIC_MAP_DONATION_URL,
     homeUrl: 'https://www.planteenboom.nu/'
   }),
   en: Object.freeze({
@@ -48,7 +50,7 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     loadTreesError: 'unable to load trees',
     loadHeroesError: 'unable to load Forest Heroes',
     donate: 'donate',
-    donateUrl: 'https://www.planteenboom.nu/pages/particulier',
+    donateUrl: PUBLIC_MAP_DONATION_URL,
     homeUrl: 'https://www.planteenboom.nu/'
   }),
   fr: Object.freeze({
@@ -74,7 +76,7 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     loadTreesError: 'impossible de charger les arbres',
     loadHeroesError: 'impossible de charger les Forest Heroes',
     donate: 'faire un don',
-    donateUrl: 'https://www.planteenboom.nu/pages/particulier',
+    donateUrl: PUBLIC_MAP_DONATION_URL,
     homeUrl: 'https://www.planteenboom.nu/'
   })
 });
