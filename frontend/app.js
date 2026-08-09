@@ -1,3 +1,62 @@
+const PUBLIC_MAP_LOCALES = Object.freeze({
+  nl: Object.freeze({
+    intlLocale: 'nl-NL',
+    mapLayer: 'Kaart (OSM)',
+    satelliteLayer: 'Satelliet (Esri)',
+    serverError: status => `serverfout ${status}`,
+    treeCount: count => `${count} ${count === 1 ? 'boom' : 'bomen'}`,
+    treesFound: count => `${count} ${count === 1 ? 'boom gevonden' : 'bomen gevonden'}`,
+    treesLoaded: count => `${count} ${count === 1 ? 'boom geladen…' : 'bomen geladen…'}`,
+    treesTotal: count => `${count} ${count === 1 ? 'boom totaal' : 'bomen totaal'}`,
+    treeFallback: 'boom',
+    nameLabel: 'Naam:',
+    copyCode: 'kopieer code',
+    openMaps: 'open in maps',
+    panelCollapse: 'paneel inklappen',
+    panelExpand: 'paneel uitklappen',
+    panelHeading: 'boomcodes • boomnamen',
+    filterPlaceholder: 'filter op code of naam',
+    noTreeCodes: 'Geen boomcodes',
+    enterQuery: 'voer e-mail of user_id in',
+    loading: 'laden…',
+    loadTreesError: 'kan bomen niet laden',
+    loadHeroesError: 'kan Forest Heroes niet laden',
+    donate: 'doneren',
+    donateUrl: 'https://www.planteenboom.nu/pages/particulier',
+    homeUrl: 'https://www.planteenboom.nu/'
+  }),
+  en: Object.freeze({
+    intlLocale: 'en-GB',
+    mapLayer: 'Map (OSM)',
+    satelliteLayer: 'Satellite (Esri)',
+    serverError: status => `server error ${status}`,
+    treeCount: count => `${count} ${count === 1 ? 'tree' : 'trees'}`,
+    treesFound: count => `${count} ${count === 1 ? 'tree found' : 'trees found'}`,
+    treesLoaded: count => `${count} ${count === 1 ? 'tree loaded…' : 'trees loaded…'}`,
+    treesTotal: count => `${count} ${count === 1 ? 'tree in total' : 'trees in total'}`,
+    treeFallback: 'tree',
+    nameLabel: 'Name:',
+    copyCode: 'copy code',
+    openMaps: 'open in maps',
+    panelCollapse: 'collapse panel',
+    panelExpand: 'expand panel',
+    panelHeading: 'tree codes • tree names',
+    filterPlaceholder: 'filter by code or name',
+    noTreeCodes: 'No tree codes',
+    enterQuery: 'enter your email or user ID',
+    loading: 'loading…',
+    loadTreesError: 'unable to load trees',
+    loadHeroesError: 'unable to load Forest Heroes',
+    donate: 'donate',
+    donateUrl: 'https://www.planteenboom.nu/pages/particulier',
+    homeUrl: 'https://www.planteenboom.nu/'
+  })
+});
+
+const requestedLocale = (document.documentElement.dataset.mapLocale || '').toLowerCase();
+const localeKey = Object.hasOwn(PUBLIC_MAP_LOCALES, requestedLocale) ? requestedLocale : 'nl';
+const text = PUBLIC_MAP_LOCALES[localeKey];
+
 // 🌍 Init map
 const map = L.map('map').setView([8.5, -13.2], 7);
 
@@ -14,7 +73,7 @@ const esriSat = L.tileLayer(
 
 // 🧭 layers control (rechtsboven)
 L.control.layers(
-  { 'Kaart (OSM)': osm, 'Satelliet (Esri)': esriSat },
+  { [text.mapLayer]: osm, [text.satelliteLayer]: esriSat },
   {},
   { position: 'topright', collapsed: true }
 ).addTo(map);
@@ -72,7 +131,7 @@ async function fetchTrees(query) {
   }
 
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!res.ok) throw new Error('serverfout ' + res.status);
+  if (!res.ok) throw new Error(text.serverError(res.status));
   return res.json();
 }
 
@@ -84,7 +143,7 @@ function renderTrees(rows) {
   ensureCodePanel();
 
   if (!rows.length) {
-    msg.textContent = '0 bomen gevonden';
+    msg.textContent = text.treesFound(0);
     renderCodeList([]);
     return;
   }
@@ -102,20 +161,20 @@ function renderTrees(rows) {
     const name = (r.tree_name || '').trim();
     const type = r.tree_type || '';
     const area = r.area || '';
-    const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString('nl-NL') : '';
+    const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString(text.intlLocale) : '';
     const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
 
-    const nameRow = name ? `<div class="popup-line"><strong>Naam:</strong> ${name}</div>` : '';
+    const nameRow = name ? `<div class="popup-line"><strong>${text.nameLabel}</strong> ${name}</div>` : '';
 
     const popup =
       `<div class="popup">
-         <div class="popup-title">${code || 'boom'}</div>
+         <div class="popup-title">${code || text.treeFallback}</div>
          ${nameRow}
          <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
          <div class="popup-meta">${planted}</div>
          <div class="popup-actions">
-           <button class="btn-link" onclick="navigator.clipboard.writeText('${code || ''}')">kopieer code</button>
-           <a class="btn-link" href="${gmaps}" target="_blank" rel="noopener">open in maps</a>
+           <button class="btn-link" onclick="navigator.clipboard.writeText('${code || ''}')">${text.copyCode}</button>
+           <a class="btn-link" href="${gmaps}" target="_blank" rel="noopener">${text.openMaps}</a>
          </div>
        </div>`;
 
@@ -129,7 +188,7 @@ function renderTrees(rows) {
 
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
 
-  msg.textContent = `${rows.length} bomen`;
+  msg.textContent = text.treeCount(rows.length);
   renderTrees.rows = rows;
   renderCodeList(rows);
 }
@@ -214,9 +273,9 @@ function ensureCodePanel() {
   panel.id = 'code-panel';
   panel.innerHTML = `
     <header>
-      <button id="code-toggle" type="button" aria-expanded="true" title="paneel inklappen">⟨</button>
-      <div>boomcodes • boomnamen</div>
-      <input id="code-filter" placeholder="filter op code of naam">
+      <button id="code-toggle" type="button" aria-expanded="true" title="${text.panelCollapse}">⟨</button>
+      <div>${text.panelHeading}</div>
+      <input id="code-filter" placeholder="${text.filterPlaceholder}">
     </header>
     <ul id="code-list"></ul>
   `;
@@ -229,6 +288,7 @@ function ensureCodePanel() {
     panel.classList.toggle('collapsed');
     const isOpen = !panel.classList.contains('collapsed');
     toggle.setAttribute('aria-expanded', String(isOpen));
+    toggle.title = isOpen ? text.panelCollapse : text.panelExpand;
     toggle.textContent = isOpen ? '⟨' : '⟩';
   });
 }
@@ -263,11 +323,11 @@ function renderCodeList(rows) {
   });
 
   if (!items.length) {
-    ul.innerHTML = `<div class="empty">Geen boomcodes</div>`;
+    ul.innerHTML = `<div class="empty">${text.noTreeCodes}</div>`;
     return;
   }
 
-  items.sort((a, b) => a.code.localeCompare(b.code, 'nl'));
+  items.sort((a, b) => a.code.localeCompare(b.code, text.intlLocale));
 
   const frag = document.createDocumentFragment();
   items.forEach(({ code, name }) => {
@@ -297,13 +357,13 @@ document.getElementById('finder').addEventListener('submit', async e => {
   const q = document.getElementById('email').value.trim();
 
   if (!q) {
-    msg.textContent = 'voer e-mail of user_id in';
+    msg.textContent = text.enterQuery;
     renderCodeList([]);
     markers.clearLayers();
     return;
   }
 
-  msg.textContent = 'laden…';
+  msg.textContent = text.loading;
 
   try {
     const data = await fetchTrees(q);
@@ -311,7 +371,7 @@ document.getElementById('finder').addEventListener('submit', async e => {
     renderTrees(rows);
   } catch (err) {
     console.error("API error:", err);
-    msg.textContent = 'kan bomen niet laden';
+    msg.textContent = text.loadTreesError;
     renderCodeList([]);
     markers.clearLayers();
   }
@@ -325,7 +385,7 @@ async function fetchForestHeroesBatch(limit = 500, afterId = null) {
   const res = await fetch(`https://ptb-tree-map.onrender.com/api/forest-heroes?${qs}`, {
     headers: { Accept: 'application/json' }
   });
-  if (!res.ok) throw new Error('serverfout ' + res.status);
+  if (!res.ok) throw new Error(text.serverError(res.status));
   return res.json();
 }
 
@@ -353,20 +413,20 @@ async function loadAllForestHeroes(limit = 500) {
       const name = (r.tree_name || '').trim();
       const type = r.tree_type || '';
       const area = r.area || '';
-      const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString('nl-NL') : '';
+      const planted = r.planted_date ? new Date(r.planted_date).toLocaleDateString(text.intlLocale) : '';
       const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
 
-      const nameRow = name ? `<div class="popup-line"><strong>Naam:</strong> ${name}</div>` : '';
+      const nameRow = name ? `<div class="popup-line"><strong>${text.nameLabel}</strong> ${name}</div>` : '';
 
       const popup =
         `<div class="popup">
-           <div class="popup-title">${code || 'boom'}</div>
+           <div class="popup-title">${code || text.treeFallback}</div>
            ${nameRow}
            <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
            <div class="popup-meta">${planted}</div>
            <div class="popup-actions">
-             <button class="btn-link" onclick="navigator.clipboard.writeText('${code || ''}')">kopieer code</button>
-             <a class="btn-link" href="${gmaps}" target="_blank" rel="noopener">open in maps</a>
+             <button class="btn-link" onclick="navigator.clipboard.writeText('${code || ''}')">${text.copyCode}</button>
+             <a class="btn-link" href="${gmaps}" target="_blank" rel="noopener">${text.openMaps}</a>
            </div>
          </div>`;
 
@@ -379,7 +439,7 @@ async function loadAllForestHeroes(limit = 500) {
 
     allRows.push(...rows);
     total += rows.length;
-    if (msg) msg.textContent = `${total} bomen geladen…`;
+    if (msg) msg.textContent = text.treesLoaded(total);
 
     if (!next_after_id || rows.length < limit) break;
     after = next_after_id;
@@ -387,7 +447,7 @@ async function loadAllForestHeroes(limit = 500) {
 
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
   renderCodeList(allRows);
-  msg.textContent = `${allRows.length} bomen totaal`;
+  msg.textContent = text.treesTotal(allRows.length);
 }
 
 // 🔘 knop: toon forest heroes
@@ -395,11 +455,11 @@ const heroesBtn = document.getElementById('show-heroes');
 if (heroesBtn) {
   heroesBtn.addEventListener('click', async () => {
     try {
-      msg.textContent = 'laden…';
+      msg.textContent = text.loading;
       await loadAllForestHeroes(500);
     } catch (err) {
-      console.error('kan Forest Heroes niet laden:', err);
-      msg.textContent = 'kan Forest Heroes niet laden';
+      console.error('Unable to load Forest Heroes:', err);
+      msg.textContent = text.loadHeroesError;
       renderCodeList([]);
       markers.clearLayers();
     }
@@ -449,12 +509,12 @@ window.addEventListener('DOMContentLoaded', () => {
       donateBtn.id = 'donate-inline';
       donateBtn.type = 'button';
       donateBtn.className = 'donate-inline-btn';
-      donateBtn.textContent = 'doneren';
+      donateBtn.textContent = text.donate;
 
       heroesBtn.insertAdjacentElement('afterend', donateBtn);
 
       donateBtn.addEventListener('click', () => {
-        window.location.href = 'https://www.planteenboom.nu/pages/particulier';
+        window.location.href = text.donateUrl;
       });
     }
 
@@ -466,7 +526,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if (headerLogo) {
       headerLogo.style.cursor = 'pointer';
       headerLogo.addEventListener('click', () => {
-        window.location.href = 'https://www.planteenboom.nu/';
+        window.location.href = text.homeUrl;
       });
     }
 
