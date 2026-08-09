@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr" data-map-locale="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Plant N Boom • Mes arbres</title>
+  <meta name="description" content="Retrouvez vos arbres Plant N Boom et découvrez leur emplacement sur la carte.">
+
+  <link rel="stylesheet" href="/styles.css">
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <link rel="icon" type="image/png" sizes="32x32"
+        href="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=64">
+  <meta property="og:title" content="Plant N Boom • Mes arbres">
+  <meta property="og:description" content="Retrouvez vos arbres Plant N Boom et découvrez leur emplacement sur la carte.">
+  <meta property="og:image" content="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=600">
+  <meta property="og:url" content="https://map.planteenboom.nu/fr/">
+  <meta property="og:type" content="website">
+  <meta name="theme-color" content="#0a7b66">
+</head>
+<body>
+  <header>
+    <img id="brand-logo"
+         src="https://www.planteenboom.nu/cdn/shop/files/plant_N_boom_logo_2000_1500_rectangle.png?v=1658947368&width=160"
+         alt="Plant N Boom">
+    <form id="finder" autocomplete="off">
+      <label for="email" class="sr-only">adresse e-mail ou identifiant</label>
+      <input id="email" type="text" placeholder="votre adresse e-mail ou votre identifiant" inputmode="text" />
+      <button type="submit">afficher mes arbres</button>
+      <button type="button" id="show-heroes" class="heroes-btn">
+        afficher les Forest Heroes
+      </button>
+      <span id="msg" aria-live="polite"></span>
+    </form>
+  </header>
+  <div id="map" role="application" aria-label="carte indiquant l’emplacement des arbres"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+
+  <script src="/app.js"></script>
+</body>
+</html>
