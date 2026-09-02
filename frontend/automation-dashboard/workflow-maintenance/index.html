@@ -47,12 +47,12 @@
       <div class="panel-heading">
         <div>
           <h2 id="critical-workflows-heading">Kritieke workflows</h2>
-          <span>Registry-first status op basis van aantoonbare PostgreSQL-evidence</span>
+          <span>Status van de drie kritieke automatiseringen op basis van registry- en PostgreSQL-bewijs.</span>
         </div>
       </div>
-      <p class="subpage-note">Deze status is geen live Zapier- of productiestatus. GREEN vereist geïmplementeerde en geteste PostgreSQL-evidence; review-only SQL is ORANGE; een expliciete blokkade is RED; ontbrekende directe PostgreSQL-evidence is UNKNOWN.</p>
       <div id="critical-workflows-state" class="dependency-state" role="status" aria-live="polite">Kritieke workflows laden…</div>
-      <div id="critical-workflows" class="reference-list-grid" aria-live="polite"></div>
+      <div id="critical-workflows" class="critical-workflows-grid" aria-live="polite"></div>
+      <p class="critical-workflows-legend">GREEN = recent succesvol geverifieerd · ORANGE = geïmplementeerd, runtimeverificatie ontbreekt · RED = geblokkeerd of gefaald · UNKNOWN = onvoldoende bewijs</p>
     </section>
 
     <section class="panel reference-section" aria-labelledby="development-matrix-heading">

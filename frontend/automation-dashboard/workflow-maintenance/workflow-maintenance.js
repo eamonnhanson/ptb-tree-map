@@ -63,12 +63,11 @@ function evidenceStatus(workflow, dependencies, definition) {
 }
 
 function statusExplanation(status, workflow, definition) {
-  if (status === "GREEN") return "PostgreSQL-implementatie en testdatum zijn in de registry vastgelegd.";
-  if (status === "RED") return "De registry markeert deze workflow als failed of blocked.";
-  if (status === "ORANGE" && definition.requiresRuntimeCompletion && !workflow?.last_tested_at) return "Zap en completionlaag bestaan; een nieuwe succesvolle post-change runtime completion is nog niet aangetoond.";
-  if (status === "ORANGE") return `Review-only PostgreSQL-evidence: ${definition.requiredSqlEvidence.join(", ")}; live uitvoering is niet bewezen.`;
+  if (status === "GREEN") return "Implementatie en een recente succesvolle runtimeverificatie zijn vastgelegd.";
+  if (status === "RED") return "De workflow is in de registry geblokkeerd of gefaald.";
+  if (status === "ORANGE") return "Implementatie is vastgelegd, maar een actuele succesvolle runtimeverificatie ontbreekt.";
   if (!workflow) return "Workflow ontbreekt in de centrale maintenance registry.";
-  return "Geen directe, source-controlled PostgreSQL-definitie aangetroffen; alleen workflow- of Zap-referenties zijn onvoldoende.";
+  return "Onvoldoende registry- of PostgreSQL-bewijs beschikbaar.";
 }
 
 function renderCriticalWorkflows(workflows, dependencies) {
@@ -78,18 +77,20 @@ function renderCriticalWorkflows(workflows, dependencies) {
     const workflow = workflows.find(item => item.workflow_id === definition.workflowId);
     const status = evidenceStatus(workflow, dependencies, definition);
     const card = document.createElement("article");
-    const title = document.createElement("strong");
+    const title = document.createElement("h3");
     const badge = document.createElement("span");
-    const explanation = document.createElement("span");
-    const evidence = document.createElement("span");
+    const explanation = document.createElement("p");
+    const evidence = document.createElement("p");
 
-    card.classList.add("reference-block");
+    card.classList.add("critical-workflow-card");
     card.dataset.status = status;
     title.textContent = definition.label;
     badge.classList.add("badge", status.toLowerCase() === "unknown" ? "neutral" : status.toLowerCase());
     badge.textContent = status;
+    explanation.classList.add("critical-workflow-reason");
     explanation.textContent = statusExplanation(status, workflow, definition);
-    evidence.textContent = `Registry: ${definition.workflowId} · PostgreSQL reads/writes: ${displayValue(workflow?.reads_from)} → ${displayValue(workflow?.writes_to)}`;
+    evidence.classList.add("critical-workflow-evidence");
+    evidence.textContent = `Evidence: ${definition.requiredSqlEvidence.join(" · ")}`;
     card.appendChild(title);
     card.appendChild(badge);
     card.appendChild(explanation);

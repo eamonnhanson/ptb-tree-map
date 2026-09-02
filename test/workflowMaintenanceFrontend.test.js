@@ -7,6 +7,14 @@ const scriptUrl = new URL(
   "../frontend/automation-dashboard/workflow-maintenance/workflow-maintenance.js",
   import.meta.url
 );
+const pageUrl = new URL(
+  "../frontend/automation-dashboard/workflow-maintenance/index.html",
+  import.meta.url
+);
+const stylesUrl = new URL(
+  "../frontend/automation-dashboard/styles.css",
+  import.meta.url
+);
 
 function element(tagName = "div") {
   return {
@@ -203,9 +211,27 @@ test("renders conservative PostgreSQL evidence statuses for critical workflows",
     elements["critical-workflows"].children.map(card => card.dataset.status),
     ["ORANGE", "ORANGE", "ORANGE"]
   );
-  assert.match(elements["critical-workflows"].children[0].children[2].textContent, /Review-only PostgreSQL-evidence/);
+  assert.match(elements["critical-workflows"].children[0].children[2].textContent, /actuele succesvolle runtimeverificatie ontbreekt/);
   assert.match(elements["critical-workflows"].children[2].children[0].textContent, /Zoho CRM Academy onboarding → PostgreSQL/);
-  assert.match(elements["critical-workflows"].children[2].children[2].textContent, /runtime completion/);
+  assert.equal(elements["critical-workflows"].children[2].children[1].textContent, "ORANGE");
+  assert.match(elements["critical-workflows"].children[2].children[3].textContent, /021_process_academy_student_from_crm\.sql/);
+  assert.match(elements["critical-workflows"].children[2].children[3].textContent, /020_academy_onboarding_completion\.sql/);
+  assert.doesNotMatch(elements["critical-workflows"].children[2].children[3].textContent, /reads\/writes|academy_students/);
+});
+
+test("critical workflow cards use a three-column desktop grid and stack on mobile", async () => {
+  const [page, styles] = await Promise.all([
+    readFile(pageUrl, "utf8"),
+    readFile(stylesUrl, "utf8")
+  ]);
+
+  assert.match(page, /<h2 id="critical-workflows-heading">Kritieke workflows<\/h2>/);
+  assert.match(page, /Status van de drie kritieke automatiseringen op basis van registry- en PostgreSQL-bewijs\./);
+  assert.match(page, /GREEN = recent succesvol geverifieerd/);
+  assert.match(page, /id="critical-workflows" class="critical-workflows-grid"/);
+  assert.match(styles, /\.critical-workflows-grid\s*{[\s\S]*?grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /@media \(max-width: 720px\)[\s\S]*?\.critical-workflows-grid\s*{\s*grid-template-columns: 1fr/);
+  assert.match(styles, /\.critical-workflow-evidence[\s\S]*?overflow-wrap: anywhere/);
 });
 
 test("uses GREEN only for implemented and tested PostgreSQL evidence", async () => {
