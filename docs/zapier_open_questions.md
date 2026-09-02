@@ -13,4 +13,4 @@
 | zap_135 | (Copy) zap b multiple Eigenbomen SKU02 | Verify production active/paused state and whether final customer-visible evidence is complete. |
 | zap_141 | Nieuw abonnes shopify handmatig - zoho form | Verify production active/paused state and whether final customer-visible evidence is complete. |
 | zap_172 | Webhooks by Zapier | Verify production active/paused state and whether final customer-visible evidence is complete. |
-| zap_175 | Trigger: New or Updated Contact in Zoho CRM | Verify production active/paused state and whether final customer-visible evidence is complete. |
+| zap_175 | Zoho CRM Academy onboarding → PostgreSQL | Demonstrate a new successful post-change runtime completion; completion does not prove inbox delivery. |

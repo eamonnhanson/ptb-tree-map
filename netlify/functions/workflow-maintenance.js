@@ -44,6 +44,10 @@ const workflowsQuery = `
     risk_level,
     owner_name,
     business_purpose,
+    trigger_description,
+    reads_from,
+    writes_to,
+    runbook_file,
     last_tested_at,
     next_review_at,
     notes
@@ -119,8 +123,11 @@ const dependenciesQuery = `
     trigger_or_input,
     action_summary,
     output_summary,
+    reads_from,
+    writes_to,
     uncertainty_level,
-    missing_information
+    missing_information,
+    evidence_source
   from monitoring.workflow_dependencies
   order by workflow_id, dependency_order nulls last
   limit $1

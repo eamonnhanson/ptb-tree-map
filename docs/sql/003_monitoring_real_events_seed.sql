@@ -217,7 +217,7 @@ WITH candidate_events(
       )
     ),
     (
-      'Trigger: New or Updated Contact in Zoho CRM',
+      'Zoho CRM Academy onboarding → PostgreSQL',
       'workflow:zap_175:zoho-crm-postgresql-match',
       'academy/onboarding',
       'red',
@@ -227,7 +227,7 @@ WITH candidate_events(
       'docs/master_workflow_registry.csv#zap_175',
       jsonb_build_object(
         'workflow_id', 'zap_175',
-        'flow_name', 'Trigger: New or Updated Contact in Zoho CRM',
+        'flow_name', 'Zoho CRM Academy onboarding → PostgreSQL',
         'source', 'docs/master_workflow_registry.csv',
         'check_type', 'zoho_crm_postgresql_match'
       )

@@ -13,9 +13,13 @@ function element(tagName = "div") {
     tagName,
     textContent: "",
     hidden: false,
+    dataset: {},
     children: [],
     classList: {
       values: new Set(),
+      add(...names) {
+        names.forEach(name => this.values.add(name));
+      },
       toggle(name, enabled) {
         enabled ? this.values.add(name) : this.values.delete(name);
       },
@@ -37,7 +41,9 @@ async function runFrontend(fetchImpl) {
   const elements = {
     dependencies: element("tbody"),
     "dependencies-state": element(),
-    "dependencies-table-wrap": element()
+    "dependencies-table-wrap": element(),
+    "critical-workflows": element(),
+    "critical-workflows-state": element()
   };
   const created = [];
   const source = await readFile(scriptUrl, "utf8");
@@ -66,13 +72,24 @@ async function runFrontend(fetchImpl) {
   return { elements, created };
 }
 
-function response(dependencies) {
+function response(dependencies, workflows = []) {
   return {
     ok: true,
     status: 200,
     async json() {
-      return { ok: true, dependencies };
+      return { ok: true, dependencies, workflows };
     }
+  };
+}
+
+function workflow(workflowId, overrides = {}) {
+  return {
+    workflow_id: workflowId,
+    status: "partially_audited",
+    reads_from: "payment payload; users1; trees1",
+    writes_to: "payment ledger; trees1",
+    last_tested_at: null,
+    ...overrides
   };
 }
 
@@ -150,4 +167,148 @@ test("renders zap_61 dependency orders 101 through 109 returned by the API", asy
     ["101", "102", "103", "104", "105", "106", "107", "108", "109"]
   );
   assert.ok(elements.dependencies.children.every(row => row.children[0].textContent === "zap_61"));
+});
+
+test("renders conservative PostgreSQL evidence statuses for critical workflows", async () => {
+  const dependencies = [
+    dependency(40, {
+      workflow_id: "zap_95",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/014_chargebee_subscription_payment_allocation.sql"
+    }),
+    dependency(30, {
+      workflow_id: "shopify_monthly_donation_subscription_payment",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/011_shopify_subscription_tree_allocation.sql"
+    }),
+    dependency(30, {
+      workflow_id: "zap_175",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/021_process_academy_student_from_crm.sql"
+    }),
+    dependency(70, {
+      workflow_id: "zap_175",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/020_academy_onboarding_completion.sql"
+    })
+  ];
+  const workflows = [
+    workflow("zap_95"),
+    workflow("shopify_monthly_donation_subscription_payment"),
+    workflow("zap_175")
+  ];
+  const { elements } = await runFrontend(async () => response(dependencies, workflows));
+
+  assert.deepEqual(
+    elements["critical-workflows"].children.map(card => card.dataset.status),
+    ["ORANGE", "ORANGE", "ORANGE"]
+  );
+  assert.match(elements["critical-workflows"].children[0].children[2].textContent, /Review-only PostgreSQL-evidence/);
+  assert.match(elements["critical-workflows"].children[2].children[0].textContent, /Zoho CRM Academy onboarding → PostgreSQL/);
+  assert.match(elements["critical-workflows"].children[2].children[2].textContent, /runtime completion/);
+});
+
+test("uses GREEN only for implemented and tested PostgreSQL evidence", async () => {
+  const dependencies = [dependency(40, {
+    workflow_id: "zap_95",
+    target_system: "PostgreSQL",
+    evidence_source: "docs/sql/014_chargebee_subscription_payment_allocation.sql"
+  })];
+  const workflows = [workflow("zap_95", { status: "implemented", last_tested_at: "2026-09-02" })];
+  const { elements } = await runFrontend(async () => response(dependencies, workflows));
+
+  assert.equal(elements["critical-workflows"].children[0].dataset.status, "GREEN");
+  assert.equal(elements["critical-workflows"].children[1].dataset.status, "UNKNOWN");
+});
+
+test("keeps Academy ORANGE without a demonstrated runtime completion", async () => {
+  const dependencies = [
+    dependency(30, {
+      workflow_id: "zap_175",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/021_process_academy_student_from_crm.sql"
+    }),
+    dependency(70, {
+      workflow_id: "zap_175",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/020_academy_onboarding_completion.sql"
+    })
+  ];
+  const workflows = [workflow("zap_175", { status: "partially_audited", last_tested_at: null })];
+  const { elements } = await runFrontend(async () => response(dependencies, workflows));
+
+  assert.equal(elements["critical-workflows"].children[2].dataset.status, "ORANGE");
+});
+
+test("uses GREEN for Academy after registered post-change runtime verification", async () => {
+  const dependencies = [
+    dependency(30, {
+      workflow_id: "zap_175",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/021_process_academy_student_from_crm.sql"
+    }),
+    dependency(70, {
+      workflow_id: "zap_175",
+      target_system: "PostgreSQL",
+      evidence_source: "docs/sql/020_academy_onboarding_completion.sql"
+    })
+  ];
+  const workflows = [workflow("zap_175", { status: "implemented", last_tested_at: "2026-09-02" })];
+  const { elements } = await runFrontend(async () => response(dependencies, workflows));
+
+  assert.equal(elements["critical-workflows"].children[2].dataset.status, "GREEN");
+});
+
+test("uses UNKNOWN when either required Academy SQL source is missing", async () => {
+  const dependencies = [dependency(70, {
+    workflow_id: "zap_175",
+    target_system: "PostgreSQL",
+    evidence_source: "docs/sql/020_academy_onboarding_completion.sql"
+  })];
+  const workflows = [workflow("zap_175", { status: "partially_audited" })];
+  const { elements } = await runFrontend(async () => response(dependencies, workflows));
+
+  assert.equal(elements["critical-workflows"].children[2].dataset.status, "UNKNOWN");
+});
+
+test("uses RED for failed Academy before evaluating SQL evidence", async () => {
+  const workflows = [workflow("zap_175", { status: "failed" })];
+  const { elements } = await runFrontend(async () => response([], workflows));
+
+  assert.equal(elements["critical-workflows"].children[2].dataset.status, "RED");
+});
+
+test("uses RED only for an explicit failed or blocked registry status", async () => {
+  const workflows = [workflow("zap_95", { status: "blocked" })];
+  const { elements } = await runFrontend(async () => response([], workflows));
+
+  assert.equal(elements["critical-workflows"].children[0].dataset.status, "RED");
+});
+
+test("does not treat the Chargebee publishing no-op as a business dependency", async () => {
+  const source = await readFile(new URL("../docs/sql/019_critical_workflows_registry.sql", import.meta.url), "utf8");
+
+  assert.doesNotMatch(source, /Technical no-op|publishing no-op|step 12/i);
+  assert.match(source, /mark_chargebee_subscription_payment_side_effect/);
+});
+
+test("does not register the Academy publishing no-op as a business dependency", async () => {
+  const source = await readFile(new URL("../docs/sql/019_critical_workflows_registry.sql", import.meta.url), "utf8");
+
+  assert.match(source, /Zoho CRM Academy onboarding → PostgreSQL/);
+  assert.doesNotMatch(source, /Technical no-op|publishing no-op/i);
+});
+
+test("changed dashboard and registry sources contain no literal mojibake", async () => {
+  const urls = [
+    scriptUrl,
+    new URL("../frontend/automation-dashboard/app.js", import.meta.url),
+    new URL("../docs/sql/019_critical_workflows_registry.sql", import.meta.url)
+  ];
+  const source = (await Promise.all(urls.map(url => readFile(url, "utf8")))).join("\n");
+
+  assert.doesNotMatch(source, /ÔåÆ|â†’|├·|ÔÇö/);
+  assert.match(source, /→/);
+  assert.match(source, /·/);
+  assert.match(source, /—/);
 });

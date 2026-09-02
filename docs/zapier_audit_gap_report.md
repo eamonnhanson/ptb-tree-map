@@ -13,4 +13,4 @@
 | zap_135 | (Copy) zap b multiple Eigenbomen SKU02 | partially_audited | standardized final workflow/audit log row | add Zapier final logging step | medium |
 | zap_141 | Nieuw abonnes shopify handmatig - zoho form | partially_audited | standardized final workflow/audit log row | add Zapier final logging step | medium |
 | zap_172 | Webhooks by Zapier | partially_audited | standardized final workflow/audit log row | add Zapier final logging step | low |
-| zap_175 | Trigger: New or Updated Contact in Zoho CRM | partially_audited | standardized final workflow/audit log row | add Zapier final logging step | high |
+| zap_175 | Zoho CRM Academy onboarding → PostgreSQL | partially_audited | new successful post-change runtime completion | verify a new academy_onboarding_completions row | high |
