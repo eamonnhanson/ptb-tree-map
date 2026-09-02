@@ -13,4 +13,4 @@
 | zap_135 | (Copy) zap b multiple Eigenbomen SKU02 | manual follow-up status is unknown | orange until matched with audit evidence |
 | zap_141 | Nieuw abonnes shopify handmatig - zoho form | workflow name/source indicates manual or customer follow-up may be required | orange until matched with audit evidence |
 | zap_172 | Webhooks by Zapier | manual follow-up status is unknown | orange until matched with audit evidence |
-| zap_175 | Trigger: New or Updated Contact in Zoho CRM | manual follow-up status is unknown | orange until matched with audit evidence |
+| zap_175 | Zoho CRM Academy onboarding → PostgreSQL | post-change runtime completion is not yet demonstrated | orange until a new completion row is verified |

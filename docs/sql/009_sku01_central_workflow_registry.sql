@@ -94,7 +94,7 @@ FROM (VALUES
   ('zap_129','Send Forest Hero Photo Email (once per user/ p/h) - Forest Photo 2025Q4 - Eénmalige e-mail'),
   ('zap_141','Nieuw abonnes shopify handmatig - zoho form'),
   ('zap_172','Webhooks by Zapier'),
-  ('zap_175','Trigger: New or Updated Contact in Zoho CRM')
+  ('zap_175','Zoho CRM Academy onboarding → PostgreSQL')
 ) AS confirmed(workflow_id,workflow_name)
 WHERE registry.workflow_id=confirmed.workflow_id;
 

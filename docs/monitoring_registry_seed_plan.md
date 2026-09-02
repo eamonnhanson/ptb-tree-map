@@ -162,7 +162,7 @@ Eerste veilige seed-kandidaten: de 12 Zapier workflows die in zowel master als Z
 | `zap_135` | `(Copy) zap b multiple Eigenbomen SKU02` | `shopify/tree purchase` | Shopify; FilterAPI; Delay; PostgreSQL; Code; ZohoCreator |
 | `zap_141` | `Nieuw abonnes shopify handmatig - zoho form` | `shopify/tree purchase` | ZohoForms; ZapierFormatter; BranchingAPI; Code; ZohoMail; PostgreSQL; FilterAPI |
 | `zap_172` | `Webhooks by Zapier` | `other` | WebHook; FilterAPI; ZohoMail |
-| `zap_175` | `Trigger: New or Updated Contact in Zoho CRM` | `academy/onboarding` | ZohoCRM; FilterAPI; PostgreSQL; ZohoMail |
+| `zap_175` | `Zoho CRM Academy onboarding → PostgreSQL` | `academy/onboarding` | ZohoCRM; FilterAPI; PostgreSQL; ZohoMail |
 
 Daarna kan een tweede seedbatch de overige master records toevoegen:
 

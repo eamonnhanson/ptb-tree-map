@@ -238,15 +238,18 @@ Manual input needed:
 
 - Confirm whether a second post-email monitoring event should be added later.
 
-### zap_175: KETSO Academy Zoho CRM onboarding
+### zap_175: Zoho CRM Academy onboarding → PostgreSQL
 
 Chain:
 
-`Zoho CRM contact new/updated -> filter -> PostgreSQL function/query process_academy_student_from_crm -> Zoho CRM update -> Zoho Mail onboarding email -> Zoho CRM status update`
+`process_academy_student_from_crm -> first Zoho CRM update -> Zoho Mail action -> final Zoho CRM update -> complete_academy_onboarding -> academy_onboarding_completions`
 
 Known outputs:
 
-- PostgreSQL function/table reference: `process_academy_student_from_crm`.
+- PostgreSQL functions/tables: `process_academy_student_from_crm`,
+  `complete_academy_onboarding`, `academy_students` and
+  `academy_onboarding_completions`.
+- The final Code by Zapier publishing no-op is not a business dependency.
 - Zoho CRM fields: KETSO student ID, onboarding URL/status/invite fields.
 - Zoho Mail onboarding email.
 

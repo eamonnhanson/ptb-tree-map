@@ -1167,6 +1167,53 @@ td small {
   border-radius: 8px;
 }
 
+.critical-workflows-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.critical-workflow-card {
+  min-width: 0;
+  min-height: 210px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.critical-workflow-card h3 {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.critical-workflow-card .badge {
+  display: inline-flex;
+  margin-bottom: 14px;
+}
+
+.critical-workflow-reason,
+.critical-workflow-evidence {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.critical-workflow-evidence {
+  margin-top: 12px;
+  font-size: .9rem;
+}
+
+.critical-workflows-legend {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
 .reference-table {
   min-width: 1180px;
 }
@@ -1329,6 +1376,10 @@ tr.student-meer_info_nodig td:first-child {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .critical-workflows-grid {
+    grid-template-columns: 1fr;
   }
 
   .controls,

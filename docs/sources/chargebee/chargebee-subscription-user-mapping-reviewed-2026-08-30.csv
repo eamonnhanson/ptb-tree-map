@@ -1,0 +1,48 @@
+chargebee_subscription_id,user_id,match_method,review_status,review_basis
+BTcL0WVThziKs5cuz,4304,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+19A4D9VTgyqsn4pGU,4303,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+199RX8VTOsPZB1xqm,3061,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTcRvDVRnjyDS6rvm,2978,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTU4NhVQJ06jL2ggX,2980,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+19A2enVJfXbDsfLx,2912,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+77849V4u9WNs4MP7,4224,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTccOOUutVB4bNmo,3337,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTcWlwUsdp9WR3ZzR,3376,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+199Xh8UofJKnD3CyU,2839,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+19A8PsUmgZCSV1cGL,2874,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTUSjmUf3PRvs74YE,2978,customer_id+email,APPROVED,Unique Chargebee Customer ID + email match
+BTM7SxUZlud6f1iBT,3106,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTLt3JUZNmesC16Ti,2975,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTUQghUZDA6Vg21Eb,2897,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTUSo1UX1qBKo2uLb,3104,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+199PaVURUwwBz6cV0,3227,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTcY4eUPY2aYZ7dg3,3090,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+198QPDUMY00VQ1LeB,3343,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTcYBfUG42mhs3SLJ,2965,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+198NwwUCBBqzI2E8m,3031,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTLrahUBtJ4oYDvjB,2936,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTUV0pTnHaGVU148Z,3197,manual_identity_review,APPROVED,"Unique email match, manually identity-reviewed in cutover review"
+BTU1b4TivWRPKBNJS,3354,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+BTU1b4TilTxTX8Qwr,3125,manual_identity_review,APPROVED,"Unique email match, manually identity-reviewed in cutover review"
+772q8TUEozX64XHS,2831,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+278748412,2986,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+761555613,2941,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+749560847,2947,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+680170270,2880,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+564502933,2989,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+483689973,2853,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+225800089,2903,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1981245613,2844,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1903178461,2913,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1939909282,2915,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+209864129,2900,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1893467328,3171,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1853415257,3012,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1831903555,3264,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1762506707,2970,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1724291601,3230,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1412454412,2971,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1376449712,3364,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1278039216,3130,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+1050829391,3066,subscription_id,APPROVED,Exact legacy Chargebee Subscription ID match
+22127317,4307,manual_identity_review,APPROVED,"Unique email match, manually identity-reviewed in cutover review"
