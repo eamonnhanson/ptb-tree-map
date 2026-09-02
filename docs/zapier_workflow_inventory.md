@@ -16,7 +16,7 @@ History: docs/sources/zapier/history/zapier-history-combined-2026-03-01-to-2026-
 | zap_135 | (Copy) zap b multiple Eigenbomen SKU02 | Shopify | new_paid_order_v3 | Shopify; FilterAPI; Delay; PostgreSQL; Code; ZohoCreator | trees1; users1 | Allocate owned tree purchase to PostgreSQL and create Zoho Creator evidence. | success 0, filtered 6, halted 0, error 0 | partially_audited | medium |
 | zap_141 | Nieuw abonnes shopify handmatig - zoho form | ZohoForms | new_form_entry | ZohoForms; ZapierFormatter; BranchingAPI; Code; ZohoMail; PostgreSQL; FilterAPI | users1; trees1 | Handle subscription/customer record, allocate subscription tree, send allocation mail. | success 0, filtered 0, halted 0, error 0 | partially_audited | medium |
 | zap_172 | Webhooks by Zapier | WebHook | hook_v2 | WebHook; FilterAPI; ZohoMail |  | Workflow needs verification. | success 45, filtered 21, halted 0, error 0 | partially_audited | low |
-| zap_175 | Trigger: New or Updated Contact in Zoho CRM | ZohoCRM | new_or_updated_module_entry | ZohoCRM; FilterAPI; PostgreSQL; ZohoMail | process_academy_student_from_crm | Create/update Academy onboarding data and send onboarding email. | success 74, filtered 912, halted 0, error 13 | partially_audited | high |
+| zap_175 | Zoho CRM Academy onboarding → PostgreSQL | ZohoCRM | new_or_updated_module_entry | ZohoCRM; FilterAPI; Code by Zapier; PostgreSQL; ZohoMail | process_academy_student_from_crm; complete_academy_onboarding | Create/update Academy onboarding data send onboarding email and persist completion. | historical success 74, filtered 912, halted 0, error 13; no new post-change completion demonstrated | partially_audited | high |
 
 ## Detailed extraction notes
 
@@ -241,7 +241,7 @@ History: docs/sources/zapier/history/zapier-history-combined-2026-03-01-to-2026-
 - Manual follow-up required: unknown
 - Open questions: Verify production active/paused state and whether final customer-visible evidence is complete.
 
-### zap_175: Trigger: New or Updated Contact in Zoho CRM
+### zap_175: Zoho CRM Academy onboarding → PostgreSQL
 
 - Trigger filters: 1 filter/path steps
 - PostgreSQL queries: 1 SQL/query steps

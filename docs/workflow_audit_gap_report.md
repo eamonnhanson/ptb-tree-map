@@ -13,7 +13,7 @@
 | zap_135 | (Copy) zap b multiple Eigenbomen SKU02 | partially_audited | standardized final workflow/audit log row | add Zapier final logging step |
 | zap_141 | Nieuw abonnes shopify handmatig - zoho form | partially_audited | standardized final workflow/audit log row | add Zapier final logging step |
 | zap_172 | Webhooks by Zapier | partially_audited | standardized final workflow/audit log row | add Zapier final logging step |
-| zap_175 | Trigger: New or Updated Contact in Zoho CRM | partially_audited | standardized final workflow/audit log row | add Zapier final logging step |
+| zap_175 | Zoho CRM Academy onboarding → PostgreSQL | partially_audited | new successful post-change runtime completion | verify a new academy_onboarding_completions row |
 | shopify_sku_'01 | Shopify product: Geef een boom cadeau | unknown | No standardized event log tying source trigger to final result. | needs human verification |
 | shopify_sku_'02 | Shopify product: Koop een boom (voor jezelf) | unknown | No standardized event log tying source trigger to final result. | needs human verification |
 | shopify_sku_'05 | Shopify product: Doneer (eenmalig) | unknown | No standardized event log tying source trigger to final result. | needs human verification |

@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "test:postgres-integration": "node --test test/shopifySubscriptionAllocationIntegration.test.js"
   },
   "dependencies": {
     "express": "^4.18.2",
