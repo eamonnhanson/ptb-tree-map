@@ -4,6 +4,7 @@ import {
   DEFAULT_ACADEMY_COURSE,
   isKnownCourse,
   isKnownLesson,
+  courseName,
   lessonName,
   normalizeCourseKey
 } from "./academyCourses.js";
@@ -557,7 +558,7 @@ function buildAcademyFeedback({
   return [
     `Upload type: ${uploadLabel}.`,
     `Topic: ${lessonLabel}.`,
-    `Course: ${course_key === "arboriculture_1" ? "Arboriculture I" : "Online tree planting"}.`,
+    `Course: ${courseName(course_key)}.`,
     `Interest area: ${interestLabel}.`,
     detected,
     improvementHint
@@ -602,6 +603,17 @@ function uploadLabelFromKey(value) {
 }
 
 function improvementHintFromLesson(courseKey, value) {
+  if (courseKey === "donor_investor_funding") {
+   const donorCommunicationHints = {
+  onboarding: "Improvement suggestion: introduce yourself and explain what you hope to achieve through this course.",
+  donor_module_1_report_writing: "Improvement suggestion: show clearly what you planned, what you achieved and what evidence supports your results.",
+  donor_module_2_proposal_writing: "Improvement suggestion: explain the problem, what you want to do, the result you expect and the support you need.",
+  donor_module_3_business_plan: "Improvement suggestion: explain what you will offer, who needs it, how you will deliver it and how the money will work.",
+  donor_module_4_income_generation_fundraising: "Improvement suggestion: explain how you plan to generate income or raise funds, who you will approach and what you will do next."
+};
+    return donorCommunicationHints[value] || "Improvement suggestion: connect the evidence more clearly to the selected donor and investor communication module.";
+  }
+
   if (courseKey === "arboriculture_1") {
     const arboricultureHints = {
       onboarding: "Improvement suggestion: introduce yourself and explain why you want to learn about trees.",
