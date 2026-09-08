@@ -1,0 +1,19 @@
+{
+  "name": "ops-console",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "clean": "node scripts/clean.mjs",
+    "dev": "npx netlify-cli dev",
+    "test": "node --test tests/*.test.js",
+    "check": "npm test && npm run build && node --check functions/overview.js && node --check functions/workflows.js && node --check functions/workflow-detail.js && node --check functions/actions.js && node --check functions/events.js"
+  },
+  "dependencies": {
+    "pg": "^8.11.0"
+  }
+}

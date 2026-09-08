@@ -1,0 +1,50 @@
+[build]
+command = "npm run build"
+publish = "dist"
+functions = "functions"
+edge_functions = "edge-functions"
+ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ."
+
+[build.environment]
+NODE_VERSION = "22"
+
+[functions]
+node_bundler = "esbuild"
+
+[[redirects]]
+from = "/api/overview"
+to = "/.netlify/functions/overview"
+status = 200
+
+[[redirects]]
+from = "/api/workflows"
+to = "/.netlify/functions/workflows"
+status = 200
+
+[[redirects]]
+from = "/api/workflows/*"
+to = "/.netlify/functions/workflow-detail?id=:splat"
+status = 200
+
+[[redirects]]
+from = "/api/actions"
+to = "/.netlify/functions/actions"
+status = 200
+
+[[redirects]]
+from = "/api/events"
+to = "/.netlify/functions/events"
+status = 200
+
+[[headers]]
+for = "/*"
+[headers.values]
+Cache-Control = "no-store"
+Content-Security-Policy = "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+Referrer-Policy = "no-referrer"
+X-Content-Type-Options = "nosniff"
+X-Frame-Options = "DENY"
+
+[[edge_functions]]
+path = "/*"
+function = "protect-ops-console"
