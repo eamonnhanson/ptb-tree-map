@@ -27,6 +27,7 @@ test("independent Netlify directories cannot publish root applications", () => {
   const config = readFileSync(path.join(appRoot, "netlify.toml"), "utf8");
   assert.match(config, /publish = "dist"/);
   assert.match(config, /functions = "functions"/);
+  assert.match(config, /edge_functions = "edge-functions"/);
   assert.doesNotMatch(config, /frontend\/automation-dashboard|\.\.\/\.\.\/frontend|\.\.\/\.\.\/netlify/);
 });
 

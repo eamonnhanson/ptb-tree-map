@@ -119,6 +119,7 @@ Recommended monorepo settings:
 - build command: inherited as `npm run build`
 - publish directory: inherited as `dist`
 - functions directory: inherited as `functions`
+- edge functions directory: inherited as `edge-functions`
 - environment variables: only the `OPS_CONSOLE_*` variables above
 
 The scoped ignore command prevents unrelated repository changes from building this site. Existing Netlify configuration at repository root remains untouched. Connect `ops.ketso.nl` manually only after the isolated site, authentication and read-only credentials have been reviewed. No DNS is configured here.
