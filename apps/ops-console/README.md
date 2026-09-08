@@ -28,6 +28,7 @@ npm run dev
 ```
 
 Never commit `.env`. Point local development at a safe test database or a database role with explicit read-only grants.
+The development command obtains Netlify CLI on demand, keeping the deployable package small.
 
 Run verification:
 

@@ -9,7 +9,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "clean": "node scripts/clean.mjs",
-    "dev": "netlify dev",
+    "dev": "npx netlify-cli dev",
     "test": "node --test tests/*.test.js",
     "check": "npm test && npm run build && node --check functions/overview.js && node --check functions/workflows.js && node --check functions/workflow-detail.js && node --check functions/actions.js && node --check functions/events.js"
   },
@@ -17,8 +17,6 @@
     "pg": "^8.11.0"
   },
   "devDependencies": {
-    "@netlify/functions": "^3.0.0",
-    "jsdom": "^26.0.0",
-    "netlify-cli": "^23.0.0"
+    "jsdom": "^26.0.0"
   }
 }
