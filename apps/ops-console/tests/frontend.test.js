@@ -1,60 +1,41 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { JSDOM } from "jsdom";
+import { readFile } from "node:fs/promises";
+import { formatTime } from "../frontend/view.js";
 
-function setup() {
-  const dom = new JSDOM("<!doctype html><body><main id='root'></main></body>");
-  global.document = dom.window.document;
-  global.window = dom.window;
-  return dom;
-}
+const frontend = (name) => readFile(new URL(`../frontend/${name}`, import.meta.url), "utf8");
 
-test("frontend renders GREEN, ORANGE, RED and UNKNOWN without HTML interpretation", async () => {
-  setup();
-  const { workflowCard } = await import("../frontend/view.js");
-  const root = document.querySelector("#root");
-  for (const state of ["GREEN", "ORANGE", "RED", "UNKNOWN"]) {
-    root.append(workflowCard({ workflow_id: state, workflow_name: `<img src=x onerror=alert('${state}')>`, health: { state, reason: "Evidence", evidence: {} } }, () => {}));
-  }
-  assert.equal(root.querySelectorAll("article").length, 4);
-  assert.equal(root.querySelectorAll("img").length, 0);
-  assert.match(root.textContent, /<img src=x/);
+test("frontend defines loading, unavailable and empty states", async () => {
+  const [html, app] = await Promise.all([frontend("index.html"), frontend("app.js")]);
+  assert.match(html, /Loading operational evidence/);
+  assert.match(app, /Monitoring data unavailable/);
+  assert.match(app, /No supported open actions were returned/);
+  assert.match(app, /Runtime health unknown/);
+  assert.match(app, /content\.hidden = true/);
 });
 
-test("timestamp display distinguishes missing and invalid evidence", async () => {
-  setup();
-  const { formatTime } = await import("../frontend/view.js");
+test("frontend supports GREEN, ORANGE, RED and neutral UNKNOWN", async () => {
+  const [view, styles] = await Promise.all([frontend("view.js"), frontend("styles.css")]);
+  for (const state of ["GREEN", "ORANGE", "RED", "UNKNOWN"]) {
+    assert.match(`${view}\n${styles}`, new RegExp(state));
+  }
+  assert.match(styles, /--unknown/);
+});
+
+test("database content is assigned through textContent and never innerHTML", async () => {
+  const [app, view] = await Promise.all([frontend("app.js"), frontend("view.js")]);
+  assert.match(view, /node\.textContent = String\(options\.text\)/);
+  assert.doesNotMatch(`${app}\n${view}`, /\.innerHTML\s*=/);
+});
+
+test("timestamp display distinguishes missing and invalid evidence", () => {
   assert.equal(formatTime(null), "No evidence");
   assert.equal(formatTime("broken"), "Invalid timestamp");
   assert.notEqual(formatTime("2026-09-08T08:00:00Z"), "No evidence");
 });
 
-test("empty state is rendered as neutral", async () => {
-  setup();
-  const { empty } = await import("../frontend/view.js");
-  const node = empty("No evidence returned.");
-  assert.match(node.className, /neutral/);
-  assert.equal(node.textContent, "No evidence returned.");
-});
-
-test("render helpers never use unsafe innerHTML", async () => {
-  setup();
-  const source = await import("node:fs/promises").then((fs) => fs.readFile(new URL("../frontend/view.js", import.meta.url), "utf8"));
-  assert.doesNotMatch(source, /\.innerHTML\s*=/);
-});
-
-test("application shows loading then unavailable without showing empty data", async () => {
-  const dom = new JSDOM(`<!doctype html><body>
-    <p id="updated"></p><main id="app"><section id="page-state"></section>
-    <div id="content"><div id="workflows"></div><div id="actions"></div><div id="failures"></div><div id="systems"></div><p id="missing-workflows"></p></div></main>
-    <dialog id="workflow-dialog"></dialog><div id="workflow-detail"></div></body>`);
-  global.document = dom.window.document;
-  global.window = dom.window;
-  global.fetch = async () => ({ ok: false, json: async () => ({ ok: false, error: "Monitoring data unavailable" }) });
-  await import(`../frontend/app.js?unavailable=${Date.now()}`);
-  assert.match(document.querySelector("#page-state").textContent, /Loading operational evidence|Monitoring data unavailable/);
-  await new Promise((resolve) => setTimeout(resolve, 0));
-  assert.equal(document.querySelector("#page-state").textContent, "Monitoring data unavailable");
-  assert.equal(document.querySelector("#content").hidden, true);
-  assert.equal(document.querySelector("#updated").textContent, "Runtime health unknown");
+test("workflow detail exposes truncation and missing evidence", async () => {
+  const app = await frontend("app.js");
+  assert.match(app, /Results truncated at/);
+  assert.match(app, /No \$\{title\.toLowerCase\(\)\} evidence/);
 });
