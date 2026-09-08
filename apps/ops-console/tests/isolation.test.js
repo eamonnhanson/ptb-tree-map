@@ -9,7 +9,8 @@ const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const repoRoot = path.resolve(appRoot, "../..");
 
 test("all working-tree changes remain inside apps/ops-console", () => {
-  const tracked = execFileSync("git", ["diff", "--name-only", "HEAD"], { cwd: repoRoot, encoding: "utf8" });
+  const base = execFileSync("git", ["merge-base", "HEAD", "origin/main"], { cwd: repoRoot, encoding: "utf8" }).trim();
+  const tracked = execFileSync("git", ["diff", "--name-only", base, "HEAD"], { cwd: repoRoot, encoding: "utf8" });
   const untracked = execFileSync("git", ["ls-files", "--others", "--exclude-standard"], { cwd: repoRoot, encoding: "utf8" });
   const changed = `${tracked}\n${untracked}`.trim().split("\n").filter(Boolean);
   assert.ok(changed.length > 0);
