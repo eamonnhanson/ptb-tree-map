@@ -23,12 +23,33 @@ inventory for the Ops Console; it is not another workflow registry.
 
 ## Safe diagnostics
 
-All five read endpoints now log one JSON record on a caught loader failure:
+Read endpoints using the shared `readHandler` log one JSON record on a caught loader failure:
 `event=ops_console_read_failed`, a fixed endpoint label, and a fixed error code.
 The client still receives the generic 503 unavailable response. No error
 message, stack, SQL, request, event data, URL, certificate or environment value
 is logged. Unrecognized failures are `UNCLASSIFIED_FAILURE`, not guesses.
 Netlify supplies the log timestamp. There is no new public diagnostic endpoint.
+
+The custom `workflow-detail` handler does not use this shared logger. Its
+`Invalid workflow id` response is an input validation failure before database access.
+
+## Preview verification on 2026-09-10
+
+- User-provided evidence from PR #37 showed `DB_URL_INVALID` for events.
+  Replacing the Deploy Previews database URL with a correctly constructed URL
+  and redeploying resolved it: events returned `ok: true`, and the overview loaded.
+  The exact defect in the previous secret value was not inspected.
+- Workflow maintenance identifies the Chargebee workflow as `zap_95`
+  (`docs/workflow_maintenance_registry.csv`). View evidence returned
+  `Invalid workflow id`, while the authenticated direct request
+  `/.netlify/functions/workflow-detail?id=zap_95` returned `ok: true` and that record.
+- The frontend now calls this direct same-origin function route with an encoded
+  explicit `id`. This avoids the wildcard rewrite used by the previous request.
+  The precise reason the previous route lost or rejected the ID remains unconfirmed.
+  Verify View evidence on a newly built preview before production publication.
+- Production connection configuration and authoritative maintenance registration
+  remain pending. The existing Tree Map site's builds were temporarily stopped
+  by the user; restoring them remains a rollout follow-up.
 
 After an explicitly approved isolated deployment, request `/api/events` once
 while authenticated. Inspect the matching function log in **ketso-ops-console**.
