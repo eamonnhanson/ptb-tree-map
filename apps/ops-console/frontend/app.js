@@ -50,7 +50,7 @@ async function openWorkflow(id) {
   detail.append(element("p", { text: "Loading workflow evidence…" }));
   dialog.showModal();
   try {
-    const body = await request(`/api/workflows/${encodeURIComponent(id)}`);
+    const body = await request(`/.netlify/functions/workflow-detail?id=${encodeURIComponent(id)}`);
     renderDetail(body.detail);
   } catch (error) {
     clear(detail);

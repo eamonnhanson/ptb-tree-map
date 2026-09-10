@@ -1,26 +1,25 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { inspectIsolation, outsideOps } from "../scripts/isolation.mjs";
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = path.resolve(appRoot, "../..");
 
-test("all working-tree changes remain inside apps/ops-console", () => {
-  let tracked = "";
-  try {
-    const base = execFileSync("git", ["merge-base", "HEAD", "origin/main"], { cwd: repoRoot, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-    tracked = execFileSync("git", ["diff", "--name-only", base, "HEAD"], { cwd: repoRoot, encoding: "utf8" });
-  } catch {
-    // GitHub's pull_request checkout is a depth-one synthetic merge without
-    // origin/main. The PR diff remains the authoritative branch comparison.
-    tracked = execFileSync("git", ["ls-files", "apps/ops-console"], { cwd: repoRoot, encoding: "utf8" });
+test("tracked working-tree changes remain inside apps/ops-console", () => {
+  assert.deepEqual(outsideOps(inspectIsolation(repoRoot).workingFiles), []);
+});
+
+test("branch commits change only apps/ops-console", (t) => {
+  const { branchFiles } = inspectIsolation(repoRoot);
+  if (branchFiles === null) {
+    t.skip("Shallow checkout lacks comparison history; review the full PR diff before deployment");
+    return;
   }
-  const changed = tracked.trim().split("\n").filter(Boolean);
-  assert.ok(changed.length > 0);
-  assert.deepEqual(changed.filter((file) => !file.startsWith("apps/ops-console/")), []);
+  // Zero commits ahead of main is valid; uncommitted edits are checked above.
+  assert.deepEqual(outsideOps(branchFiles), []);
 });
 
 test("independent Netlify directories cannot publish root applications", () => {

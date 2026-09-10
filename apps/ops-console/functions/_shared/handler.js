@@ -1,4 +1,5 @@
 import { guardGet, json, unavailable } from "./http.js";
+import { reportFailure } from "./diagnostics.js";
 
 export function readHandler(loader, key) {
   return async function handler(event) {
@@ -7,7 +8,8 @@ export function readHandler(loader, key) {
     try {
       const data = await loader(event);
       return json(200, { ok: true, [key]: data, generated_at: new Date().toISOString() });
-    } catch {
+    } catch (error) {
+      reportFailure(error, key);
       return unavailable("Monitoring data unavailable");
     }
   };
