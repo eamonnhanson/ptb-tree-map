@@ -1,0 +1,54 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { loadWorkspace } from '../functions/_shared/workspace.js';
+import { buildTasks } from '../frontend/workspace-model.js';
+import { handler } from '../functions/workspace.js';
+
+const rows=()=>Promise.resolve({rows:[],truncated:false,limit:100});
+test('workspace isolates missing permissions and preserves genuine zero counts',async t=>{
+  t.mock.method(console,'error',()=>{});
+  const result=await loadWorkspace({listActions:rows,listWorkflows:rows,read:async sql=>{
+    if(sql.includes('trees1'))throw Object.assign(new Error('private'),{code:'42501'});
+    return {rows:[{count:'0'}]};
+  }});
+  assert.equal(result.sources.trees.available,false);
+  assert.equal(result.sources.trees.data,null);
+  assert.equal(result.sources.uploads.data.count,0);
+  assert.equal(result.sources.questions.data.count,0);
+  assert.equal(JSON.stringify(result).includes('private'),false);
+});
+test('malformed aggregate counts are unavailable rather than zero',async t=>{
+  t.mock.method(console,'error',()=>{});
+  const r=await loadWorkspace({listActions:rows,listWorkflows:rows,read:async()=>({rows:[{count:null}]})});
+  assert.equal(r.sources.trees.available,false);
+});
+test('missing monitoring becomes a specific follow-up, never a fake order failure',()=>{
+  const tasks=buildTasks({sources:{},partners:{configured:false},minimum_free_trees:0});
+  assert.ok(tasks.some(t=>t.id==='source-trees'));
+  assert.ok(tasks.some(t=>t.id==='csr-setup'));
+  assert.ok(!tasks.some(t=>t.id==='stock'));
+  assert.ok(tasks.every(t=>t.action&&t.owner));
+});
+test('successful empty queues need no action while low stock and pending queues do',()=>{
+  const available=data=>({available:true,data});
+  const data={sources:{workflows:available({rows:[{workflow_id:'all',workflow_name:'Shopify subscription certificate CRM',health:{state:'GREEN'}}]}),actions:available({rows:[]}),trees:available({count:20}),uploads:available({count:0}),questions:available({count:0})},partners:{configured:true,records:[]},minimum_free_trees:10};
+  assert.deepEqual(buildTasks(data),[]);
+  data.sources.trees.data.count=10;data.sources.uploads.data.count=3;
+  assert.deepEqual(buildTasks(data).map(t=>t.id),['stock','uploads']);
+});
+test('new workspace rejects unauthenticated and write requests',async t=>{
+  const before={user:process.env.OPS_CONSOLE_USER,password:process.env.OPS_CONSOLE_PASSWORD};
+  t.after(()=>{for(const [key,value] of [['OPS_CONSOLE_USER',before.user],['OPS_CONSOLE_PASSWORD',before.password]])if(value===undefined)delete process.env[key];else process.env[key]=value;});
+  process.env.OPS_CONSOLE_USER='test';process.env.OPS_CONSOLE_PASSWORD='test';
+  assert.equal((await handler({httpMethod:'GET',headers:{}})).statusCode,401);
+  assert.equal((await handler({httpMethod:'POST',headers:{authorization:'Basic '+Buffer.from('test:test').toString('base64')}})).statusCode,405);
+});
+test('new UI renders source content as text and ships no external scripts or demo data',()=>{
+  const read=file=>readFileSync(new URL('../frontend/'+file,import.meta.url),'utf8');
+  assert.doesNotMatch(read('workspace.js'),/\.innerHTML\s*=/);
+  assert.doesNotMatch(read('workspace.js'),/examplePartners|saleOpen|1042/);
+  assert.doesNotMatch(read('index.html'),/<script[^>]+src="https:/);
+  assert.match(read('index.html'),/legacy.html/);
+  for(const route of ['tree-map','csr','academy','upload'])assert.ok(read('index.html').includes('#'+route));
+});

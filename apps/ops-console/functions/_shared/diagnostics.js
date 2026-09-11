@@ -28,7 +28,7 @@ const messages = new Map([
   ["timeout exceeded when trying to connect", "DB_CONNECTION_TIMEOUT"],
   ["Connection terminated due to connection timeout", "DB_CONNECTION_TIMEOUT"]
 ]);
-const endpoints = new Set(["overview", "workflows", "detail", "actions", "events"]);
+const endpoints = new Set(["overview", "workflows", "detail", "actions", "events", "workspace", "trees", "uploads", "questions"]);
 
 export function reportFailure(error, endpoint, logger = console.error) {
   try {
