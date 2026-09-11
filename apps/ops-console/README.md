@@ -1,5 +1,11 @@
 # KETSO Operations Console
 
+The default UI is now the action workspace described in [WORKSPACE.md](WORKSPACE.md).
+It includes Tree Map, CSR and Academy navigation. The original evidence UI is
+retained at `legacy.html`. The health model below describes backend evidence,
+not the new owner-facing red/green action labels.
+
+
 Internal, read-only operational monitoring for KETSO and Plant N Boom. This application answers a narrow question: what needs attention today, and what runtime evidence supports that conclusion?
 
 It is a controlled greenfield application. It does not import frontend code, functions, build settings or routes from the Tree Map, uploader or current automation dashboard.

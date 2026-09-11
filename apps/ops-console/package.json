@@ -11,7 +11,7 @@
     "clean": "node scripts/clean.mjs",
     "dev": "npx netlify-cli dev",
     "test": "node scripts/run-suite.mjs",
-    "check": "npm test && npm run build && node --check functions/overview.js && node --check functions/workflows.js && node --check functions/workflow-detail.js && node --check functions/actions.js && node --check functions/events.js"
+    "check": "npm test && npm run build && node --check functions/overview.js && node --check functions/workflows.js && node --check functions/workflow-detail.js && node --check functions/actions.js && node --check functions/events.js && node --check functions/workspace.js && node --check frontend/workspace.js && node --check frontend/workspace-model.js"
   },
   "dependencies": {
     "pg": "^8.11.0"
