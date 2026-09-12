@@ -38,18 +38,19 @@ list. Failures are independent. All SQL uses the existing read-only transaction.
 No names, emails, questions or uploaded media are fetched for Academy counters.
 Refresh happens on page load or the Refresh button only; no background polling.
 
-Free trees: public.trees1, user_id null, blank/null tree_code and tree_name,
-non-null lat and long. This is the owner's earlier definition; it is not a count
-of every unassigned coded/reserved tree. OPS_CONSOLE_MIN_FREE_TREES controls the
+Free trees: public.trees1, user_id null, blank/null tree_name, non-null lat
+and long. The inventory uses tree_code for all rows, including free trees, so it
+is deliberately not part of the definition. This is not a count of every
+unassigned reserved tree. OPS_CONSOLE_MIN_FREE_TREES controls the
 alert floor, default 0. Confirm the operating minimum and count definition with
 the allocation owner before setting a larger threshold.
 
-The existing monitoring connection targets ptb_monitoring_test. Confirm that it
-contains the authoritative business tables before calling their counters live.
-Missing relations/permissions are shown as repair actions. The reviewed grants
-are in sql/workspace_count_access.sql and have NOT been applied. If business
-and monitoring data reside in separate databases, add an explicitly approved
-read-only business connection rather than relabelling test figures as live.
+The existing monitoring connection targets ptb_monitoring_test. The free-tree
+count uses OPS_CONSOLE_TREE_DATABASE_URL because trees1 is in a separate
+database, confirmed as defaultdb on 12 September 2026. Missing relations/permissions are shown as repair actions. The reviewed
+grants are in sql/workspace_count_access.sql and have NOT been applied. Create
+one read-only defaultdb connection and configure it only in the Ops Console's
+Netlify environment. Never replace the monitoring URL with it.
 
 Approvals, tutor replies and uploads open the already working authenticated
 screens. This preserves their write permissions, review and notification logic.
