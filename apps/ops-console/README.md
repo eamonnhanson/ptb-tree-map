@@ -52,6 +52,8 @@ npm run check
 |---|---:|---|
 | `OPS_CONSOLE_DATABASE_URL` | yes | PostgreSQL connection using a dedicated read-only role |
 | `OPS_CONSOLE_DATABASE_CA_BASE64` | depends on host | Base64-encoded trusted CA certificate for verified TLS |
+| `OPS_CONSOLE_TREE_DATABASE_URL` | free-tree count | Separate read-only connection to the authoritative Tree Map database |
+| `OPS_CONSOLE_TREE_DATABASE_CA_BASE64` | no | CA for the Tree Map database when it differs from the monitoring database |
 | `OPS_CONSOLE_USER` | yes | Basic-auth username for the internal site and API |
 | `OPS_CONSOLE_PASSWORD` | yes | Strong Basic-auth password |
 | `OPS_CONSOLE_FRESHNESS_HOURS` | no | Runtime success freshness threshold, default 72 hours |
@@ -106,7 +108,7 @@ Visible states:
 | `monitoring.automation_events` | yes | Runtime/historical evidence | Recent outcomes, failures and action-required events |
 | `monitoring.outbound_messages` | yes | Runtime/historical evidence | Failed/error/blocked message attempts become actions |
 
-The application does not read business payloads or expose `customer_email`. V1 does not query upload/student business tables because a stable, minimized operational evidence view is not yet source-controlled.
+The application does not read business payloads or expose `customer_email`. V1 does not query upload/student Tree Map table because a stable, minimized operational evidence view is not yet source-controlled.
 
 ## Database permissions
 

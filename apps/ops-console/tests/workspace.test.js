@@ -18,6 +18,25 @@ test('workspace isolates missing permissions and preserves genuine zero counts',
   assert.equal(result.sources.questions.data.count,0);
   assert.equal(JSON.stringify(result).includes('private'),false);
 });
+test('tree count uses the dedicated Tree Map read path', async () => {
+  const calls = [];
+  const result = await loadWorkspace({
+    listActions: rows,
+    listWorkflows: rows,
+    read: async () => ({ rows: [{ count: '4' }] }),
+    readTrees: async (sql) => { calls.push(sql); return { rows: [{ count: '316' }] }; }
+  });
+  assert.equal(result.sources.trees.data.count, 316);
+  assert.equal(calls.length, 1);
+  assert.match(calls[0], /public\.trees1/);
+});
+
+test('free tree SQL treats a populated inventory code as compatible with free status', async () => {
+  const source = readFileSync(new URL('../functions/_shared/workspace.js', import.meta.url), 'utf8');
+  assert.match(source, /user_id is null[\s\S]*tree_name/);
+  assert.doesNotMatch(source, /nullif\(trim\(tree_code\)/);
+});
+
 test('malformed aggregate counts are unavailable rather than zero',async t=>{
   t.mock.method(console,'error',()=>{});
   const r=await loadWorkspace({listActions:rows,listWorkflows:rows,read:async()=>({rows:[{count:null}]})});

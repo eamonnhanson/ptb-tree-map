@@ -1,12 +1,13 @@
-import { read } from './db.js';
+import { read, readTrees } from './db.js';
 import { listActions, listWorkflows } from './repository.js';
 import { reportFailure } from './diagnostics.js';
 import { partners } from './partners.js';
 
 export const COUNT_QUERIES = Object.freeze({
   trees: `select count(*)::text as count from public.trees1
-    where user_id is null and nullif(trim(tree_code), '') is null
-    and nullif(trim(tree_name), '') is null and lat is not null and "long" is not null`,
+    where user_id is null
+    and nullif(trim(tree_name), '') is null
+    and lat is not null and "long" is not null`,
   uploads: `select count(*)::text as count from public.photo_uploads_review
     where review_status = 'pending'`,
   questions: `select count(*)::text as count from public.academy_tutor_questions
@@ -24,11 +25,13 @@ function checkedCount(result) {
 // Sources fail independently; missing access never becomes a zero count.
 export async function loadWorkspace(deps = {}) {
   const query = deps.read || read;
+  const treeQuery = deps.readTrees || (deps.read ? deps.read : readTrees);
   const loaders = {
     workflows: deps.listWorkflows || listWorkflows,
     actions: deps.listActions || listActions,
-    ...Object.fromEntries(Object.entries(COUNT_QUERIES).map(([key, sql]) =>
-      [key, async () => checkedCount(await query(sql))]))
+    trees: async () => checkedCount(await treeQuery(COUNT_QUERIES.trees)),
+    uploads: async () => checkedCount(await query(COUNT_QUERIES.uploads)),
+    questions: async () => checkedCount(await query(COUNT_QUERIES.questions))
   };
   const entries = await Promise.all(Object.entries(loaders).map(async ([key, loader]) => {
     try { return [key, { available: true, data: await loader() }]; }
