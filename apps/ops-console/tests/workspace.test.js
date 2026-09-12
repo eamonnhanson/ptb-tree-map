@@ -42,6 +42,8 @@ test('Tree Map uses its bundled public Aiven CA instead of a second large enviro
   const certificate = readFileSync(new URL('../functions/_shared/tree-database-ca.js', import.meta.url), 'utf8');
   assert.match(database, /TREE_DATABASE_CA/);
   assert.match(certificate, /BEGIN CERTIFICATE/);
+  assert.match(database, /withoutTlsUrlParameters/);
+  assert.match(database, /sslmode/);
 });
 
 test('malformed aggregate counts are unavailable rather than zero',async t=>{

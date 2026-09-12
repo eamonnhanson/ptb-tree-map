@@ -4,6 +4,16 @@ import { TREE_DATABASE_CA } from "./tree-database-ca.js";
 const { Pool } = pg;
 let pool;
 let treePool;
+const TLS_URL_PARAMETERS = ["sslmode", "sslrootcert", "sslcert", "sslkey", "sslnegotiation", "uselibpqcompat"];
+
+function withoutTlsUrlParameters(connectionString) {
+  const url = new URL(connectionString);
+  const remaining = [...url.searchParams]
+    .filter(([parameter]) => !TLS_URL_PARAMETERS.includes(parameter))
+    .map(([parameter, value]) => `${encodeURIComponent(parameter)}=${encodeURIComponent(value)}`);
+  url.search = remaining.join("&");
+  return url.toString();
+}
 
 function decodeCa(caBase64) {
   return caBase64 ? Buffer.from(caBase64, "base64").toString("utf8") : undefined;
@@ -12,7 +22,9 @@ function decodeCa(caBase64) {
 function createPool(connectionString, ca, applicationName) {
   if (!connectionString) throw new Error("DATABASE_NOT_CONFIGURED");
   return new Pool({
-    connectionString,
+    // pg re-parses a connection string after applying this configuration. Strip
+    // URL SSL options so they cannot replace the verified CA supplied below.
+    connectionString: withoutTlsUrlParameters(connectionString),
     ssl: ca ? { ca, rejectUnauthorized: true } : undefined,
     max: 3,
     connectionTimeoutMillis: 5000,
