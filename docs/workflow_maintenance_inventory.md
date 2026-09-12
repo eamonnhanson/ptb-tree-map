@@ -113,6 +113,10 @@ The workflow maintenance inventory does not change these tables. It is a documen
 
 ## IMCD Benelux tree-credit check
 
+The CSR page shows IMCD only through an active follow-up or restore action.
+Above the threshold there is no IMCD card. Credit details appear when opening
+the follow-up action, rather than as a permanent CSR summary.
+
 The Operations Console has a read-only, current-state check for customer code
 `imcd_benelux`. Eamonn Hanson owns the operational follow-up. The source is
 `defaultdb` tables `users1` and `trees1`, using the dedicated Tree Map reader;
