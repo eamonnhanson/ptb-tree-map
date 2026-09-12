@@ -27,8 +27,26 @@ test('tree count uses the dedicated Tree Map read path', async () => {
     readTrees: async (sql) => { calls.push(sql); return { rows: [{ count: '316' }] }; }
   });
   assert.equal(result.sources.trees.data.count, 316);
-  assert.equal(calls.length, 1);
+  assert.equal(calls.length, 2);
   assert.match(calls[0], /public\.trees1/);
+});
+test('IMCD credit counts both linked countries once and makes a threshold action', async () => {
+  const result = await loadWorkspace({
+    listActions: rows, listWorkflows: rows, read: async () => ({ rows: [{ count: '0' }] }),
+    readTrees: async sql => sql.includes('ops_console_tree_credits') ? { rows: [{ starts_at: '2026-09-09T22:00:00.000Z', opening_trees: '25', alert_threshold: '5', account_manager: 'Eamonn Hanson', topup_trees: '0', nl_trees: '2', be_trees: '18', balance: '5' }] } : { rows: [{ count: '10' }] }
+  });
+  assert.deepEqual(result.sources.imcd_credit.data, { starts_at: '2026-09-09T22:00:00.000Z', opening_trees: 25, alert_threshold: 5, account_manager: 'Eamonn Hanson', topup_trees: 0, nl_trees: 2, be_trees: 18, balance: 5 });
+  assert.equal(buildTasks(result).find(t => t.id === 'imcd-tree-credit').title, 'IMCD has 5 trees remaining');
+});
+test('IMCD unavailable data is a repair action, never a zero balance', () => {
+  const tasks = buildTasks({ sources: { imcd_credit: { available: false, data: null } }, partners: { configured: true, records: [] }, minimum_free_trees: 0 });
+  assert.ok(tasks.some(t => t.id === 'imcd-tree-credit-repair'));
+});
+test('IMCD action thresholds include zero and negative balances but not six', () => {
+  const source = balance => ({ sources: { imcd_credit: { available: true, data: { balance, alert_threshold: 5, account_manager: 'Eamonn Hanson' } } }, partners: { configured: true, records: [] }, minimum_free_trees: 0 });
+  assert.equal(buildTasks(source(6)).some(t => t.id === 'imcd-tree-credit'), false);
+  assert.match(buildTasks(source(0)).find(t => t.id === 'imcd-tree-credit').title, /used its tree credit/);
+  assert.match(buildTasks(source(-2)).find(t => t.id === 'imcd-tree-credit').title, /2 trees beyond/);
 });
 
 test('free tree SQL treats a populated inventory code as compatible with free status', async () => {
@@ -60,7 +78,7 @@ test('missing monitoring becomes a specific follow-up, never a fake order failur
 });
 test('successful empty queues need no action while low stock and pending queues do',()=>{
   const available=data=>({available:true,data});
-  const data={sources:{workflows:available({rows:[{workflow_id:'all',workflow_name:'Shopify subscription certificate CRM',health:{state:'GREEN'}}]}),actions:available({rows:[]}),trees:available({count:20}),uploads:available({count:0}),questions:available({count:0})},partners:{configured:true,records:[]},minimum_free_trees:10};
+  const data={sources:{workflows:available({rows:[{workflow_id:'all',workflow_name:'Shopify subscription certificate CRM',health:{state:'GREEN'}}]}),actions:available({rows:[]}),trees:available({count:20}),imcd_credit:available({balance:6,alert_threshold:5,account_manager:'Eamonn Hanson'}),uploads:available({count:0}),questions:available({count:0})},partners:{configured:true,records:[]},minimum_free_trees:10};
   assert.deepEqual(buildTasks(data),[]);
   data.sources.trees.data.count=10;data.sources.uploads.data.count=3;
   assert.deepEqual(buildTasks(data).map(t=>t.id),['stock','uploads']);

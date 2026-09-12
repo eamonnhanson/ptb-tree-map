@@ -5,8 +5,10 @@
 -- Existing role: ops_console_reader. Execute only after explicit approval.
 BEGIN;
 GRANT USAGE ON SCHEMA public TO ops_console_reader;
-GRANT SELECT (user_id, tree_name, lat, "long")
+GRANT SELECT (id, user_id, tree_name, lat, "long", claimed_at)
   ON public.trees1 TO ops_console_reader;
+GRANT SELECT ON public.ops_console_tree_credits, public.ops_console_tree_credit_accounts,
+  public.ops_console_tree_credit_topups TO ops_console_reader;
 GRANT SELECT (review_status) ON public.photo_uploads_review TO ops_console_reader;
 GRANT SELECT (status) ON public.academy_tutor_questions TO ops_console_reader;
 COMMIT;

@@ -74,6 +74,30 @@ prospect targets are never counted as confirmed income.
 - functions/_shared/partners.js: approved CSR data source, currently unconfigured.
 - sql/workspace_count_access.sql: optional reviewed permissions, never auto-run.
 - tests/workspace.test.js: counts, partial failure, authentication and UI boundaries.
+- sql/imcd_tree_credit_*.sql and the workspace IMCD source: a read-only current
+  tree-credit check for IMCD Benelux. The customer code is `imcd_benelux`;
+  Eamonn Hanson owns follow-up. Netherlands and Belgium share one credit.
+  The explicit start is 10 September 2026, 00:00 Europe/Amsterdam (stored and
+  compared as a timestamptz), with an opening credit of 25 and an alert at five.
+  Later batches are recorded once using a unique batch reference, not merely an
+  invoice number. A batch is ordered credit, not evidence of received payment.
+
+## IMCD tree-credit runbook
+
+Run `sql/imcd_tree_credit_inspect.sql` in Beekeeper on **defaultdb** first. It
+must show exactly one match for each approved account; do not choose a matching
+row arbitrarily. Then review and run `imcd_tree_credit_setup.sql`, followed by
+the relevant `workspace_count_access.sql` grants, only with database-change
+approval. Use `imcd_tree_credit_check.sql` to confirm setup. Record a new batch
+only by filling and reviewing `imcd_tree_credit_add_batch.sql`; a unique batch
+reference prevents a repeated run from adding credit twice. The app itself has
+no write endpoint.
+
+The tracker counts present `trees1` records with `claimed_at` from the start
+instant forward. It cannot reconstruct historic deletions or reallocations.
+Investigate any suspicious historical allocation separately; do not silently
+correct it in this tracker. A missing setup, account link, permission or query
+is a repair action, never an assertion that no trees were used.
 
 ## Rollout
 
