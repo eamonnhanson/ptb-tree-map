@@ -111,6 +111,24 @@ The current dashboard already has these monitoring tables:
 
 The workflow maintenance inventory does not change these tables. It is a documentation and governance layer that can later feed or enrich `monitoring.automation_registry` after review.
 
+## IMCD Benelux tree-credit check
+
+The Operations Console has a read-only, current-state check for customer code
+`imcd_benelux`. Eamonn Hanson owns the operational follow-up. The source is
+`defaultdb` tables `users1` and `trees1`, using the dedicated Tree Map reader;
+the monitoring database remains separate. Netherlands and Belgium share one
+credit. The tracker counts linked `trees1` rows whose `claimed_at` is at or
+after 10 September 2026 00:00 Europe/Amsterdam, with the comparison performed
+as `timestamptz`. Its opening credit is 25 trees and it alerts at five or fewer.
+
+Source-controlled, reviewable SQL lives in `apps/ops-console/sql/`: inspect
+the table/types and approved account matches first, then run idempotent setup,
+apply the scoped reader grants, and use the control query. New batches use a
+unique batch reference because an invoice number was reused historically.
+Registered credit is an order record, not proof of payment. The check cannot
+reconstruct deleted or reallocated historical tree rows. Missing setup,
+permissions or account links must be handled as a restore action, not zero use.
+
 ## Current Source Coverage
 
 Strong source coverage:

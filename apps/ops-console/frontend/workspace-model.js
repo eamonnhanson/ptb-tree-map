@@ -24,6 +24,15 @@ export function buildTasks(workspace) {
     if (!sources[key]?.available) add('source-'+key, ['uploads','questions'].includes(key)?'academy':key==='trees'?'tree-map':'checks', 'Restore the '+label,
       'The console could not read this information.', 'Ask the maintainer to check the database connection and read permissions.', { technical: true });
   }
+  const credit = sources.imcd_credit?.data;
+  if (credit) {
+    const balance = credit.balance;
+    if (balance <= credit.alert_threshold) {
+      const title = balance > 0 ? `IMCD has ${balance} trees remaining` : balance === 0 ? 'IMCD has used its tree credit' : `IMCD has used ${Math.abs(balance)} trees beyond its credit`;
+      const action = balance > 0 ? 'Contact HR about a new batch.' : balance === 0 ? 'Check whether a new batch should be ordered and invoiced.' : 'Review the additional trees and arrange the next batch.';
+      add('imcd-tree-credit', 'csr', title, 'The Netherlands and Belgium share this tree credit.', action, { owner: credit.account_manager, imcd_credit: credit, technical: true });
+    }
+  } else if (!sources.imcd_credit?.available) add('imcd-tree-credit-repair', 'csr', 'Restore the IMCD tree-credit check', 'The console could not read the IMCD credit setup or current allocations.', 'Ask the maintainer to run the IMCD inspection and setup SQL, confirm the three account links, then check the defaultdb reader grant.', { owner: 'Eamonn Hanson', technical: true });
   const workflows = sources.workflows?.available ? sources.workflows.data.rows : [];
   if (sources.workflows?.data?.truncated || sources.actions?.data?.truncated)
     add('truncated','checks','Review the remaining monitoring records','Only part of the record list was returned.','Ask the maintainer to retrieve the remaining records.',{technical:true});
