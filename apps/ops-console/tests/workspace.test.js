@@ -37,6 +37,13 @@ test('free tree SQL treats a populated inventory code as compatible with free st
   assert.doesNotMatch(source, /nullif\(trim\(tree_code\)/);
 });
 
+test('Tree Map uses its bundled public Aiven CA instead of a second large environment variable', () => {
+  const database = readFileSync(new URL('../functions/_shared/db.js', import.meta.url), 'utf8');
+  const certificate = readFileSync(new URL('../functions/_shared/tree-database-ca.js', import.meta.url), 'utf8');
+  assert.match(database, /TREE_DATABASE_CA/);
+  assert.match(certificate, /BEGIN CERTIFICATE/);
+});
+
 test('malformed aggregate counts are unavailable rather than zero',async t=>{
   t.mock.method(console,'error',()=>{});
   const r=await loadWorkspace({listActions:rows,listWorkflows:rows,read:async()=>({rows:[{count:null}]})});
