@@ -1,5 +1,5 @@
 import { createDatabasePool, postgresDiagnostics } from "./tree-allocated.js";
-import { idempotencyKey, SHOPIFY_GIFT_WORKFLOW, validateEvidencePayload } from "./shopify-workflow-evidence.js";
+import { idempotencyKey, validateEvidencePayload, workflowRegistry } from "./shopify-workflow-evidence.js";
 
 let pool;
 const response = (statusCode, body, extra = {}) => ({ statusCode, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...extra }, body: JSON.stringify(body) });
@@ -21,7 +21,7 @@ export function eventRecord(data) {
   const key = idempotencyKey(data);
   const failed = data.status === "failed" || data.submission_status === "failed" || data.creator_record_count > 1 || data.creator_record_count === 0;
   const source = data.event_type === "shopify_order_received" ? "Shopify" : data.event_type === "gift_claim_created" ? "Zoho Creator" : "E-mailactie";
-  const changed = { ...data, idempotency_key: key, workflow_name: SHOPIFY_GIFT_WORKFLOW.name };
+  const changed = { ...data, idempotency_key: key };
   delete changed.customer_email;
   delete changed.recipient_email;
   return { key, failed, source, customerEmail: data.customer_email || data.recipient_email || null, changed };
@@ -34,7 +34,7 @@ export function createHandler({ env = process.env, getPool = () => database(env)
     if ((event.body || "").length > 16384) return response(413, { ok: false, error: "Payload te groot" });
     let payload;
     try { payload = JSON.parse(event.body || ""); } catch { return response(400, { ok: false, error: "Ongeldige JSON-payload" }); }
-    const validated = validateEvidencePayload(payload);
+    const validated = validateEvidencePayload(payload, workflowRegistry(env));
     if (validated.error) return response(400, { ok: false, error: validated.error });
     const db = getPool();
     if (!db) return response(503, { ok: false, error: "Monitoringdatabase is niet geconfigureerd" });
@@ -48,7 +48,7 @@ export function createHandler({ env = process.env, getPool = () => database(env)
         (event_time,category,severity,status,source_system,flow_name,entity_type,entity_id,customer_email,changed_fields,summary,action_required,error_message)
         select $1,$2,$3,$4,$5,$6,'shopify_order',$7,$8,$9::jsonb,$10,$11,$12
         where not exists (select 1 from monitoring.automation_events where changed_fields->>'idempotency_key'=$13)
-        returning id`, [validated.value.occurred_at, validated.value.event_type, record.failed ? "red" : "green", record.failed ? "failed" : "confirmed", record.source, SHOPIFY_GIFT_WORKFLOW.name, validated.value.order_id, record.customerEmail, JSON.stringify(record.changed), `${validated.value.event_type} geregistreerd`, record.failed, record.failed ? "Geregistreerde workflowfout" : null, record.key]);
+        returning id`, [validated.value.occurred_at, validated.value.event_type, record.failed ? "red" : "green", record.failed ? "failed" : "confirmed", record.source, validated.value.workflow_name, validated.value.order_id, record.customerEmail, JSON.stringify(record.changed), `${validated.value.event_type} geregistreerd`, record.failed, record.failed ? "Geregistreerde workflowfout" : null, record.key]);
       await client.query("commit");
       const created = inserted.rowCount === 1;
       return response(created ? 201 : 200, { ok: true, inserted: created, event_type: validated.value.event_type, order_id: validated.value.order_id });
