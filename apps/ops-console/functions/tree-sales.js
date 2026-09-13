@@ -1,0 +1,3 @@
+import { guardGet, json, unavailable } from "./_shared/http.js";
+import { getTreeSale, listTreeSales } from "./_shared/tree-sales.js";
+export async function handler(event) { const guard=guardGet(event); if(guard)return guard; const id=event.queryStringParameters?.order_id; try { if(id&&!/^\d{1,30}$/.test(String(id)))return json(400,{ok:false,error:"Invalid order id"}); const payload=id?await getTreeSale(id):await listTreeSales(); return payload?json(200,{ok:true,...payload,generated_at:new Date().toISOString()}):json(404,{ok:false,error:"Sale not found"}); } catch { return unavailable("Tree sales data is unavailable"); } }
