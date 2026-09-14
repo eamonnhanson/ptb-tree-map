@@ -1,4 +1,3 @@
-import { pool } from "./db.js";
 import { generateImageDescription } from "./generateImageDescription.js";
 import {
   DEFAULT_ACADEMY_COURSE,
@@ -16,17 +15,33 @@ const VALID_VERIFICATION_STATUSES = new Set([
   "not_required"
 ]);
 
-export default async function savePhotoReview(req, res) {
+export function createSavePhotoReviewHandler({
+  dbPool = null,
+  describeImage = generateImageDescription
+} = {}) {
+  return async function savePhotoReview(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
   try {
+    if (!dbPool) {
+      ({ pool: dbPool } = await import("./db.js"));
+    }
+
     console.log("savePhotoReview called. body =", req.body);
 
     const body = req.body || {};
 
     const category = normalize(body.category);
+    const caption = normalize(body.caption);
+    const staff_category = normalize(body.staff_category);
+    const selected_category = normalize(body.selected_category);
+    const uploaded_by = normalize(body.uploaded_by);
+    const staff_id = normalize(body.staff_id) || uploaded_by;
+    const staff_name = normalize(body.staff_name);
+    const staff_created_at = normalizeTimestamp(body.staff_created_at);
+    const uploader_role = normalize(body.uploader_role);
 
     const cropped_file_url =
       normalize(body.cropped_file_url) ||
@@ -109,6 +124,13 @@ let uploader_email = normalize(body.uploader_email);
       });
     }
 
+    if (isStaffUpload && !staff_id) {
+      return res.status(400).json({
+        ok: false,
+        error: "staff_upload requires staff_id"
+      });
+    }
+
     if (category === "forest_hero") {
       if (!user_id || !tree_id) {
         return res.status(400).json({
@@ -139,7 +161,7 @@ let uploader_email = normalize(body.uploader_email);
         let studentLookup = { rows: [] };
 
         if (academy_student_id) {
-          studentLookup = await pool.query(
+          studentLookup = await dbPool.query(
             `
             SELECT
               s.id,
@@ -161,7 +183,7 @@ let uploader_email = normalize(body.uploader_email);
         }
 
         if (studentLookup.rows.length === 0 && uploader_email) {
-          studentLookup = await pool.query(
+          studentLookup = await dbPool.query(
             `
             SELECT
               s.id,
@@ -297,7 +319,7 @@ let uploader_email = normalize(body.uploader_email);
       ai_status = "checking";
 
       if (file_type === "image") {
-        ai_description = await generateImageDescription(cropped_file_url, {
+        ai_description = await describeImage(cropped_file_url, {
           courseKey: course_key || DEFAULT_ACADEMY_COURSE,
           lessonKey: lesson_key
         });
@@ -366,7 +388,15 @@ let uploader_email = normalize(body.uploader_email);
         reviewed_by_admin,
         approved_at,
         rejected_reason,
-        course_key
+        course_key,
+        caption,
+        staff_category,
+        selected_category,
+        uploaded_by,
+        staff_id,
+        staff_name,
+        staff_created_at,
+        uploader_role
       )
       VALUES (
         $1,$2,$3,$4,$5,
@@ -375,8 +405,13 @@ let uploader_email = normalize(body.uploader_email);
         $16,$17,$18,$19,$20,
         $21,$22,$23,$24,$25,
         $26,$27,$28,$29,$30,
-        $31,$32,$33,$34,$35
+        $31,$32,$33,$34,$35,
+        $36,$37,$38,$39,$40,
+        $41,$42,$43,$44
       )
+      ON CONFLICT (staff_id, cropped_file_url)
+        WHERE upload_context = 'staff_upload'
+      DO UPDATE SET staff_id = photo_uploads_review.staff_id
       RETURNING id;
     `;
 
@@ -415,7 +450,15 @@ let uploader_email = normalize(body.uploader_email);
       reviewed_by_admin,
       approved_at,
       rejected_reason,
-      course_key
+      course_key,
+      caption,
+      staff_category,
+      selected_category,
+      uploaded_by,
+      staff_id,
+      staff_name,
+      staff_created_at,
+      uploader_role
     ];
 
     console.log("savePhotoReview staff status check =", {
@@ -430,7 +473,7 @@ let uploader_email = normalize(body.uploader_email);
 
     console.log("savePhotoReview query values =", values);
 
-    const result = await pool.query(query, values);
+    const result = await dbPool.query(query, values);
     const reviewId = result.rows[0]?.id;
 
     return res.status(200).json({
@@ -454,7 +497,10 @@ let uploader_email = normalize(body.uploader_email);
       details: err.message
     });
   }
+  };
 }
+
+export default createSavePhotoReviewHandler();
 
 function normalize(value) {
   if (value === undefined || value === null) return null;
@@ -467,6 +513,13 @@ function normalizeNumber(value) {
   if (value === undefined || value === null || value === "") return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+function normalizeTimestamp(value) {
+  const normalized = normalize(value);
+  if (!normalized) return null;
+  const timestamp = new Date(normalized);
+  return Number.isNaN(timestamp.valueOf()) ? null : timestamp.toISOString();
 }
 
 function normalizeBoolean(value) {
