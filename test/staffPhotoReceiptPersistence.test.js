@@ -64,6 +64,16 @@ test("staff receipt stores identity and metadata and returns one durable id on r
     "Seedlings ready for planting", "nursery", "nursery", "test_staff",
     "test_staff", "Test Staff", "2026-09-14T10:00:00.000Z", "staff"
   ]);
+
+  const insertShape = calls[0].sql.match(/INSERT INTO photo_uploads_review \((.*?)\) VALUES \((.*?)\)/);
+  assert.ok(insertShape, "the receipt write must retain an INSERT column/value shape");
+  const targetColumns = insertShape[1].split(",").map(value => value.trim());
+  const placeholders = insertShape[2].split(",").map(value => value.trim());
+  assert.equal(targetColumns.length, calls[0].values.length);
+  assert.deepEqual(placeholders, Array.from(
+    { length: calls[0].values.length },
+    (_, index) => `$${index + 1}`
+  ));
 });
 
 test("staff receipt fails closed before a database write without staff identity", async () => {

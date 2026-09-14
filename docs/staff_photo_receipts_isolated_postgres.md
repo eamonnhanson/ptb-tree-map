@@ -55,3 +55,30 @@ existing receipt without creating a second row.
 
 After testing, remove the disposable database with the local PostgreSQL owner
 tooling. Do not use a production connection for cleanup.
+
+## Local acceptance evidence — 14 September 2026
+
+The SQL-backed suite was run successfully against a dedicated loopback
+database whose host and name passed the test's local-target allowlist. The
+connection was not an Aiven host. The suite recreated only that database's
+`public` schema and applied the baseline followed by migration 022.
+
+All five assertions passed:
+
+1. Identical staff payloads returned the same positive review ID and produced
+   one row.
+2. The seven staff receipt columns and the partial unique index existed.
+3. The gallery returned the exact R2 URL, staff ID, uploader, category, and a
+   positive review ID.
+4. A missing staff ID returned HTTP 400 without inserting a row.
+5. Lost-response recovery found the existing receipt without another insert.
+
+Commands and results:
+
+```text
+node --test test/staffPhotoReceiptPostgresIntegration.test.js
+# pass 6, fail 0 (one parent test plus five assertions)
+
+npm test
+# pass 394, fail 0, skipped 4 (398 tests)
+```

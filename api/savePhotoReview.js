@@ -407,7 +407,7 @@ let uploader_email = normalize(body.uploader_email);
         $26,$27,$28,$29,$30,
         $31,$32,$33,$34,$35,
         $36,$37,$38,$39,$40,
-        $41,$42,$43,$44
+        $41,$42,$43
       )
       ON CONFLICT (staff_id, cropped_file_url)
         WHERE upload_context = 'staff_upload'

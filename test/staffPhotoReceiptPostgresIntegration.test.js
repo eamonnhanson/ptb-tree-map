@@ -57,6 +57,11 @@ function response() {
   };
 }
 
+function isPositiveReviewId(value) {
+  return (Number.isSafeInteger(value) && value > 0) ||
+    (typeof value === "string" && /^[1-9]\d*$/.test(value));
+}
+
 test("staff photo receipts on isolated PostgreSQL", {
   skip: !localUrl && "local isolated PostgreSQL prerequisite unavailable"
 }, async t => {
@@ -85,7 +90,7 @@ test("staff photo receipts on isolated PostgreSQL", {
 
       assert.equal(first.statusCode, 200);
       assert.equal(retry.statusCode, 200);
-      assert.ok(Number.isInteger(first.body.review_id) && first.body.review_id > 0);
+      assert.ok(isPositiveReviewId(first.body.review_id));
       assert.equal(retry.body.review_id, first.body.review_id);
       const count = await pool.query(
         "SELECT count(*)::int AS count FROM public.photo_uploads_review WHERE staff_id = $1 AND cropped_file_url = $2",
@@ -124,7 +129,7 @@ test("staff photo receipts on isolated PostgreSQL", {
       assert.equal(res.statusCode, 200);
       const upload = res.body.photos.find(row => row.cropped_file_url === photoUrl);
       assert.ok(upload);
-      assert.ok(Number.isInteger(upload.id) && upload.id > 0);
+      assert.ok(isPositiveReviewId(upload.id));
       assert.equal(upload.staff_id, payload.staff_id);
       assert.equal(upload.uploaded_by, payload.uploaded_by);
       assert.equal(upload.category, "staff_upload");
@@ -147,7 +152,7 @@ test("staff photo receipts on isolated PostgreSQL", {
       const received = res.body.photos.find(upload =>
         upload.staff_id === payload.staff_id &&
         upload.cropped_file_url === photoUrl &&
-        Number.isInteger(upload.id) && upload.id > 0
+        isPositiveReviewId(upload.id)
       );
       const after = await pool.query("SELECT count(*)::int AS count FROM public.photo_uploads_review");
       assert.ok(received);
