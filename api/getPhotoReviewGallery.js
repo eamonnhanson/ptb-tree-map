@@ -1,12 +1,16 @@
-import { pool } from "./db.js";
 import { DEFAULT_ACADEMY_COURSE, normalizeCourseKey, submissionSectionLabel } from "./academyCourses.js";
 
-export default async function getPhotoReviewGallery(req, res) {
+export function createPhotoReviewGalleryHandler({ dbPool = null } = {}) {
+  return async function getPhotoReviewGallery(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
   try {
+    if (!dbPool) {
+      ({ pool: dbPool } = await import("./db.js"));
+    }
+
     const category = normalize(req.query.category);
     const date_from = normalize(req.query.date_from);
     const date_to = normalize(req.query.date_to);
@@ -126,6 +130,13 @@ export default async function getPhotoReviewGallery(req, res) {
         submission_section,
         uploader_name,
         uploader_email,
+        staff_category,
+        selected_category,
+        uploaded_by,
+        staff_id,
+        staff_name,
+        staff_created_at,
+        uploader_role,
         caption,
         ai_description,
         created_at_utc,
@@ -139,7 +150,7 @@ export default async function getPhotoReviewGallery(req, res) {
     `;
 
     console.log("photo-review-gallery SQL params:", values);
-    const result = await pool.query(query, values);
+    const result = await dbPool.query(query, values);
     console.log("photo-review-gallery row count returned:", result.rowCount);
 
     return res.status(200).json({
@@ -155,7 +166,10 @@ export default async function getPhotoReviewGallery(req, res) {
       details: err.message
     });
   }
+  };
 }
+
+export default createPhotoReviewGalleryHandler();
 
 function normalize(value) {
   if (value === undefined || value === null) return null;

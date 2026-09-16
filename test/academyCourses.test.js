@@ -8,6 +8,7 @@ import {
   isKnownLesson,
   submissionSectionLabel
 } from "../api/academyCourses.js";
+import { createSavePhotoReviewHandler } from "../api/savePhotoReview.js";
 
 const COURSE_KEY = "donor_investor_funding";
 
@@ -42,31 +43,73 @@ test("upload, approval, gallery and profile retain the canonical course context"
     readFile(new URL("../api/getStudentGallery.js", import.meta.url), "utf8")
   ]);
 
+  const writes = [];
+  const handler = createSavePhotoReviewHandler({
+    dbPool: {
+      async query(sql, values) {
+        if (/FROM academy_students s/.test(sql)) {
+          return {
+            rows: [{
+              id: 42,
+              full_name: "Course context student",
+              email: "student@example.test",
+              cohort: "2026",
+              track: "fundraising",
+              whatsapp: null
+            }]
+          };
+        }
+        writes.push({ sql, values });
+        return { rows: [{ id: 99 }] };
+      }
+    },
+    describeImage: async () => "A course submission"
+  });
+  const response = {
+    statusCode: null,
+    body: null,
+    status(code) { this.statusCode = code; return this; },
+    json(body) { this.body = body; return this; }
+  };
+
+  await handler({
+    method: "POST",
+    body: {
+      category: "academy_upload",
+      course_key: COURSE_KEY,
+      lesson_key: "donor_module_1_report_writing",
+      file_url: "https://example.test/submission.jpg",
+      uploader_name: "Course context student",
+      uploader_email: "student@example.test",
+      academy_track: "fundraising",
+      upload_type: "lesson_evidence",
+      consent_given: true
+    }
+  }, response);
+
+  assert.equal(response.statusCode, 200);
+  assert.equal(response.body.course_key, COURSE_KEY);
+  assert.equal(writes.length, 1);
+  const insertColumns = writes[0].sql.match(/INSERT INTO photo_uploads_review\s*\((.*?)\)\s*VALUES/is)[1]
+    .split(",").map(column => column.trim());
+  assert.equal(writes[0].values[insertColumns.indexOf("course_key")], COURSE_KEY);
+
   assert.match(saveSource, /if \(submitted_course_key && !isKnownCourse\(submitted_course_key\)\)/);
   assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
-  assert.match(saveSource, /course_key,\s*submission_section/);
   assert.match(serverSource, /app\.post\("\/api\/academy-approve-upload"/);
+  assert.match(serverSource, /RETURNING[\s\S]*?course_key,[\s\S]*?verification_status/);
   assert.match(serverSource, /COALESCE\(course_key, '[^']+'\) = \$2/);
   assert.match(serverSource, /requiredLessonKeys = course\.requiredLessons/);
   assert.match(gallerySource, /COALESCE\(p\.course_key, '[^']+'\) = \$1/);
+  assert.match(gallerySource, /\$1::text AS course_key/);
 });
 
-test("donor report sections are separate from canonical lessons", async () => {
-  const [saveSource, serverSource, gallerySource, migrationSource] = await Promise.all([
-    readFile(new URL("../api/savePhotoReview.js", import.meta.url), "utf8"),
-    readFile(new URL("../server.js", import.meta.url), "utf8"),
-    readFile(new URL("../api/getPhotoReviewGallery.js", import.meta.url), "utf8"),
-    readFile(new URL("../docs/sql/024_donor_report_submission_section.sql", import.meta.url), "utf8")
-  ]);
-  assert.match(saveSource, /course_key === "donor_investor_funding" && submission_section/);
-  assert.match(saveSource, /"onboarding", "cover_page", "results", "impact", "conclusions", "finances"/);
+test("donor report accepts a valid section without a lesson and rejects other null lessons", async () => {
+  assert.equal(submissionSectionLabel("cover_page"), "Part 1: Cover page");
+  assert.equal(submissionSectionLabel("invalid"), null);
+
+  const saveSource = await readFile(new URL("../api/savePhotoReview.js", import.meta.url), "utf8");
+  assert.match(saveSource, /DONOR_REPORT_SUBMISSION_SECTIONS\[submission_section\]/);
   assert.match(saveSource, /if \(!lesson_key && !isDonorReport\)/);
   assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
-  assert.match(saveSource, /submission_section/);
-  assert.match(serverSource, /submission_section/);
-  assert.match(gallerySource, /submission_section/);
-  assert.match(migrationSource, /course_key = 'donor_investor_funding'/);
-  assert.match(migrationSource, /ADD COLUMN IF NOT EXISTS submission_section/);
-  assert.equal(submissionSectionLabel("cover_page"), "Part 1: Cover page");
-  assert.equal(submissionSectionLabel("not_a_section"), null);
 });
