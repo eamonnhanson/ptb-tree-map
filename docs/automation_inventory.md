@@ -327,8 +327,15 @@ Read/write fields referenced:
 - `rejected_reason`
 - `created_at_utc`
 - `student_confirmed_at`
+- `staff_category` *(migration 022; not yet applied)*
+- `selected_category` *(migration 022; not yet applied)*
+- `uploaded_by` *(migration 022; not yet applied)*
+- `staff_id` *(migration 022; not yet applied)*
+- `staff_name` *(migration 022; not yet applied)*
+- `staff_created_at` *(migration 022; not yet applied)*
+- `uploader_role` *(migration 022; not yet applied)*
 
-Code also sends fields such as `staff_category`, `selected_category`, `uploaded_by`, `staff_id`, `staff_name`, and `staff_created_at` from `ketso-uploader-current/functions/api/staff-uploads.js`, but `api/savePhotoReview.js` currently does not insert those fields. This is important for staff upload monitoring because staff identity appears to be lost unless it is encoded into already-inserted fields such as `uploader_name`, `category`, or `linked_entity_name`.
+`docs/sql/022_staff_photo_receipts.sql` defines the required staff fields and a partial unique receipt boundary on `(staff_id, cropped_file_url)` for `staff_upload` rows. The migration is deliberately unapplied: deployed-schema confirmation and a reviewed deployment plan are required before this contract exists in production.
 
 ### `academy_students` / `public.academy_students`
 
@@ -627,9 +634,9 @@ Observed code:
   - `/api/trees/:id` currently returns placeholder data.
   - `/api/trees/by-codes` currently returns placeholder data.
   - `PATCH /api/staff-uploads` and `PATCH /api/staff-uploads/:id` return `501`.
-- Potential field mismatch:
-  - Staff upload function sends staff-specific fields that `savePhotoReview.js` does not insert.
-  - `getPhotoReviewGallery.js` reads filters from query only for category/date/search/anonymous onboarding; Cloudflare staff uploads GET passes `upload_context=staff_upload`, but backend gallery code does not currently consume an `upload_context` query parameter.
+- Pending deployment verification:
+  - Migration 022 must be applied before `savePhotoReview.js` can persist the staff receipt fields or enforce duplicate prevention in production.
+  - `getPhotoReviewGallery.js` accepts `upload_context=staff_upload` and returns the persisted staff identity fields after the migration is applied.
 
 Suggested first dashboard signals:
 
@@ -646,7 +653,7 @@ Suggested first dashboard signals:
 - No persistent outbound email/certificate tables or send code were found.
 - No durable error/retry table was found.
 - No request logging or audit log table was found for admin actions.
-- No clear persisted field for staff id in `photo_uploads_review` was found, despite client code sending `staff_id`.
+- The production schema has not been inspected; the proposed `staff_id` persistence and receipt uniqueness boundary remain unverified until migration 022 is reviewed and applied.
 - No persistent Zapier webhook attempt log was found.
 - No R2-to-DB reconciliation code was found.
 - Git status could not be read without marking these older checkouts as safe Git directories because ownership differs between sandbox users. I did not change Git configuration.
@@ -671,7 +678,7 @@ These entries are intentionally operational-event oriented rather than system-or
 | `academy.points.synced` | `academy_point_events` | Source table/id exists for approved public student upload | Missing or duplicate points event |
 | `academy.points.removed` | `academy_point_events` | Source event removed after reject/hide | Verify no stale reward state |
 | `gallery.student.visible` | `photo_uploads_review` | Approved public student upload | Missing image/file URL |
-| `gallery.staff.visible_or_private` | `photo_uploads_review` | Staff upload context/category | Staff id not persisted or cannot be filtered |
+| `gallery.staff.visible_or_private` | `photo_uploads_review` | Staff upload context/category and staff receipt identity | Requires migration 022 and deployed gallery response verification |
 | `outbound.approval_webhook.sent` | Zapier webhook | Approval webhook attempted | Needs durable logging |
 | `outbound.approval_webhook.failed` | Zapier webhook | Non-2xx or exception | Retry/follow-up needed |
 | `purchase.shopify.created.awaiting_followup` | Missing source | New Shopify purchase | Placeholder until purchase integration located |
@@ -689,9 +696,8 @@ These entries are intentionally operational-event oriented rather than system-or
 - Admin authentication is a shared key passed by header or query parameter. Query-param admin keys can leak via browser history, logs, and referrers.
 - `notifyApproval()` has no persistent delivery log or retry queue. Approval follow-up may silently depend on application logs.
 - R2 upload and DB metadata save are not atomic. A user can upload a file successfully but fail to create the review row.
-- Staff upload metadata appears partly dropped because `savePhotoReview.js` ignores staff-specific fields sent by `functions/api/staff-uploads.js`.
-- `functions/api/staff-uploads.js` tries to filter staff uploads by `staff_id`/`uploaded_by`, but those fields are not returned by `photo-review-gallery` and may not be stored.
-- `getPhotoReviewGallery.js` does not consume `upload_context` from query parameters, although a caller passes it. Staff upload listing may therefore over-fetch and filter poorly.
+- Staff upload metadata and duplicate prevention depend on migration 022; until it is reviewed and applied, staff identity persistence and idempotent receipts remain unverified in production.
+- The uploader receipt lookup requires the deployed gallery response to return `staff_id`/`uploaded_by`, an exact R2 URL and a positive review ID; this branch adds those selected fields but has no production runtime evidence.
 - The photo review table is doing many jobs: public gallery, student submissions, staff uploads, forest hero linking, academy onboarding, moderation, AI status, points, and outbound trigger source. The dashboard should expose event views without encouraging direct table editing in version 1.
 - No schema/migration files were found, so referenced fields may differ from live DB reality.
 - No destructive SQL or application logic changes were made while preparing this inventory.
