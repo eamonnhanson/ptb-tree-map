@@ -434,16 +434,6 @@ app.get("/api/academy-student", async (req, res) => {
       console.warn("academy_course_enrollments is not installed yet; using legacy token lookup");
     }
 
-    if (
-      result.rows[0].upload_type === "question_to_tutor" ||
-      result.rows[0].lesson_key === "tutor_question"
-    ) {
-      return res.status(404).json({
-        ok: false,
-        error: "Upload not found"
-      });
-    }
-
     const result = await pool.query(
       `
       SELECT
