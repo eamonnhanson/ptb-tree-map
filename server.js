@@ -16,7 +16,7 @@ import getPhotoReviewGallery from "./api/getPhotoReviewGallery.js";
 import { createPhotoReviewAdminGalleryHandler } from "./api/getPhotoReviewAdminGallery.js";
 import getStudentGallery from "./api/getStudentGallery.js";
 import { pool } from "./api/db.js";
-import { ACADEMY_COURSES, DEFAULT_ACADEMY_COURSE, normalizeCourseKey } from "./api/academyCourses.js";
+import { ACADEMY_COURSES, DEFAULT_ACADEMY_COURSE, normalizeCourseKey, submissionSectionLabel } from "./api/academyCourses.js";
 import { createTutorQuestionsRouter } from "./api/tutorQuestions.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -314,6 +314,7 @@ app.get("/api/academy-upload-review", async (req, res) => {
       ok: true,
       upload: {
         ...result.rows[0],
+        submission_section_label: submissionSectionLabel(result.rows[0].submission_section),
         file_url: result.rows[0].cropped_file_url
       }
     });
@@ -885,7 +886,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
 
     res.json({
       ok: true,
-      uploads: result.rows
+      uploads: result.rows.map(upload => ({ ...upload, submission_section_label: submissionSectionLabel(upload.submission_section) }))
     });
 
   } catch (err) {
@@ -1105,7 +1106,7 @@ app.get("/api/student-profile/:id", async (req, res) => {
         approved_lessons: approvedLessonKeys.filter(key => requiredLessonKeys.includes(key)).length,
         required_lessons: requiredLessonKeys.length
       },
-      uploads: uploadsResult.rows,
+      uploads: uploadsResult.rows.map(upload => ({ ...upload, submission_section_label: submissionSectionLabel(upload.submission_section) })),
       point_events: pointEventsResult.rows
     });
 

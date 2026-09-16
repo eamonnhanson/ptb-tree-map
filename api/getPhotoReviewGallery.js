@@ -1,5 +1,5 @@
 import { pool } from "./db.js";
-import { DEFAULT_ACADEMY_COURSE, normalizeCourseKey } from "./academyCourses.js";
+import { DEFAULT_ACADEMY_COURSE, normalizeCourseKey, submissionSectionLabel } from "./academyCourses.js";
 
 export default async function getPhotoReviewGallery(req, res) {
   if (req.method !== "GET") {
@@ -144,7 +144,7 @@ export default async function getPhotoReviewGallery(req, res) {
 
     return res.status(200).json({
       ok: true,
-      photos: result.rows
+      photos: result.rows.map(photo => ({ ...photo, submission_section_label: submissionSectionLabel(photo.submission_section) }))
     });
 
   } catch (err) {

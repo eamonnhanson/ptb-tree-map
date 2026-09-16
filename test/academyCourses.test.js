@@ -5,7 +5,8 @@ import {
   ACADEMY_COURSES,
   courseName,
   isKnownCourse,
-  isKnownLesson
+  isKnownLesson,
+  submissionSectionLabel
 } from "../api/academyCourses.js";
 
 const COURSE_KEY = "donor_investor_funding";
@@ -66,4 +67,6 @@ test("donor report sections are separate from canonical lessons", async () => {
   assert.match(gallerySource, /submission_section/);
   assert.match(migrationSource, /course_key = 'donor_investor_funding'/);
   assert.match(migrationSource, /ADD COLUMN IF NOT EXISTS submission_section/);
+  assert.equal(submissionSectionLabel("cover_page"), "Part 1: Cover page");
+  assert.equal(submissionSectionLabel("not_a_section"), null);
 });

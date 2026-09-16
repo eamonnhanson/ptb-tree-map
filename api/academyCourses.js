@@ -1,5 +1,14 @@
 export const DEFAULT_ACADEMY_COURSE = "online_tree_planting";
 
+export const DONOR_REPORT_SUBMISSION_SECTIONS = Object.freeze({
+  onboarding: "Onboarding",
+  cover_page: "Part 1: Cover page",
+  results: "Part 2: Results",
+  impact: "Part 3: Impact",
+  conclusions: "Part 4: Conclusions",
+  finances: "Part 5: Finances"
+});
+
 export const ACADEMY_COURSES = Object.freeze({
   online_tree_planting: {
     name: "Online tree planting",
@@ -87,4 +96,8 @@ export function courseName(courseKey) {
 
 export function lessonName(courseKey, lessonKey) {
   return ACADEMY_COURSES[normalizeCourseKey(courseKey)].lessons[lessonKey] || lessonKey || "Not selected";
+}
+
+export function submissionSectionLabel(submissionSection) {
+  return DONOR_REPORT_SUBMISSION_SECTIONS[submissionSection] || null;
 }
