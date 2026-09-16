@@ -53,7 +53,7 @@ test("admin gallery applies every supported filter with parameterized SQL", asyn
   }, res);
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, { ok: true, uploads: [{ id: 17 }] });
+  assert.deepEqual(res.body, { ok: true, uploads: [{ id: 17, submission_section_label: null }] });
   assert.deepEqual(calls[0].params, [
     "public",
     "approved",
@@ -74,6 +74,18 @@ test("admin gallery applies every supported filter with parameterized SQL", asyn
   assert.match(calls[0].sql, /ai_description ILIKE \$8/);
   assert.match(calls[0].sql, /LIMIT \$9/);
   assert.doesNotMatch(calls[0].sql, /Eamonn|'staff_upload'|'approved'/);
+});
+
+test("admin gallery returns a readable donor report-section label", async () => {
+  const { handler } = setup([{ id: 18, submission_section: "cover_page" }]);
+  const res = response();
+
+  await handler({ query: {} }, res);
+
+  assert.deepEqual(res.body, {
+    ok: true,
+    uploads: [{ id: 18, submission_section: "cover_page", submission_section_label: "Part 1: Cover page" }]
+  });
 });
 
 test("admin gallery treats missing and all values as unfiltered and defaults limit", async () => {

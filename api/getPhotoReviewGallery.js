@@ -1,4 +1,4 @@
-import { DEFAULT_ACADEMY_COURSE, normalizeCourseKey } from "./academyCourses.js";
+import { DEFAULT_ACADEMY_COURSE, normalizeCourseKey, submissionSectionLabel } from "./academyCourses.js";
 
 export function createPhotoReviewGalleryHandler({ dbPool = null } = {}) {
   return async function getPhotoReviewGallery(req, res) {
@@ -127,6 +127,7 @@ export function createPhotoReviewGalleryHandler({ dbPool = null } = {}) {
         academy_cohort,
         COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         lesson_key,
+        submission_section,
         uploader_name,
         uploader_email,
         staff_category,
@@ -154,7 +155,7 @@ export function createPhotoReviewGalleryHandler({ dbPool = null } = {}) {
 
     return res.status(200).json({
       ok: true,
-      photos: result.rows
+      photos: result.rows.map(photo => ({ ...photo, submission_section_label: submissionSectionLabel(photo.submission_section) }))
     });
 
   } catch (err) {

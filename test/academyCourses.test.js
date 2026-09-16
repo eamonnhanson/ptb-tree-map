@@ -5,7 +5,8 @@ import {
   ACADEMY_COURSES,
   courseName,
   isKnownCourse,
-  isKnownLesson
+  isKnownLesson,
+  submissionSectionLabel
 } from "../api/academyCourses.js";
 import { createSavePhotoReviewHandler } from "../api/savePhotoReview.js";
 
@@ -94,11 +95,21 @@ test("upload, approval, gallery and profile retain the canonical course context"
   assert.equal(writes[0].values[insertColumns.indexOf("course_key")], COURSE_KEY);
 
   assert.match(saveSource, /if \(submitted_course_key && !isKnownCourse\(submitted_course_key\)\)/);
-  assert.match(saveSource, /if \(!isKnownLesson\(course_key, lesson_key\)\)/);
+  assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
   assert.match(serverSource, /app\.post\("\/api\/academy-approve-upload"/);
   assert.match(serverSource, /RETURNING[\s\S]*?course_key,[\s\S]*?verification_status/);
   assert.match(serverSource, /COALESCE\(course_key, '[^']+'\) = \$2/);
   assert.match(serverSource, /requiredLessonKeys = course\.requiredLessons/);
   assert.match(gallerySource, /COALESCE\(p\.course_key, '[^']+'\) = \$1/);
   assert.match(gallerySource, /\$1::text AS course_key/);
+});
+
+test("donor report accepts a valid section without a lesson and rejects other null lessons", async () => {
+  assert.equal(submissionSectionLabel("cover_page"), "Part 1: Cover page");
+  assert.equal(submissionSectionLabel("invalid"), null);
+
+  const saveSource = await readFile(new URL("../api/savePhotoReview.js", import.meta.url), "utf8");
+  assert.match(saveSource, /DONOR_REPORT_SUBMISSION_SECTIONS\[submission_section\]/);
+  assert.match(saveSource, /if \(!lesson_key && !isDonorReport\)/);
+  assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
 });

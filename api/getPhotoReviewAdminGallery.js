@@ -1,3 +1,5 @@
+import { submissionSectionLabel } from "./academyCourses.js";
+
 const FILTER_COLUMNS = [
   "public_gallery_status",
   "verification_status",
@@ -82,6 +84,7 @@ export function createPhotoReviewAdminGalleryHandler(dbPool) {
           academy_student_id,
           academy_cohort,
           lesson_key,
+          submission_section,
           interest_area,
           file_type,
           file_extension,
@@ -104,7 +107,7 @@ export function createPhotoReviewAdminGalleryHandler(dbPool) {
       `;
 
       const result = await dbPool.query(query, values);
-      return res.status(200).json({ ok: true, uploads: result.rows });
+      return res.status(200).json({ ok: true, uploads: result.rows.map(upload => ({ ...upload, submission_section_label: submissionSectionLabel(upload.submission_section) })) });
     } catch (err) {
       console.error("getPhotoReviewAdminGallery error:", err);
       return res.status(500).json({
