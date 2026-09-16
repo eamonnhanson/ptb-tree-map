@@ -112,4 +112,6 @@ test("donor report accepts a valid section without a lesson and rejects other nu
   assert.match(saveSource, /DONOR_REPORT_SUBMISSION_SECTIONS\[submission_section\]/);
   assert.match(saveSource, /if \(!lesson_key && !isDonorReport\)/);
   assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
+  assert.match(saveSource, /academy_course_enrollments/);
+  assert.match(saveSource, /active donor and investor course enrollment is required/);
 });
