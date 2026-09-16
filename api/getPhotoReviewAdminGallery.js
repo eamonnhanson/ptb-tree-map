@@ -75,6 +75,7 @@ export function createPhotoReviewAdminGalleryHandler(dbPool) {
           academy_student_id,
           academy_cohort,
           lesson_key,
+          submission_section,
           interest_area,
           file_type,
           file_extension,

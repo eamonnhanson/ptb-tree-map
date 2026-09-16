@@ -42,10 +42,25 @@ test("upload, approval, gallery and profile retain the canonical course context"
   ]);
 
   assert.match(saveSource, /if \(submitted_course_key && !isKnownCourse\(submitted_course_key\)\)/);
-  assert.match(saveSource, /if \(!isKnownLesson\(course_key, lesson_key\)\)/);
-  assert.match(saveSource, /rejected_reason,\s*course_key\s*\)/);
+  assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
+  assert.match(saveSource, /course_key,\s*submission_section/);
   assert.match(serverSource, /app\.post\("\/api\/academy-approve-upload"/);
   assert.match(serverSource, /COALESCE\(course_key, '[^']+'\) = \$2/);
   assert.match(serverSource, /requiredLessonKeys = course\.requiredLessons/);
   assert.match(gallerySource, /COALESCE\(p\.course_key, '[^']+'\) = \$1/);
+});
+
+test("donor report sections are separate from canonical lessons", async () => {
+  const [saveSource, serverSource, gallerySource] = await Promise.all([
+    readFile(new URL("../api/savePhotoReview.js", import.meta.url), "utf8"),
+    readFile(new URL("../server.js", import.meta.url), "utf8"),
+    readFile(new URL("../api/getPhotoReviewGallery.js", import.meta.url), "utf8")
+  ]);
+  assert.match(saveSource, /course_key === "donor_investor_funding" && submission_section/);
+  assert.match(saveSource, /"onboarding", "cover_page", "results", "impact", "conclusions", "finances"/);
+  assert.match(saveSource, /if \(!lesson_key && !isDonorReport\)/);
+  assert.match(saveSource, /if \(lesson_key && !isKnownLesson\(course_key, lesson_key\)\)/);
+  assert.match(saveSource, /submission_section/);
+  assert.match(serverSource, /submission_section/);
+  assert.match(gallerySource, /submission_section/);
 });

@@ -123,6 +123,7 @@ export default async function getPhotoReviewGallery(req, res) {
         academy_cohort,
         COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         lesson_key,
+        submission_section,
         uploader_name,
         uploader_email,
         caption,

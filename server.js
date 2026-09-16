@@ -294,6 +294,7 @@ app.get("/api/academy-upload-review", async (req, res) => {
         original_file_url,
         upload_type,
         lesson_key,
+        submission_section,
         verification_status
       FROM photo_uploads_review
       WHERE id = $1
@@ -842,6 +843,7 @@ app.get("/api/academy-moderation-queue", async (req, res) => {
         COALESCE(p.course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         p.interest_area,
         p.lesson_key,
+        p.submission_section,
         p.upload_type,
         p.file_type,
         p.cropped_file_url,
@@ -1058,6 +1060,7 @@ app.get("/api/student-profile/:id", async (req, res) => {
         id,
         COALESCE(course_key, '${DEFAULT_ACADEMY_COURSE}') AS course_key,
         lesson_key,
+        submission_section,
         interest_area,
         upload_type,
         file_type,
