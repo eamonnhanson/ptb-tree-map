@@ -318,6 +318,21 @@ let uploader_email = normalize(body.uploader_email);
           error: `Lesson ${lesson_key} does not belong to ${course_key}`
         });
       }
+
+      if (isDonorReport) {
+        const enrollment = await dbPool.query(
+          `SELECT 1 FROM academy_course_enrollments
+           WHERE academy_student_id = $1 AND course_key = $2 AND status = 'active'
+           LIMIT 1`,
+          [academy_student_id, course_key]
+        );
+        if (!enrollment.rows.length) {
+          return res.status(403).json({
+            ok: false,
+            error: "An active donor and investor course enrollment is required for this report upload"
+          });
+        }
+      }
     }
 
     let ai_description = null;
