@@ -57,6 +57,7 @@ let uploader_email = normalize(body.uploader_email);
     const lesson_key = normalize(body.lesson_key);
     const submitted_course_key = normalize(body.course_key);
     let course_key = normalizeCourseKey(submitted_course_key);
+    const submission_section = normalize(body.submission_section);
     let interest_area = normalize(body.interest_area) || academy_track;
     const consent_given = normalizeBoolean(body.consent_given);
 
@@ -134,6 +135,12 @@ let uploader_email = normalize(body.uploader_email);
     }
 
     if (!isAcademyUpload) course_key = null;
+
+    const donorReportSections = new Set(["onboarding", "cover_page", "results", "impact", "conclusions", "finances"]);
+    const isDonorReport = course_key === "donor_investor_funding" && submission_section;
+    if (submission_section && (!isDonorReport || !donorReportSections.has(submission_section))) {
+      return res.status(400).json({ ok: false, error: "Invalid submission_section" });
+    }
 
     if (isAcademyUpload) {
       try {
@@ -275,14 +282,14 @@ let uploader_email = normalize(body.uploader_email);
         });
       }
 
-      if (!lesson_key) {
+      if (!lesson_key && !isDonorReport) {
         return res.status(400).json({
           ok: false,
           error: "Academy uploads require lesson_key"
         });
       }
 
-      if (!isKnownLesson(course_key, lesson_key)) {
+      if (lesson_key && !isKnownLesson(course_key, lesson_key)) {
         return res.status(400).json({
           ok: false,
           error: `Lesson ${lesson_key} does not belong to ${course_key}`
@@ -367,7 +374,8 @@ let uploader_email = normalize(body.uploader_email);
         reviewed_by_admin,
         approved_at,
         rejected_reason,
-        course_key
+        course_key,
+        submission_section
       )
       VALUES (
         $1,$2,$3,$4,$5,
@@ -376,7 +384,7 @@ let uploader_email = normalize(body.uploader_email);
         $16,$17,$18,$19,$20,
         $21,$22,$23,$24,$25,
         $26,$27,$28,$29,$30,
-        $31,$32,$33,$34,$35
+        $31,$32,$33,$34,$35,$36
       )
       RETURNING id;
     `;
@@ -416,7 +424,8 @@ let uploader_email = normalize(body.uploader_email);
       reviewed_by_admin,
       approved_at,
       rejected_reason,
-      course_key
+      course_key,
+      submission_section
     ];
 
     console.log("savePhotoReview staff status check =", {
@@ -444,7 +453,8 @@ let uploader_email = normalize(body.uploader_email);
       ai_status,
       ai_description,
       ai_feedback,
-      course_key
+      course_key,
+      submission_section
     });
   } catch (err) {
     console.error("savePhotoReview error:", err);
