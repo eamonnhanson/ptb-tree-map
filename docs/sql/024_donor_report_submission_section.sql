@@ -6,6 +6,12 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'photo_uploads_review_submission_section_check') THEN
     ALTER TABLE public.photo_uploads_review ADD CONSTRAINT photo_uploads_review_submission_section_check
-      CHECK (submission_section IS NULL OR submission_section IN ('onboarding','cover_page','results','impact','conclusions','finances'));
+      CHECK (
+        submission_section IS NULL
+        OR (
+          course_key = 'donor_investor_funding'
+          AND submission_section IN ('onboarding','cover_page','results','impact','conclusions','finances')
+        )
+      );
   END IF;
 END $$;

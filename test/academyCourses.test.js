@@ -51,10 +51,11 @@ test("upload, approval, gallery and profile retain the canonical course context"
 });
 
 test("donor report sections are separate from canonical lessons", async () => {
-  const [saveSource, serverSource, gallerySource] = await Promise.all([
+  const [saveSource, serverSource, gallerySource, migrationSource] = await Promise.all([
     readFile(new URL("../api/savePhotoReview.js", import.meta.url), "utf8"),
     readFile(new URL("../server.js", import.meta.url), "utf8"),
-    readFile(new URL("../api/getPhotoReviewGallery.js", import.meta.url), "utf8")
+    readFile(new URL("../api/getPhotoReviewGallery.js", import.meta.url), "utf8"),
+    readFile(new URL("../docs/sql/024_donor_report_submission_section.sql", import.meta.url), "utf8")
   ]);
   assert.match(saveSource, /course_key === "donor_investor_funding" && submission_section/);
   assert.match(saveSource, /"onboarding", "cover_page", "results", "impact", "conclusions", "finances"/);
@@ -63,4 +64,6 @@ test("donor report sections are separate from canonical lessons", async () => {
   assert.match(saveSource, /submission_section/);
   assert.match(serverSource, /submission_section/);
   assert.match(gallerySource, /submission_section/);
+  assert.match(migrationSource, /course_key = 'donor_investor_funding'/);
+  assert.match(migrationSource, /ADD COLUMN IF NOT EXISTS submission_section/);
 });
