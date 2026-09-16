@@ -1,8 +1,11 @@
+import { courseName, lessonName } from "./academyCourses.js";
+
 export async function generateImageDescription(imageUrl, context = {}) {
-  const courseName = context.courseKey === "arboriculture_1"
-    ? "Arboriculture I"
-    : "Online tree planting";
-  const lessonKey = String(context.lessonKey || "general activity");
+  const selectedCourseName = courseName(context.courseKey);
+  const selectedLessonName = lessonName(context.courseKey, context.lessonKey);
+  const visibleFocus = context.courseKey === "donor_investor_funding"
+    ? "people, project activities, documents, plans, results and other visible project evidence"
+    : "tree features, people, tools, soil and activity";
   const res = await fetch("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -17,7 +20,7 @@ export async function generateImageDescription(imageUrl, context = {}) {
           content: [
             {
               type: "input_text",
-              text: `Describe this image in one short factual sentence for the ${courseName} course, assignment ${lessonKey}. Focus on visible tree features, people, tools, soil and activity. Do not claim that unseen work was completed.`
+              text: `Describe this image in one short factual sentence for the ${selectedCourseName} course, assignment ${selectedLessonName}. Focus on ${visibleFocus}. Do not claim that unseen work was completed.`
             },
             {
               type: "input_image",

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>KETSO Operations Console</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">KETSO Operations Console</p>
+      <h1>Plant N Boom operations</h1>
+    </div>
+    <p id="updated" class="updated">Loading monitoring data…</p>
+  </header>
+
+  <main id="app" aria-live="polite">
+    <section id="page-state" class="notice loading">Loading operational evidence…</section>
+    <div id="content" hidden>
+      <section aria-labelledby="critical-title">
+        <div class="section-heading">
+          <div><p class="eyebrow">Overall state</p><h2 id="critical-title">Critical workflows</h2></div>
+          <p class="section-note">GREEN requires recent successful runtime evidence.</p>
+        </div>
+        <div id="workflows" class="workflow-grid"></div>
+        <p id="missing-workflows" class="notice neutral" hidden></p>
+      </section>
+
+      <section class="two-column">
+        <div aria-labelledby="actions-title">
+          <div class="section-heading"><div><p class="eyebrow">Today</p><h2 id="actions-title">Action required</h2></div></div>
+          <div id="actions" class="stack"></div>
+        </div>
+        <div aria-labelledby="failures-title">
+          <div class="section-heading"><div><p class="eyebrow">Runtime</p><h2 id="failures-title">Recent failures</h2></div></div>
+          <div id="failures" class="stack"></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="systems-title">
+        <div class="section-heading"><div><p class="eyebrow">Evidence by source</p><h2 id="systems-title">System visibility</h2></div></div>
+        <div id="systems" class="system-grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="workflow-dialog" aria-labelledby="dialog-title">
+    <form method="dialog"><button class="close" aria-label="Close workflow details">×</button></form>
+    <div id="workflow-detail"></div>
+  </dialog>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
