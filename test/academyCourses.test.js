@@ -115,3 +115,47 @@ test("donor report accepts a valid section without a lesson and rejects other nu
   assert.match(saveSource, /academy_course_enrollments/);
   assert.match(saveSource, /active donor and investor course enrollment is required/);
 });
+
+test("donor PDF persists its section only with an active donor enrollment", async () => {
+  const writes = [];
+  const makeHandler = (enrolled) => createSavePhotoReviewHandler({
+    dbPool: {
+      async query(sql, values) {
+        if (/FROM academy_students s/.test(sql)) return { rows: [{
+          id: 77, full_name: "Donor PDF student", email: "donor@example.test",
+          cohort: "2026", track: "fundraising", whatsapp: null
+        }] };
+        if (/FROM academy_course_enrollments/.test(sql)) return { rows: enrolled ? [{ ok: 1 }] : [] };
+        writes.push({ sql, values });
+        return { rows: [{ id: 501 }] };
+      }
+    },
+    describeImage: async () => "Donor report PDF"
+  });
+  const body = {
+    category: "academy_upload", course_key: COURSE_KEY, lesson_key: null,
+    submission_section: "cover_page", file_url: "https://example.test/report.pdf",
+    uploader_name: "Donor PDF student", uploader_email: "donor@example.test",
+    academy_track: "fundraising", upload_type: "document", consent_given: true
+  };
+  const response = () => ({ statusCode: null, body: null, status(code) { this.statusCode = code; return this; }, json(value) { this.body = value; return this; } });
+
+  const allowed = response();
+  await makeHandler(true)({ method: "POST", body }, allowed);
+  assert.equal(allowed.statusCode, 200);
+  assert.equal(writes.length, 1);
+  const columns = writes[0].sql.match(/INSERT INTO photo_uploads_review\s*\((.*?)\)\s*VALUES/is)[1].split(",").map(value => value.trim());
+  assert.equal(writes[0].values[columns.indexOf("course_key")], COURSE_KEY);
+  assert.equal(writes[0].values[columns.indexOf("lesson_key")], null);
+  assert.equal(writes[0].values[columns.indexOf("submission_section")], "cover_page");
+  assert.equal(writes[0].values[columns.indexOf("file_type")], "document");
+  assert.equal(writes[0].values[columns.indexOf("file_extension")], "pdf");
+  assert.equal(writes[0].values[columns.indexOf("academy_student_id")], 77);
+
+  writes.length = 0;
+  const denied = response();
+  await makeHandler(false)({ method: "POST", body }, denied);
+  assert.equal(denied.statusCode, 403);
+  assert.match(denied.body.error, /active donor and investor course enrollment/);
+  assert.equal(writes.length, 0);
+});
