@@ -12,6 +12,7 @@ import treeByAdHandler from "./api/treeByAd.js";
 import forestHeroes from "./api/forestHeroes.js";
 import forestHeroSearch from "./api/forestHeroSearch.js";
 import savePhotoReview from "./api/savePhotoReview.js";
+import updateStaffUploadMetadata from "./api/updateStaffUploadMetadata.js";
 import getPhotoReviewGallery from "./api/getPhotoReviewGallery.js";
 import { createPhotoReviewAdminGalleryHandler } from "./api/getPhotoReviewAdminGallery.js";
 import getStudentGallery from "./api/getStudentGallery.js";
@@ -143,6 +144,7 @@ app.get("/api/photo-review-admin-gallery", (req, res) => {
 app.get("/api/student-gallery", getStudentGallery);
 
 app.post("/api/save-photo-review", savePhotoReview);
+app.patch("/api/staff-uploads/:review_id", updateStaffUploadMetadata);
 
 app.use("/api/forest-heroes", forestHeroes);
 app.use("/api/academy-tutor-questions", createTutorQuestionsRouter({ pool }));
