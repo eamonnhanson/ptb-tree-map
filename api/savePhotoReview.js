@@ -17,6 +17,13 @@ const VALID_VERIFICATION_STATUSES = new Set([
   "not_required"
 ]);
 
+const STAFF_VIDEO_MIME_TYPES = new Set([
+  "video/mp4",
+  "video/quicktime",
+  "video/webm"
+]);
+const MAX_STAFF_VIDEO_SIZE_BYTES = 75 * 1024 * 1024;
+
 export function createSavePhotoReviewHandler({
   dbPool = null,
   describeImage = generateImageDescription
@@ -62,6 +69,9 @@ let uploader_email = normalize(body.uploader_email);
 
     const original_file_size_bytes = normalizeNumber(body.original_file_size_bytes);
     const cropped_file_size_bytes = normalizeNumber(body.cropped_file_size_bytes);
+    const mime_type = normalize(body.mime_type)?.toLowerCase() || null;
+    const original_file_name = normalize(body.original_file_name) || normalize(body.original_filename);
+    const duration_seconds = normalizeNumber(body.duration_seconds);
 
     let academy_student_id = normalizeNumber(body.academy_student_id);
     let academy_cohort = normalize(body.academy_cohort);
@@ -90,21 +100,32 @@ let uploader_email = normalize(body.uploader_email);
       upload_context === "staff_upload" ||
       linked_entity_type === "staff";
 
-    const verification_status = isStaffUpload
+    const requestedFileType = normalize(body.file_type);
+    const file_type = requestedFileType === "video"
+      ? "video"
+      : inferFileType(upload_type, cropped_file_url || original_file_url);
+    const isStaffVideo = isStaffUpload && file_type === "video";
+
+    const verification_status = isStaffVideo
+      ? "pending"
+      : isStaffUpload
       ? "not_required"
       : normalizeStatus(body.verification_status, VALID_VERIFICATION_STATUSES, "pending");
 
-    const review_status = isStaffUpload
+    const review_status = isStaffVideo
+      ? "pending"
+      : isStaffUpload
       ? "not_required"
       : "pending";
 
-    const public_gallery_status = isStaffUpload
+    const public_gallery_status = isStaffVideo
+      ? "private"
+      : isStaffUpload
       ? "public"
       : "private";
 
     let ai_status = normalize(body.ai_status) || "not_checked";
 
-    const file_type = inferFileType(upload_type, cropped_file_url || original_file_url);
     const file_extension = inferFileExtension(cropped_file_url || original_file_url);
 
     const points_awarded = 0;
@@ -130,8 +151,35 @@ let uploader_email = normalize(body.uploader_email);
     if (isStaffUpload && !staff_id) {
       return res.status(400).json({
         ok: false,
-        error: "staff_upload requires staff_id"
+        error: "STAFF_IDENTITY_REQUIRED",
+        message: "A staff identity is required for staff uploads."
       });
+    }
+
+    if (isStaffVideo) {
+      if (!STAFF_VIDEO_MIME_TYPES.has(mime_type)) {
+        return res.status(400).json({
+          ok: false,
+          error: "UNSUPPORTED_VIDEO_TYPE",
+          message: "Staff videos must be MP4, QuickTime, or WebM."
+        });
+      }
+
+      if (!Number.isFinite(original_file_size_bytes) || original_file_size_bytes > MAX_STAFF_VIDEO_SIZE_BYTES) {
+        return res.status(400).json({
+          ok: false,
+          error: "VIDEO_TOO_LARGE",
+          message: "Staff videos must be 75 MB or smaller."
+        });
+      }
+
+      if (duration_seconds !== null && duration_seconds > 60) {
+        return res.status(400).json({
+          ok: false,
+          error: "VIDEO_TOO_LONG",
+          message: "Staff videos must be 60 seconds or shorter."
+        });
+      }
     }
 
     if (category === "forest_hero") {
@@ -387,6 +435,9 @@ let uploader_email = normalize(body.uploader_email);
         original_file_url,
         original_file_size_bytes,
         cropped_file_size_bytes,
+        mime_type,
+        original_file_name,
+        duration_seconds,
         uploader_name,
         uploader_email,
         review_status,
@@ -424,14 +475,13 @@ let uploader_email = normalize(body.uploader_email);
       )
       VALUES (
         $1,$2,$3,$4,$5,
-        $6,$7,$8,$9,$10,
-        $11,$12,$13,$14,$15,
-        $16,$17,$18,$19,$20,
-        $21,$22,$23,$24,$25,
-        $26,$27,$28,$29,$30,
-        $31,$32,$33,$34,$35,
-        $36,$37,$38,$39,$40,
-        $41,$42,$43${submission_section ? ",$44" : ""}
+        $6,$7,$8,$9,$10,$11,$12,$13,
+        $14,$15,$16,$17,$18,$19,$20,
+        $21,$22,$23,$24,$25,$26,
+        $27,$28,$29,$30,$31,$32,
+        $33,$34,$35,$36,$37,$38,
+        $39,$40,$41,$42,$43,$44,
+        $45,$46${submission_section ? ",$47" : ""}
       )
       ON CONFLICT (staff_id, cropped_file_url)
         WHERE upload_context = 'staff_upload'
@@ -449,6 +499,9 @@ let uploader_email = normalize(body.uploader_email);
       original_file_url,
       original_file_size_bytes,
       cropped_file_size_bytes,
+      mime_type,
+      original_file_name,
+      duration_seconds,
       uploader_name,
       uploader_email,
       review_status,
@@ -516,6 +569,14 @@ let uploader_email = normalize(body.uploader_email);
     });
   } catch (err) {
     console.error("savePhotoReview error:", err);
+
+    if (isRequestedStaffVideo(req.body)) {
+      return res.status(500).json({
+        ok: false,
+        error: "RECEIPT_PERSISTENCE_FAILED",
+        message: "The video was not confirmed. Please retry the upload."
+      });
+    }
 
     return res.status(500).json({
       ok: false,
@@ -609,6 +670,15 @@ function inferFileType(uploadType, url) {
   }
 
   return "file";
+}
+
+function isRequestedStaffVideo(body = {}) {
+  const uploadContext = normalize(body.upload_context);
+  const category = normalize(body.category);
+  const requestedFileType = normalize(body.file_type);
+  const uploadType = normalize(body.upload_type);
+  const isStaffUpload = category === "staff_upload" || uploadContext === "staff_upload";
+  return isStaffUpload && (requestedFileType === "video" || uploadType === "video");
 }
 
 function buildAcademyFeedback({
