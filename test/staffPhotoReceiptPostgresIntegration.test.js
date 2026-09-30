@@ -9,6 +9,7 @@ const { Pool } = pg;
 const connectionString = process.env.PTB_STAFF_PHOTO_POSTGRES_INTEGRATION_URL;
 const baselineUrl = new URL("./sql/001_photo_uploads_review_baseline.sql", import.meta.url);
 const migrationUrl = new URL("../docs/sql/022_staff_photo_receipts.sql", import.meta.url);
+const staffVideoMigrationUrl = new URL("../docs/sql/025_staff_video_uploads.sql", import.meta.url);
 
 function validateLocalTestUrl(value) {
   if (!value) return null;
@@ -66,15 +67,17 @@ test("staff photo receipts on isolated PostgreSQL", {
   skip: !localUrl && "local isolated PostgreSQL prerequisite unavailable"
 }, async t => {
   const pool = new Pool({ connectionString: localUrl, ssl: false });
-  const [baseline, migration] = await Promise.all([
+  const [baseline, migration, staffVideoMigration] = await Promise.all([
     readFile(baselineUrl, "utf8"),
-    readFile(migrationUrl, "utf8")
+    readFile(migrationUrl, "utf8"),
+    readFile(staffVideoMigrationUrl, "utf8")
   ]);
 
   try {
     await pool.query("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public");
     await pool.query(baseline);
     await pool.query(migration);
+    await pool.query(staffVideoMigration);
 
     const save = createSavePhotoReviewHandler({
       dbPool: pool,
@@ -106,9 +109,9 @@ test("staff photo receipts on isolated PostgreSQL", {
         WHERE table_schema = 'public' AND table_name = 'photo_uploads_review'
           AND column_name = ANY($1::text[])
         ORDER BY column_name
-      `, [["staff_category", "selected_category", "uploaded_by", "staff_id", "staff_name", "staff_created_at", "uploader_role"]]);
+      `, [["staff_category", "selected_category", "uploaded_by", "staff_id", "staff_name", "staff_created_at", "uploader_role", "duration_seconds"]]);
       assert.deepEqual(columns.rows.map(row => row.column_name), [
-        "selected_category", "staff_category", "staff_created_at", "staff_id",
+        "duration_seconds", "selected_category", "staff_category", "staff_created_at", "staff_id",
         "staff_name", "uploaded_by", "uploader_role"
       ]);
       const index = await pool.query(`

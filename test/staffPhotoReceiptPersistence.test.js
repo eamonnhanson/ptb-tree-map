@@ -60,7 +60,7 @@ test("staff receipt stores identity and metadata and returns one durable id on r
   assert.equal(calls.length, 2);
   assert.match(calls[0].sql, /caption, staff_category, selected_category, uploaded_by, staff_id, staff_name, staff_created_at, uploader_role/);
   assert.match(calls[0].sql, /ON CONFLICT \(staff_id, cropped_file_url\) WHERE upload_context = 'staff_upload' DO UPDATE SET staff_id = photo_uploads_review.staff_id/);
-  assert.deepEqual(calls[0].values.slice(35), [
+  assert.deepEqual(calls[0].values.slice(38), [
     "Seedlings ready for planting", "nursery", "nursery", "test_staff",
     "test_staff", "Test Staff", "2026-09-14T10:00:00.000Z", "staff"
   ]);
@@ -111,5 +111,7 @@ test("staff identity is selected by both gallery feeds", async () => {
     assert.match(source, /staff_id,/);
     assert.match(source, /uploaded_by,/);
     assert.match(source, /staff_category,/);
+    assert.match(source, /mime_type,/);
+    assert.match(source, /duration_seconds,/);
   }
 });
