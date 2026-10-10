@@ -2,6 +2,7 @@
 
 import express from "express";
 import cors from "cors";
+import { corsOrigin } from "./api/corsOrigins.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { timingSafeEqual } from "crypto";
@@ -38,31 +39,12 @@ app.use(express.urlencoded({ extended: true }));
 // cors
 // =====================================================
 
-const allowedOrigins = [
-  "http://localhost:3000",
-  "http://127.0.0.1:5500",
-  "https://eamonnhanson.github.io",
-  "https://courageous-centaur-f7d1ea.netlify.app",
-  "https://map.planteenboom.nu",
-  "https://ketso-uploader.pages.dev"
-];
+// Shared policy permits the existing uploader project previews for token lookup
+// and submission preflight. Administrative authorization remains unchanged.
 
 app.use(
   cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true);
-
-      if (
-        allowedOrigins.includes(origin) ||
-        /\.netlify\.app$/.test(origin)
-      ) {
-        return cb(null, true);
-      }
-
-      console.log("❌ Blocked by CORS:", origin);
-
-      return cb(new Error("Not allowed by CORS"));
-    },
+    origin: corsOrigin,
   })
 );
 
