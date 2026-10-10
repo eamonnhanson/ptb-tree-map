@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import vm from "node:vm";
+import { ACADEMY_COURSES } from "../api/academyCourses.js";
 
 const scriptUrl = new URL(
   "../frontend/automation-dashboard/ketso/admin-review/admin-review.js",
@@ -58,7 +59,9 @@ async function frontendContext({
       }
     },
     window: { location: { search: "" } },
-    fetch: fetchImpl,
+    fetch: (url, options) => String(url).endsWith('/courses')
+      ? Promise.resolve({ ok:true, status:200, json:async () => ({ ok:true,courses:ACADEMY_COURSES }) })
+      : fetchImpl(url, options),
     URL,
     URLSearchParams,
     encodeURIComponent,
@@ -88,6 +91,20 @@ function deferred() {
   });
   return { promise, resolve, reject };
 }
+
+test('course options and donor labels come from the shared registry and filter unchanged', async () => {
+  const calls=[];
+  const { context,elements }=await frontendContext({ fetchImpl:async url => { calls.push(url); return uploadQueue([]); } });
+  for(const [key,course] of Object.entries(ACADEMY_COURSES)) {
+    assert.ok(elements.courseFilter.innerHTML.includes(`value="${key}"`));
+    assert.ok(elements.courseFilter.innerHTML.includes(course.name));
+  }
+  elements.courseFilter.value='donor_investor_funding'; await elements.courseFilter.dispatch('change');
+  assert.match(calls.at(-1),/course_key=donor_investor_funding/);
+  assert.equal(await evaluate(context,"labelCourse('donor_investor_funding')"),ACADEMY_COURSES.donor_investor_funding.name);
+  assert.equal(await evaluate(context,"labelLesson('donor_module_1_report_writing','donor_investor_funding')"),'Module 1: Report writing');
+  assert.equal(await evaluate(context,"labelCourse('future_course')"),'future_course');
+});
 
 function uploadQueue(uploads) {
   return {

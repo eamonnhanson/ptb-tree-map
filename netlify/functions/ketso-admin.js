@@ -1,4 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
+import { ACADEMY_COURSES } from "../../api/academyCourses.js";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -17,11 +18,7 @@ const VALID_UPLOAD_STATUSES = new Set([
   "rejected",
   "all"
 ]);
-const VALID_COURSES = new Set([
-  "all",
-  "online_tree_planting",
-  "arboriculture_1"
-]);
+const VALID_COURSES = new Set(["all", ...Object.keys(ACADEMY_COURSES)]);
 const VALID_QUESTION_STATUSES = new Set(["new", "answered", "closed", "all"]);
 const REVIEW_ID_PATTERN = /^[1-9]\d*$/;
 const DEFAULT_PROXY_TIMEOUT_MS = 10000;
@@ -179,6 +176,11 @@ function buildRoute(event) {
   const path = routePath(event);
   const method = String(event.httpMethod || "").toUpperCase();
   const params = event.queryStringParameters || {};
+
+  if (path === "/admin-review/courses") {
+    if (method !== "GET") return { error: methodNotAllowed("GET") };
+    return { response: json(200, { ok: true, courses: ACADEMY_COURSES }) };
+  }
 
   if (path === "/admin-review/uploads") {
     if (method !== "GET") return { error: methodNotAllowed("GET") };
@@ -338,6 +340,7 @@ export function createHandler({
 
     const route = buildRoute(event);
     if (route.error) return route.error;
+    if (route.response) return route.response;
 
     const headers = {
       "Accept": "application/json",
