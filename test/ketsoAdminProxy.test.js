@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHandler } from "../netlify/functions/ketso-admin.js";
+import { ACADEMY_COURSES } from "../api/academyCourses.js";
 
 const env = {
   AUTOMATION_DASHBOARD_USER: "dashboard-user",
@@ -43,6 +44,19 @@ function testHandler() {
   });
   return { handler, calls };
 }
+
+test('authenticated course registry stays local and all registered filters are accepted',async()=>{
+  const { handler,calls }=testHandler();
+  const registry=await handler(event('/admin-review/courses'));
+  assert.equal(registry.statusCode,200); assert.deepEqual(JSON.parse(registry.body).courses,ACADEMY_COURSES); assert.equal(calls.length,0);
+  assert.equal((await handler(event('/admin-review/courses','GET',{ authenticated:false }))).statusCode,401);
+  assert.equal((await handler(event('/admin-review/courses','POST'))).statusCode,405);
+  for(const key of Object.keys(ACADEMY_COURSES)) {
+    assert.equal((await handler(event('/admin-review/uploads','GET',{query:{course_key:key}}))).statusCode,200);
+    assert.ok(calls.at(-1).url.endsWith('course_key='+key));
+  }
+  assert.equal((await handler(event('/admin-review/uploads','GET',{query:{course_key:'unsupported'}}))).statusCode,400);
+});
 
 test("proxy requires valid dashboard basic authentication", async () => {
   const { handler, calls } = testHandler();

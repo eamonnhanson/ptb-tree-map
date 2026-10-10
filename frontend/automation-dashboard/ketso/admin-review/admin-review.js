@@ -11,6 +11,23 @@ const TIMEOUT_MESSAGE =
   "The request timed out. The change may already have been processed. Refresh the queue before trying again.";
 const inFlightUploadIds = new Set();
 let latestUploadsRefreshId = 0;
+let academyCourses = {};
+
+async function loadCourses() {
+  courseFilter.disabled = true;
+  try {
+    const data = await request('/courses');
+    academyCourses = data.courses || {};
+    courseFilter.innerHTML = '<option value="all">All courses</option>' + Object.entries(academyCourses)
+      .map(([key, course]) => `<option value="${escapeAttr(key)}">${escapeHtml(course.name)}</option>`).join('');
+  } catch {
+    // Keep All courses usable if registry loading fails, without guessing options.
+    academyCourses = {};
+  } finally {
+    courseFilter.disabled = false;
+  }
+  await loadUploads();
+}
 
 loadBtn.addEventListener("click", () => loadUploads());
 statusFilter.addEventListener("change", () => loadUploads());
@@ -122,7 +139,7 @@ function renderUpload(upload) {
           <strong>Cohort:</strong> ${escapeHtml(upload.academy_cohort || "")}<br>
           <strong>Course:</strong> ${escapeHtml(labelCourse(upload.course_key))}<br>
           <strong>Interest:</strong> ${escapeHtml(labelInterest(upload.interest_area || upload.academy_track))}<br>
-          <strong>Lesson:</strong> ${escapeHtml(labelLesson(upload.lesson_key))}<br>
+          <strong>Lesson:</strong> ${escapeHtml(labelLesson(upload.lesson_key, upload.course_key))}<br>
           <strong>Upload type:</strong> ${escapeHtml(upload.upload_type || upload.file_type || "")}<br>
           <strong>Status:</strong> ${escapeHtml(upload.verification_status || "")}<br>
           <strong>Gallery:</strong> ${escapeHtml(upload.public_gallery_status || "")}<br>
@@ -272,7 +289,9 @@ function mutationId(value) {
   return value === undefined || value === null ? "" : String(value);
 }
 
-function labelLesson(value) {
+function labelLesson(value, courseKey) {
+  const registered = academyCourses[courseKey]?.lessons?.[value];
+  if (registered) return registered;
   const map = {
     onboarding: "Onboarding",
     lesson_1_climate_change: "Lesson 1 Climate Change",
@@ -295,7 +314,7 @@ function labelLesson(value) {
 }
 
 function labelCourse(value) {
-  return value === "arboriculture_1" ? "Arboriculture I" : "Online tree planting";
+  return academyCourses[value]?.name || value || "Not set";
 }
 
 function labelInterest(value) {
@@ -321,4 +340,4 @@ function escapeAttr(value) {
   return escapeHtml(value);
 }
 
-loadUploads();
+loadCourses();
