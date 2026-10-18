@@ -5,7 +5,6 @@ import cors from "cors";
 import { corsOrigin } from "./api/corsOrigins.js";
 import path from "path";
 import { fileURLToPath } from "url";
-import { timingSafeEqual } from "crypto";
 
 import treesHandler from "./api/trees.js";
 import treesByCodesHandler from "./api/treesByCodes.js";
@@ -14,6 +13,8 @@ import forestHeroes from "./api/forestHeroes.js";
 import forestHeroSearch from "./api/forestHeroSearch.js";
 import savePhotoReview from "./api/savePhotoReview.js";
 import updateStaffUploadMetadata from "./api/updateStaffUploadMetadata.js";
+import { createStaffLoginHandler, requireStaff } from "./api/staffAccess.js";
+import { createManageStaffUploads } from "./api/manageStaffUploads.js";
 import getPhotoReviewGallery from "./api/getPhotoReviewGallery.js";
 import { createPhotoReviewAdminGalleryHandler } from "./api/getPhotoReviewAdminGallery.js";
 import getStudentGallery from "./api/getStudentGallery.js";
@@ -90,25 +91,7 @@ function requireAdmin(req, res) {
   return true;
 }
 
-function secureTextEqual(left, right) {
-  const leftBuffer = Buffer.from(String(left || ""));
-  const rightBuffer = Buffer.from(String(right || ""));
-  return leftBuffer.length === rightBuffer.length &&
-    timingSafeEqual(leftBuffer, rightBuffer);
-}
-
-app.post("/api/academy-staff-auth", (req, res) => {
-  const configuredPassword = process.env.STAFF_UPLOAD_KEY;
-  const password = String(req.body?.password || "");
-  if (!configuredPassword) {
-    return res.status(500).json({ ok: false, error: "Staff access is not configured" });
-  }
-  if (!password || password.length > 128 ||
-      !secureTextEqual(password, configuredPassword)) {
-    return res.status(401).json({ ok: false, error: "Wrong password" });
-  }
-  return res.json({ ok: true });
-});
+app.post("/api/academy-staff-auth", createStaffLoginHandler());
 
 app.get("/api/trees", treesHandler);
 
@@ -126,7 +109,13 @@ app.get("/api/photo-review-admin-gallery", (req, res) => {
 app.get("/api/student-gallery", getStudentGallery);
 
 app.post("/api/save-photo-review", savePhotoReview);
-app.patch("/api/staff-uploads/:review_id", updateStaffUploadMetadata);
+app.patch("/api/staff-uploads/:review_id", (req, res) => {
+  if (!requireStaff(req, res)) return;
+  return updateStaffUploadMetadata(req, res);
+});
+const manageStaffUploads = createManageStaffUploads({ pool });
+app.get("/api/staff-managed-uploads", manageStaffUploads);
+app.patch("/api/staff-managed-uploads/:review_id", manageStaffUploads);
 
 app.use("/api/forest-heroes", forestHeroes);
 app.use("/api/academy-tutor-questions", createTutorQuestionsRouter({ pool }));
