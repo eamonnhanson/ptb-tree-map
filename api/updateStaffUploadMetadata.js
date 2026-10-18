@@ -1,3 +1,5 @@
+import { STAFF_SCOPE } from './manageStaffUploads.js';
+
 const STAFF_CATEGORIES = new Set([
   "forest_hero", "nursery", "training", "vocational_training", "charcoal_making",
   "truck", "wilde_ganzen", "hoorn_foundation", "josephina_foundation",
@@ -28,6 +30,7 @@ export function createUpdateStaffUploadMetadataHandler({ dbPool = null } = {}) {
             linked_entity_name = CASE WHEN linked_entity_type = 'staff' THEN $1 ELSE linked_entity_name END,
             staff_category = $2, selected_category = $2, caption = $3, updated_at_utc = now()
         WHERE id = $4 AND staff_id = $5 AND upload_context = 'staff_upload'
+          AND ${STAFF_SCOPE.replaceAll('p.', '')}
         RETURNING id, staff_id, staff_name, uploader_name, staff_category, selected_category, caption,
           cropped_file_url, original_file_url, file_type, mime_type, duration_seconds,
           created_at_utc, verification_status, review_status, public_gallery_status, upload_context;

@@ -9,6 +9,7 @@ const { Pool } = pg;
 const connectionString = process.env.PTB_STAFF_PHOTO_POSTGRES_INTEGRATION_URL;
 const baselineUrl = new URL("./sql/001_photo_uploads_review_baseline.sql", import.meta.url);
 const migrationUrl = new URL("../docs/sql/022_staff_photo_receipts.sql", import.meta.url);
+const submissionSectionMigrationUrl = new URL("../docs/sql/024_donor_report_submission_section.sql", import.meta.url);
 const staffVideoMigrationUrl = new URL("../docs/sql/025_staff_video_uploads.sql", import.meta.url);
 
 function validateLocalTestUrl(value) {
@@ -67,9 +68,10 @@ test("staff photo receipts on isolated PostgreSQL", {
   skip: !localUrl && "local isolated PostgreSQL prerequisite unavailable"
 }, async t => {
   const pool = new Pool({ connectionString: localUrl, ssl: false });
-  const [baseline, migration, staffVideoMigration] = await Promise.all([
+  const [baseline, migration, submissionSectionMigration, staffVideoMigration] = await Promise.all([
     readFile(baselineUrl, "utf8"),
     readFile(migrationUrl, "utf8"),
+    readFile(submissionSectionMigrationUrl, "utf8"),
     readFile(staffVideoMigrationUrl, "utf8")
   ]);
 
@@ -77,6 +79,7 @@ test("staff photo receipts on isolated PostgreSQL", {
     await pool.query("DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public");
     await pool.query(baseline);
     await pool.query(migration);
+    await pool.query(submissionSectionMigration);
     await pool.query(staffVideoMigration);
 
     const save = createSavePhotoReviewHandler({
