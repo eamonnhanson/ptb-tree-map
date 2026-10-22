@@ -1,5 +1,41 @@
 # Staff metadata backend correction
 
+## Confirmed production 42P08 correction — 22 October 2026
+
+This section supersedes earlier statements that the production cause was unknown.
+User-supplied Render evidence confirms SQLSTATE 42P08, text versus character
+varying, in variable_coerce_param_hook. Read-only inspection confirmed defaultdb,
+public, web_ro; staff_name/caption are text, category is varchar(100), optional
+media columns exist, and the role has SELECT/UPDATE privileges.
+
+The UPDATE reused untyped $1 in COALESCE for staff_name/uploader_name and in
+CASE for linked_entity_name. Those column contexts can infer incompatible text
+and varchar parameter types during parsing, before any write. $2 is likewise
+shared by staff_category/selected_category and needed the same protection.
+Every use of $1 and $2 now has ::text; caption $3 has ::text and its presence
+flag $6 has ::boolean throughout. Expected-value parameters $8/$10/$11 already
+use ::text; $7/$9 already use ::boolean. $4/$5 are each used once in this UPDATE;
+the separate scoped SELECT has its own independent parameter numbering.
+No value normalization, parameter bindings, predicates, authentication or write
+boundaries changed. Assignment to varchar destinations retains column constraints;
+no bounded varchar cast was introduced that could silently truncate names.
+
+Added static coverage of all four name and both category parameter occurrences,
+plus explicit caption/flag types and unchanged exact Unicode/spacing bindings.
+Existing partial-edit, clearing, scope, route-authentication and stale-edit tests
+remain intact. No disposable PostgreSQL target was explicitly approved, so no
+SQL was executed and PostgreSQL parsing/persistence remain unverified.
+
+Validation for this correction (database integration variables removed):
+- Full backend: 238 passed, 0 failed, 5 guarded PostgreSQL tests skipped.
+- Repository-wide: 299 passed, 2 failed, 5 skipped. Both failures are ops-console
+  isolation assertions that require branch and working-tree changes exclusively
+  within apps/ops-console, incompatible with this backend PR.
+- Commands: npm test -- --test-isolation=none --test-reporter=tap [test/*.test.js].
+  Local HTTP fixtures required execution outside the filesystem sandbox.
+- git diff --check passed.
+- No merge, deployment, migration or production data change performed.
+
 ## Concurrency compatibility follow-up — 22 October 2026
 
 Reviewed and applied `docs/backend-pr65-concurrency.patch` from uploader

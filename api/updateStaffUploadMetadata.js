@@ -34,12 +34,13 @@ export function createUpdateStaffUploadMetadataHandler({ dbPool = null } = {}) {
     }
     try {
       if (!dbPool) ({ pool: dbPool } = await import("./db.js"));
+      // Pin shared parameters before COALESCE/CASE can infer conflicting text/varchar types.
       const result = await dbPool.query(`
         UPDATE photo_uploads_review
-        SET staff_name = COALESCE($1, staff_name), uploader_name = COALESCE($1, uploader_name),
-            linked_entity_name = CASE WHEN linked_entity_type = 'staff' AND $1 IS NOT NULL THEN $1 ELSE linked_entity_name END,
-            staff_category = COALESCE($2, staff_category), selected_category = COALESCE($2, selected_category),
-            caption = CASE WHEN $6 THEN $3 ELSE caption END, updated_at_utc = now()
+        SET staff_name = COALESCE($1::text, staff_name), uploader_name = COALESCE($1::text, uploader_name),
+            linked_entity_name = CASE WHEN linked_entity_type = 'staff' AND $1::text IS NOT NULL THEN $1::text ELSE linked_entity_name END,
+            staff_category = COALESCE($2::text, staff_category), selected_category = COALESCE($2::text, selected_category),
+            caption = CASE WHEN $6::boolean THEN $3::text ELSE caption END, updated_at_utc = now()
         WHERE id = $4 AND staff_id = $5 AND upload_context = 'staff_upload'
           AND ${STAFF_SCOPE.replaceAll('p.', '')}
           AND (NOT $7::boolean OR staff_name IS NOT DISTINCT FROM $8::text)

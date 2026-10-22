@@ -15,7 +15,7 @@ test('exact names, omitted captions and atomic field preconditions bind without 
       assert.match(sql,/caption IS NOT DISTINCT FROM \$11::text/);
       assert.match(sql,/staff_id = \$5/); assert.match(sql,/academy_student_id IS NULL/);
       assert.match(sql,/public_gallery_status = 'public'/);
-      assert.match(sql,/caption = CASE WHEN \$6 THEN \$3 ELSE caption END/);
+      assert.match(sql,/caption = CASE WHEN \$6::boolean THEN \$3::text ELSE caption END/);
       return {rows:[{id:71,staff_name,caption:'Preserved'}]};
     }}});
     const res=response();await handler(request({staff_name,expected:{staff_name:'Old name'}}),res);

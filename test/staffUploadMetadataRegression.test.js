@@ -18,9 +18,9 @@ test('partial PATCH binds omitted values separately from explicit caption cleari
   ]) {
     const handler = createUpdateStaffUploadMetadataHandler({ dbPool: { async query(sql, values) {
       assert.deepEqual(values, [...expected, Object.hasOwn(body,'staff_name'), null, Object.hasOwn(body,'category'), null, null]);
-      assert.match(sql, /caption = CASE WHEN \$6 THEN \$3 ELSE caption END/);
-      assert.match(sql, /staff_name = COALESCE\(\$1, staff_name\)/);
-      assert.match(sql, /staff_category = COALESCE\(\$2, staff_category\)/);
+      assert.match(sql, /caption = CASE WHEN \$6::boolean THEN \$3::text ELSE caption END/);
+      assert.match(sql, /staff_name = COALESCE\(\$1::text, staff_name\)/);
+      assert.match(sql, /staff_category = COALESCE\(\$2::text, staff_category\)/);
       assert.match(sql, /staff_id = \$5/); assert.match(sql, /academy_student_id IS NULL/);
       assert.ok(sql.includes(STAFF_SCOPE.replaceAll('p.', '')));
       assert.doesNotMatch(sql, /mime_type|duration_seconds/);
