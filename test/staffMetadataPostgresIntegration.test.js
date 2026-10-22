@@ -19,7 +19,10 @@ test('staff metadata survives independent PostgreSQL reads and preserves unrelat
     const handler = createUpdateStaffUploadMetadataHandler({ dbPool: pool });
     async function edit(body, id = ids.legacy) {
       const res = { code: 200, status(code) { this.code = code; return this; }, json(body) { this.body = body; return this; } };
-      await handler({ method: 'PATCH', params: { review_id: id }, body: { staff_id: 'fixture_staff', ...body } }, res);
+      const before = (await pool.query('SELECT staff_name, staff_category, caption FROM photo_uploads_review WHERE id=$1', [id])).rows[0];
+      const expected = Object.fromEntries(['staff_name','category','caption'].filter(key => Object.hasOwn(body,key))
+        .map(key => [key, before?.[key === 'category' ? 'staff_category' : key] ?? null]));
+      await handler({ method: 'PATCH', params: { review_id: id }, body: { staff_id: 'fixture_staff', expected, ...body } }, res);
       return res;
     }
     for (const [name, patch, fields] of [
@@ -47,6 +50,33 @@ test('staff metadata survives independent PostgreSQL reads and preserves unrelat
         assert.equal(res.body.upload.caption, after.caption);
       });
     }
+    await t.test('two stale editors and exact Unicode/spacing names', async () => {
+      for (const staff_name of ['Mary  Jane','José']) {
+        assert.equal((await edit({staff_name})).code,200);
+        assert.equal((await pool.query('SELECT staff_name FROM photo_uploads_review WHERE id=$1',[ids.legacy])).rows[0].staff_name, staff_name);
+      }
+      const baseline = (await pool.query('SELECT caption,staff_name FROM photo_uploads_review WHERE id=$1',[ids.legacy])).rows[0];
+      assert.equal((await edit({caption:'First editor'})).code,200);
+      const stale = await edit({caption:'Second editor',expected:{caption:baseline.caption}});
+      assert.equal(stale.code,409);
+      assert.equal((await pool.query('SELECT caption FROM photo_uploads_review WHERE id=$1',[ids.legacy])).rows[0].caption,'First editor');
+      assert.equal((await edit({staff_name:'Independent name',expected:{staff_name:baseline.staff_name}})).code,200);
+      assert.equal((await pool.query('SELECT caption FROM photo_uploads_review WHERE id=$1',[ids.legacy])).rows[0].caption,'First editor');
+      const expected = {caption:'First editor'};
+      const races = await Promise.all([
+        edit({caption:'Race A',expected}), edit({caption:'Race B',expected})
+      ]);
+      assert.deepEqual(races.map(r=>r.code).sort(),[200,409]);
+      const afterRace = (await pool.query('SELECT caption,staff_name FROM photo_uploads_review WHERE id=$1',[ids.legacy])).rows[0];
+      const independent = await Promise.all([
+        edit({caption:'Concurrent caption',expected:{caption:afterRace.caption}}),
+        edit({staff_name:'Concurrent name',expected:{staff_name:afterRace.staff_name}})
+      ]);
+      assert.deepEqual(independent.map(r=>r.code),[200,200]);
+      assert.deepEqual((await pool.query('SELECT caption,staff_name FROM photo_uploads_review WHERE id=$1',[ids.legacy])).rows[0],
+        {caption:'Concurrent caption',staff_name:'Concurrent name'});
+      await edit({caption:'x'.repeat(2000)});
+    });
     await t.test('wrong owner and student/private/pending records remain unchanged', async () => {
       const before = (await pool.query('SELECT * FROM photo_uploads_review ORDER BY id')).rows;
       for (const id of [ids.private, ids.student, ids.pending]) assert.equal((await edit({ caption: 'Forbidden' }, id)).code, 404);
@@ -63,7 +93,7 @@ test('staff metadata survives independent PostgreSQL reads and preserves unrelat
     await t.test('database failure returns failure', async () => {
       const failing = createUpdateStaffUploadMetadataHandler({ dbPool: { async query() { throw Object.assign(new Error('test failure'), { code: '42501' }); } } });
       const res = { status(code) { this.code = code; return this; }, json(body) { this.body = body; } };
-      await failing({ method: 'PATCH', params: { review_id: ids.legacy }, body: { staff_id: 'fixture_staff', caption: 'Unwritten' } }, res);
+      await failing({ method: 'PATCH', params: { review_id: ids.legacy }, body: { staff_id: 'fixture_staff', caption: 'Unwritten', expected: {caption:'x'.repeat(2000)} } }, res);
       assert.equal(res.code, 500); assert.equal(res.body.ok, false);
       assert.equal((await pool.query('SELECT caption FROM photo_uploads_review WHERE id=$1', [ids.legacy])).rows[0].caption, 'x'.repeat(2000));
     });

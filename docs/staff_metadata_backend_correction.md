@@ -1,5 +1,55 @@
 # Staff metadata backend correction
 
+## Concurrency compatibility follow-up — 22 October 2026
+
+Reviewed and applied `docs/backend-pr65-concurrency.patch` from uploader
+commit `13fa8f3bb3c28482e36e856052c39a3d216de37b`, alongside its verification
+report `docs/staff-metadata-review-blockers.md`. This section supersedes the
+earlier contract and verification status below.
+
+PATCH now requires an `expected` object containing exactly the supplied editable
+fields (`staff_name`, `category`, `caption`), with each original raw value a string
+or null. Missing/invalid preconditions and edits with no fields return 400.
+Names are validated without normalization: accents, repeated and surrounding
+spaces are retained; blank-only, non-string and over-80-character names fail.
+Caption trimming and the 2,000-character limit remain unchanged.
+
+Null-safe comparisons run inside the same parameterized UPDATE that writes the
+edit. A changed supplied field rejects the entire edit with HTTP 409 and
+`STAFF_METADATA_CONFLICT` / `METADATA_CONFLICT`. Unrelated fields are neither
+compared nor overwritten. A scoped read after an unsuccessful UPDATE returns 404
+for inaccessible/missing records; it never retries a write. The existing staff
+session route gate, immutable receipt ownership, public/non-student scope and
+forbidden-field checks remain intact. Empty and null captions deliberately clear
+descriptions only when their original value still matches.
+
+Validation of the final backend changes:
+
+- Every root backend `test/*.test.js`: 237 passed, zero failures, five guarded
+  PostgreSQL tests skipped. Database integration URLs were removed from the test
+  process; localhost permission was used for HTTP fixtures.
+- Repository-wide `npm test`: 298 passed, two failures, five skipped. Both failures
+  are existing ops-console isolation assertions requiring all branch/working-tree
+  files to be inside `apps/ops-console`; this backend PR necessarily violates
+  that app-specific assumption. No tests were weakened or removed.
+- Uploader at the exact commit above: `npm test` passed all 12 test files.
+- Direct uploader proxy-to-backend-handler fixture passed exact names, partial
+  edits, combined stale-edit rejection/409, auth forwarding, required expected
+  values and empty/null clearing. Fetch was intercepted and the SQL pool mocked;
+  no deployed service or database was contacted by this fixture.
+- Regression tests include simultaneous same-field edits (one success/one 409),
+  simultaneous different-field edits (both retained), exact names and deliberate
+  clearing. The simultaneous connection cases are guarded PostgreSQL tests and
+  remain unexecuted without an explicitly approved disposable database.
+- `git diff --check` passed.
+
+Remaining release blockers: approved disposable PostgreSQL acceptance, read-only
+confirmation of the deployed error/schema/configuration, and separately authorized
+post-release persistence/device acceptance with uploader #36. Keep this PR draft.
+No merge, deployment, migration or production database write was performed.
+
+## Earlier correction and verification (historical)
+
 Companion to eamonnhanson/ketso-uploader#36, based on
 `docs/backend-staff-metadata.patch` and `docs/staff-metadata-persistence.md`
 at uploader commit 5050a3e8322392b79741a6f11ef0b42d2492af85.

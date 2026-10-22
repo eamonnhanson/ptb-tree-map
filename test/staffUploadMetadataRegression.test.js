@@ -5,7 +5,7 @@ import { createUpdateStaffUploadMetadataHandler } from '../api/updateStaffUpload
 import { STAFF_SCOPE } from '../api/manageStaffUploads.js';
 
 const response = () => ({ statusCode: 200, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } });
-const request = body => ({ method: 'PATCH', params: { review_id: '71' }, body: { staff_id: 'staff_1', ...body } });
+const request = body => ({ method: 'PATCH', params: { review_id: '71' }, body: { staff_id: 'staff_1', expected: Object.fromEntries(['staff_name','category','caption'].filter(key => Object.hasOwn(body,key)).map(key => [key,null])), ...body } });
 
 test('partial PATCH binds omitted values separately from explicit caption clearing', async () => {
   for (const [body, expected] of [
@@ -17,7 +17,7 @@ test('partial PATCH binds omitted values separately from explicit caption cleari
     [{ caption: null }, [null, null, null, 71, 'staff_1', true]]
   ]) {
     const handler = createUpdateStaffUploadMetadataHandler({ dbPool: { async query(sql, values) {
-      assert.deepEqual(values, expected);
+      assert.deepEqual(values, [...expected, Object.hasOwn(body,'staff_name'), null, Object.hasOwn(body,'category'), null, null]);
       assert.match(sql, /caption = CASE WHEN \$6 THEN \$3 ELSE caption END/);
       assert.match(sql, /staff_name = COALESCE\(\$1, staff_name\)/);
       assert.match(sql, /staff_category = COALESCE\(\$2, staff_category\)/);
