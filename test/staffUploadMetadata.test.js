@@ -4,7 +4,7 @@ import { createUpdateStaffUploadMetadataHandler } from "../api/updateStaffUpload
 
 function response() { return { statusCode: 0, body: null, status(code) { this.statusCode = code; return this; }, json(body) { this.body = body; return this; } }; }
 function request(body, id = "71") { return { method: "PATCH", params: { review_id: id }, body }; }
-const valid = { staff_id: "staff_1", staff_name: "Amara Sesay", category: "nursery", caption: "Updated description" };
+const valid = { staff_id: "staff_1", staff_name: "Amara Sesay", category: "nursery", caption: "Updated description", expected: {staff_name: "Old name", category: "other", caption: "Old description"} };
 
 test("metadata patch updates only display fields and preserves receipt/media/status fields", async () => {
   const calls = [];

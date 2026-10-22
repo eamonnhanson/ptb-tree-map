@@ -5,7 +5,7 @@ const STAFF_CATEGORIES = new Set([
   "truck", "wilde_ganzen", "hoorn_foundation", "josephina_foundation",
   "care_international", "woord_en_daad", "plant_een_boom", "other"
 ]);
-const ALLOWED_FIELDS = new Set(["staff_id", "staff_name", "category", "caption"]);
+const ALLOWED_FIELDS = new Set(["staff_id", "staff_name", "category", "caption", "expected"]);
 
 export function createUpdateStaffUploadMetadataHandler({ dbPool = null } = {}) {
   return async function updateStaffUploadMetadata(req, res) {
@@ -17,29 +17,58 @@ export function createUpdateStaffUploadMetadataHandler({ dbPool = null } = {}) {
     if (unexpected.length) return res.status(400).json({ ok: false, error: "FORBIDDEN_METADATA_FIELD" });
     if (!reviewId) return res.status(400).json({ ok: false, error: "INVALID_REVIEW_ID" });
     if (!staffId) return res.status(400).json({ ok: false, error: "STAFF_IDENTITY_REQUIRED" });
-    const staffName = text(body.staff_name, 80);
+    const staffName = body.staff_name;
     const category = text(body.category, 100);
-    const caption = optionalText(body.caption, 500);
-    if (!staffName) return res.status(400).json({ ok: false, error: "INVALID_STAFF_NAME" });
-    if (!STAFF_CATEGORIES.has(category)) return res.status(400).json({ ok: false, error: "INVALID_STAFF_CATEGORY" });
+    if (body.caption != null && (typeof body.caption !== "string" || body.caption.length > 2000)) {
+      return res.status(400).json({ ok: false, error: "INVALID_STAFF_CAPTION" });
+    }
+    const caption = optionalText(body.caption, 2000);
+    if (Object.hasOwn(body, "staff_name") && (typeof staffName !== "string" || !staffName.trim() || staffName.length > 80)) return res.status(400).json({ ok: false, error: "INVALID_STAFF_NAME" });
+    if (Object.hasOwn(body, "category") && !STAFF_CATEGORIES.has(category)) return res.status(400).json({ ok: false, error: "INVALID_STAFF_CATEGORY" });
+    const fields = ["staff_name", "category", "caption"].filter(key => Object.hasOwn(body, key));
+    const expected = body.expected;
+    if (!fields.length || !expected || typeof expected !== "object" || Array.isArray(expected) ||
+        Object.keys(expected).length !== fields.length || fields.some(key =>
+          !Object.hasOwn(expected, key) || (expected[key] !== null && typeof expected[key] !== "string"))) {
+      return res.status(400).json({ ok: false, error: "METADATA_PRECONDITION_REQUIRED" });
+    }
     try {
       if (!dbPool) ({ pool: dbPool } = await import("./db.js"));
+      // Pin shared parameters before COALESCE/CASE can infer conflicting text/varchar types.
       const result = await dbPool.query(`
         UPDATE photo_uploads_review
-        SET staff_name = $1, uploader_name = $1,
-            linked_entity_name = CASE WHEN linked_entity_type = 'staff' THEN $1 ELSE linked_entity_name END,
-            staff_category = $2, selected_category = $2, caption = $3, updated_at_utc = now()
+        SET staff_name = COALESCE($1::text, staff_name), uploader_name = COALESCE($1::text, uploader_name),
+            linked_entity_name = CASE WHEN linked_entity_type = 'staff' AND $1::text IS NOT NULL THEN $1::text ELSE linked_entity_name END,
+            staff_category = COALESCE($2::text, staff_category), selected_category = COALESCE($2::text, selected_category),
+            caption = CASE WHEN $6::boolean THEN $3::text ELSE caption END, updated_at_utc = now()
         WHERE id = $4 AND staff_id = $5 AND upload_context = 'staff_upload'
           AND ${STAFF_SCOPE.replaceAll('p.', '')}
+          AND (NOT $7::boolean OR staff_name IS NOT DISTINCT FROM $8::text)
+          AND (NOT $9::boolean OR staff_category IS NOT DISTINCT FROM $10::text)
+          AND (NOT $6::boolean OR caption IS NOT DISTINCT FROM $11::text)
         RETURNING id, staff_id, staff_name, uploader_name, staff_category, selected_category, caption,
-          cropped_file_url, original_file_url, file_type, mime_type, duration_seconds,
+          cropped_file_url, original_file_url, file_type,
           created_at_utc, verification_status, review_status, public_gallery_status, upload_context;
-      `, [staffName, category, caption, reviewId, staffId]);
-      if (!result.rows.length) return res.status(404).json({ ok: false, error: "STAFF_UPLOAD_NOT_FOUND" });
+      `, [Object.hasOwn(body, "staff_name") ? staffName : null,
+        Object.hasOwn(body, "category") ? category : null, caption, reviewId, staffId, Object.hasOwn(body, "caption"), Object.hasOwn(body, "staff_name"), expected.staff_name ?? null,
+        Object.hasOwn(body, "category"), expected.category ?? null, expected.caption ?? null]);
+      if (!result.rows.length) {
+        const scoped = await dbPool.query(`SELECT id FROM photo_uploads_review p
+          WHERE p.id = $1 AND p.staff_id = $2 AND p.upload_context = 'staff_upload' AND ${STAFF_SCOPE}`, [reviewId, staffId]);
+        return scoped.rows.length
+          ? res.status(409).json({ ok: false, error: "STAFF_METADATA_CONFLICT", diagnostic: "METADATA_CONFLICT" })
+          : res.status(404).json({ ok: false, error: "STAFF_UPLOAD_NOT_FOUND" });
+      }
       return res.status(200).json({ ok: true, review_id: result.rows[0].id, upload: result.rows[0] });
     } catch (err) {
-      console.error("updateStaffUploadMetadata error:", err);
-      return res.status(500).json({ ok: false, error: "STAFF_METADATA_UPDATE_FAILED" });
+      const diagnostic = new Map([
+        ["42703", "SCHEMA_MISMATCH"], ["42P01", "SCHEMA_MISMATCH"],
+        ["42501", "DATABASE_PERMISSION_DENIED"], ["23505", "METADATA_CONFLICT"],
+        ["57014", "DATABASE_TIMEOUT"]
+      ]).get(err?.code) || "DATABASE_ERROR";
+      // Never log SQL, parameters, connection strings or raw driver errors.
+      console.error("updateStaffUploadMetadata", { diagnostic });
+      return res.status(500).json({ ok: false, error: "STAFF_METADATA_UPDATE_FAILED", diagnostic });
     }
   };
 }
