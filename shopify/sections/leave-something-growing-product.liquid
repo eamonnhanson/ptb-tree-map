@@ -1,0 +1,186 @@
+{% assign v = product.selected_or_first_available_variant %}
+{% assign is_demo = false %}
+{% if v.sku == 'test' and v.price == 0 %}
+  {% assign is_demo = true %}
+{% endif %}
+
+<section class="lsg">
+  {% if is_demo %}
+    <div class="lsg-demo">
+      NOVEMBER DEMO · GRATIS TEST · DE BOOM IS 24 UUR TIJDELIJK AAN JE GEKOPPELD
+    </div>
+  {% endif %}
+
+  <div class="lsg-hero">
+    <div class="lsg-copy">
+      <p class="lsg-kicker">Plant N Boom · Sierra Leone</p>
+      <h1>Leave something growing.</h1>
+
+      {% if is_demo %}
+        <p class="lsg-lead">
+          Test hoe het werkt. Kies 1, 5 of 10 echte bomen uit onze demopool.
+          Je betaalt niets en ziet je bomen tijdelijk terug op onze bomenkaart.
+        </p>
+      {% else %}
+        <p class="lsg-lead">
+          Plant een boom die in Sierra Leone wordt verzorgd en gevolgd.
+          Je ontvangt informatie over je boom en kunt zien waar hij groeit.
+        </p>
+      {% endif %}
+
+      <div class="lsg-proof">
+        <div><strong>Echte boom</strong><span>met eigen boomcode</span></div>
+        <div><strong>Locatie bekend</strong><span>terug te vinden op de kaart</span></div>
+        <div><strong>Lokale zorg</strong><span>geplant en verzorgd in Sierra Leone</span></div>
+      </div>
+    </div>
+
+    <div class="lsg-visual">
+      {% if product.featured_image %}
+        {{ product.featured_image | image_url: width: 1200 | image_tag: loading: 'eager', widths: '480,720,960,1200', alt: product.title }}
+      {% else %}
+        <img
+          src="https://cdn.shopify.com/s/files/1/0555/9966/1149/files/hand_540_square_3dee51e2-25fc-4f18-ba39-a7718527de8a.jpg?v=1778171359"
+          alt="Boom planten in Sierra Leone"
+          loading="eager">
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="lsg-buy" id="plant">
+    <div class="lsg-buy-copy">
+      {% if is_demo %}
+        <p class="lsg-kicker">Probeer de klantreis</p>
+        <h2>Hoeveel bomen wil je testen?</h2>
+        <p>
+          De bomen worden niet verkocht. De tijdelijke koppeling vervalt na 24 uur
+          en dezelfde bomen kunnen daarna opnieuw voor een demonstratie worden gebruikt.
+        </p>
+      {% else %}
+        <p class="lsg-kicker">Jouw bijdrage</p>
+        <h2>Hoeveel bomen wil je laten groeien?</h2>
+        <p>
+          Eén boom kost €10. Kies 1, 5 of 10 bomen, of vul zelf een aantal in.
+        </p>
+      {% endif %}
+    </div>
+
+    {% form 'product', product, class: 'lsg-form' %}
+      <input type="hidden" name="id" value="{{ v.id }}">
+
+      <div class="lsg-options" role="group" aria-label="Aantal bomen">
+        <label>
+          <input type="radio" name="quantity" value="1" checked>
+          <span><strong>1</strong> boom</span>
+        </label>
+        <label>
+          <input type="radio" name="quantity" value="5">
+          <span><strong>5</strong> bomen</span>
+        </label>
+        <label>
+          <input type="radio" name="quantity" value="10">
+          <span><strong>10</strong> bomen</span>
+        </label>
+      </div>
+
+      <div class="lsg-price">
+        {% if is_demo %}
+          <strong>€0</strong>
+          <span>demo</span>
+        {% else %}
+          <strong>{{ v.price | money }}</strong>
+          <span>per boom</span>
+        {% endif %}
+      </div>
+
+      <button type="submit" class="lsg-button" {% unless v.available %}disabled{% endunless %}>
+        {% if is_demo %}
+          Start gratis demo
+        {% else %}
+          Plant mijn boom
+        {% endif %}
+      </button>
+
+      <p class="lsg-small">
+        {% if is_demo %}
+          Dit is een testbestelling. Er wordt niets in rekening gebracht.
+        {% else %}
+          Na je bestelling ontvang je informatie over je toegewezen boom of bomen.
+        {% endif %}
+      </p>
+    {% endform %}
+  </div>
+
+  <div class="lsg-story">
+    <div>
+      <p class="lsg-kicker">Niet alleen planten</p>
+      <h2>Een geplante boom is pas het begin.</h2>
+    </div>
+    <div>
+      <p>
+        Plant N Boom werkt met KETSO in Sierra Leone. Bomen worden lokaal geplant,
+        verzorgd en gevolgd. Zo gaat je bijdrage niet alleen over het moment van planten,
+        maar over wat er daarna gebeurt.
+      </p>
+      <p>
+        De boom krijgt een eigen code en locatie. Daarmee maken we zichtbaar wat er
+        daadwerkelijk is geplant en waar.
+      </p>
+    </div>
+  </div>
+
+  <div class="lsg-steps">
+    <article><span>01</span><h3>Kies</h3><p>Kies hoeveel bomen je wilt planten of testen.</p></article>
+    <article><span>02</span><h3>Wij koppelen</h3><p>Je krijgt een concrete boom met eigen code en locatie.</p></article>
+    <article><span>03</span><h3>Bekijk</h3><p>Zoek je boom terug op de Plant N Boom bomenkaart.</p></article>
+  </div>
+
+  {% if is_demo %}
+    <div class="lsg-note">
+      <strong>Demo-uitleg:</strong>
+      de boom blijft een echte Plant N Boom-boom, maar deze test registreert geen nieuwe verkoop
+      en geen nieuwe impact. De tijdelijke koppeling vervalt automatisch na 24 uur.
+    </div>
+  {% endif %}
+</section>
+
+<style>
+.lsg{--green:#143f2d;--lime:#70bf44;--cream:#f5f1e6;--white:#fff;--ink:#17221b;background:var(--cream);color:var(--ink);font-family:inherit}
+.lsg-demo{background:#181818;color:#fff;text-align:center;padding:.7rem 1rem;font-size:.78rem;font-weight:800;letter-spacing:.09em}
+.lsg-hero{max-width:1200px;margin:auto;padding:3.5rem 1.5rem 4rem;display:grid;grid-template-columns:1.05fr .95fr;gap:3rem;align-items:center}
+.lsg-kicker{text-transform:uppercase;letter-spacing:.13em;font-size:.78rem;font-weight:800;color:var(--green);margin:0 0 .8rem}
+.lsg h1{font-size:clamp(3.6rem,8vw,7.4rem);line-height:.9;letter-spacing:-.055em;color:var(--green);margin:0 0 1.6rem;max-width:11ch}
+.lsg-lead{font-size:1.2rem;line-height:1.6;max-width:39rem}
+.lsg-visual img{width:100%;display:block;border-radius:28px;aspect-ratio:1/1;object-fit:cover}
+.lsg-proof{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:2rem}
+.lsg-proof div{background:rgba(255,255,255,.75);padding:1rem;border-radius:14px}
+.lsg-proof strong,.lsg-proof span{display:block}.lsg-proof span{font-size:.86rem;margin-top:.25rem;line-height:1.35}
+.lsg-buy{max-width:1200px;margin:0 auto 4rem;background:#e0ebcf;border-radius:30px;padding:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
+.lsg-buy h2,.lsg-story h2{font-size:clamp(2rem,4vw,3.2rem);line-height:1.05;letter-spacing:-.035em;color:var(--green);margin:.25rem 0 1rem}
+.lsg-buy-copy p{line-height:1.55;max-width:38rem}
+.lsg-options{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+.lsg-options input{position:absolute;opacity:0;pointer-events:none}
+.lsg-options span{display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;border:2px solid transparent;border-radius:16px;padding:1rem;cursor:pointer;min-height:76px}
+.lsg-options strong{font-size:1.6rem}
+.lsg-options input:checked+span{border-color:var(--green);box-shadow:0 0 0 1px var(--green)}
+.lsg-price{display:flex;align-items:baseline;gap:.5rem;margin:1.1rem 0 .7rem;color:var(--green)}
+.lsg-price strong{font-size:2.2rem}.lsg-price span{font-weight:700}
+.lsg-button{width:100%;border:0;border-radius:999px;background:var(--green);color:#fff;padding:1rem 1.4rem;font:inherit;font-size:1.05rem;font-weight:900;cursor:pointer}
+.lsg-button:hover{filter:brightness(1.06)}.lsg-button:disabled{opacity:.45;cursor:not-allowed}
+.lsg-small{font-size:.83rem;line-height:1.4;margin:.7rem .3rem 0}
+.lsg-story{max-width:1200px;margin:auto;padding:1rem 1.5rem 3rem;display:grid;grid-template-columns:1fr 1fr;gap:3rem}
+.lsg-story p{line-height:1.65}
+.lsg-steps{max-width:1200px;margin:auto;padding:0 1.5rem 4rem;display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.lsg-steps article{background:#fff;border-radius:20px;padding:1.5rem}.lsg-steps span{font-weight:900;color:var(--lime)}.lsg-steps h3{font-size:1.35rem;color:var(--green);margin:.6rem 0}.lsg-steps p{line-height:1.5;margin:0}
+.lsg-note{max-width:1170px;margin:0 auto 4rem;padding:1rem 1.2rem;border:1px solid #cec8b9;border-radius:14px;line-height:1.5}
+@media(max-width:800px){.lsg-hero,.lsg-buy,.lsg-story{grid-template-columns:1fr}.lsg-proof{grid-template-columns:1fr}.lsg-steps{grid-template-columns:1fr}.lsg-hero{padding-top:2.4rem}.lsg h1{font-size:3.8rem}.lsg-buy{border-radius:0;margin-bottom:3rem}}
+@media(max-width:480px){.lsg-options{grid-template-columns:1fr 1fr 1fr}.lsg-options span{padding:.75rem .35rem}}
+</style>
+
+{% schema %}
+{
+  "name": "Leave something growing",
+  "settings": [],
+  "presets": [{"name":"Leave something growing"}]
+}
+{% endschema %}
