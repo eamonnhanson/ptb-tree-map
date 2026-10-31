@@ -37,6 +37,7 @@ router.get("/", async (req, res) => {
       t.lat,
       t.long,
       t.tree_code,
+      COALESCE((to_jsonb(t)->>'is_test')::boolean, false) AS is_test,
       t.tree_type,
       t.tree_name,
       t.planted_date,

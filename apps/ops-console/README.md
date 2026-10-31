@@ -143,3 +143,5 @@ V1 contains no approvals, retries, responses or other writes. Add them only afte
 ## Relationship to existing applications
 
 The Tree Map, uploader and current automation dashboard remain independent protected applications and references only. They are not moved or refactored. See [ARCHITECTURE.md](ARCHITECTURE.md).
+
+Ops-only deployment scope is enforced by `npm run check:scope` (also the first step of `npm run check`). It rejects any working-tree or branch changes outside this app and missing comparison history. Ordinary repository feature tests exercise the guard using fixtures; they do not assume every feature is an ops-only deployment.

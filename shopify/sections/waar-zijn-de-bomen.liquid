@@ -1,0 +1,45 @@
+{% assign campaign_variant = product.selected_or_first_available_variant %}
+{% assign campaign_sku = 'PNB-WAAR-ZIJN-DE-BOMEN' %}
+{% if campaign_variant.sku == campaign_sku and campaign_variant.price > 0 %}
+<section class="wzdb">
+  <header class="wzdb-hero">
+    <p>Plant N Boom</p>
+    <h1>Waar zijn<br>de bomen?</h1>
+    <p>Nederland wordt warmer, maar op veel pleinen, schoolpleinen en in nieuwe woonwijken is schaduw van bomen nog steeds schaars.</p>
+    <a class="wzdb-button" href="#plant-een-boom">Plant een boom</a>
+    <a href="#nomineer">Nomineer een kale plek</a>
+  </header>
+  <div class="wzdb-content">
+    <h2>Een plein vol stenen. Waar is de schaduw?</h2>
+    <p>Plant N Boom zoekt plekken in Nederland waar het ontbreken van bomen opvalt. Laat ons jouw kale plein, schoolplein of straat zien. Deel een foto of video en volg de campagne.</p>
+    <h2 id="plant-een-boom">Plant meer bomen.</h2>
+    <p>Help Plant N Boom bomen te planten en te verzorgen in Sierra Leone. Je ontvangt informatie over jouw toegewezen bomen en kunt ze terugvinden op de <a href="https://map.planteenboom.nu/">Plant N Boom bomenkaart</a>.</p>
+    <p>Met je aankoop steun je bomen in Sierra Leone. Je nominatie is een uitnodiging om aandacht te vragen voor een plek in Nederland.</p>
+    {% form 'product', product %}
+      <input type="hidden" name="id" value="{{ campaign_variant.id }}">
+      <label for="wzdb-quantity-{{ section.id }}">Aantal bomen</label>
+      <input id="wzdb-quantity-{{ section.id }}" name="quantity" type="number" min="1" max="100" value="1" required>
+      <p>{{ campaign_variant.price | money }} per boom</p>
+      <button class="wzdb-button" type="submit" {% unless campaign_variant.available %}disabled{% endunless %}>Plant een boom</button>
+    {% endform %}
+    <h2 id="nomineer">Nomineer een kale plek</h2>
+    {% form 'contact' %}
+      {{ form.errors | default_errors }}
+      {% if form.posted_successfully? %}<p>Bedankt voor je nominatie!</p>{% endif %}
+      <input type="hidden" name="contact[subject]" value="Waar zijn de bomen? — nominatie">
+      <label for="wzdb-email-{{ section.id }}">Je e-mailadres</label>
+      <input id="wzdb-email-{{ section.id }}" type="email" name="contact[email]" autocomplete="email" required>
+      <label for="wzdb-location-{{ section.id }}">Welke plek? Deel een locatie en eventueel een link naar je foto of video.</label>
+      <textarea id="wzdb-location-{{ section.id }}" name="contact[body]" required></textarea>
+      <button class="wzdb-button" type="submit">Verstuur je nominatie</button>
+    {% endform %}
+    <p>Plant N Boom volgt individuele bomen. Bekijk je eigen bomen via de informatie die je na je aankoop ontvangt.</p>
+  </div>
+</section>
+{% else %}<p>Dit campagneproduct is nog niet beschikbaar.</p>{% endif %}
+<style>
+.wzdb{--green:#133e2d;background:#f7f3e8;color:var(--green);font-family:inherit}.wzdb-hero{padding:4rem 1.5rem;background:#e4ebce}.wzdb h1{font-size:clamp(3.3rem,12vw,7rem);line-height:.95;letter-spacing:-.05em;margin:1rem 0 2rem}.wzdb p{max-width:42rem;line-height:1.6}.wzdb a{color:inherit}.wzdb-button{display:inline-block;background:var(--green);color:white!important;padding:1rem 1.4rem;border:0;border-radius:2rem;font:inherit;cursor:pointer;margin:.5rem .5rem .5rem 0}.wzdb-content{max-width:60rem;margin:auto;padding:2rem 1.5rem 4rem}.wzdb h2{margin-top:3rem;font-size:2rem}.wzdb label{display:block;margin:1rem 0 .4rem}.wzdb input,.wzdb textarea{max-width:100%;box-sizing:border-box;padding:.8rem;font:inherit}.wzdb textarea{display:block;width:100%;min-height:8rem}
+</style>
+{% schema %}
+{"name":"Waar zijn de bomen?","settings":[],"presets":[{"name":"Waar zijn de bomen?"}]}
+{% endschema %}

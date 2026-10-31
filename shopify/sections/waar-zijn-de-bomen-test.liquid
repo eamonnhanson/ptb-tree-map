@@ -1,0 +1,16 @@
+{% assign v = product.selected_or_first_available_variant %}
+{% if customer.tags contains 'pnb-training' and v.sku == 'PNB-WAAR-ZIJN-DE-BOMEN-TEST' and v.price == 0 %}
+<section style="padding:2rem;background:#fff0af;color:#222">
+<h1>TEST — Waar zijn de bomen?</h1>
+<p>TEST TREE – not a real planted tree. Alleen voor training. Deze bestelling wijst uitsluitend fictieve bomen toe.</p>
+{% form 'product', product %}
+<input type="hidden" name="id" value="{{ v.id }}">
+<label for="test-count-{{ section.id }}">Aantal testbomen</label>
+<input id="test-count-{{ section.id }}" type="number" name="quantity" min="1" max="100" value="1" required>
+<p>{{ v.price | money }}</p><button type="submit">Plaats testbestelling</button>
+{% endform %}
+</section>
+{% else %}<p>Dit interne trainingsproduct is niet beschikbaar voor dit account.</p>{% endif %}
+{% schema %}
+{"name":"WZDB interne training","settings":[]}
+{% endschema %}

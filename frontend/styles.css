@@ -202,3 +202,6 @@ button:hover { filter: brightness(0.92); }
     width: 100%;
   }
 }
+
+.test-tree-warning { display:block; background:#fff0af; color:#442600; padding:8px; }
+.test-tree-marker { background:#ffdf00; color:#111; border:3px solid #111; font-weight:bold; text-align:center; }

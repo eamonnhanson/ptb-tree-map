@@ -43,6 +43,7 @@ candidates AS MATERIALIZED (
     AND input.requested_count > 0
     AND COALESCE(t.is_claimed, false) = false
     AND t.order_id IS NULL
+    AND COALESCE((to_jsonb(t)->>'is_test')::boolean, false) = false
   ORDER BY t.id
   FOR UPDATE OF t SKIP LOCKED
   LIMIT (SELECT requested_count FROM input)
@@ -78,6 +79,7 @@ De bestaande `SET`-lijst bevat geen `order_id` en behoudt dat veld daardoor al. 
 
 ```sql
 AND order_id IS NOT NULL
+AND is_test = FALSE
 ```
 
 Voeg `order_id` toe aan beide `RETURNING`-lijsten. De claimstap mag uitsluitend `user_id`, `is_claimed`, claimtoken/reserveringsvelden en `claimed_at` wijzigen. Voeg nooit `order_id = NULL`, checkout-ID, zichtbaar ordernummer of een e-mailadresmapping toe.

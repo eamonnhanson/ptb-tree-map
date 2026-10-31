@@ -23,3 +23,14 @@ export function inspectIsolation(repoRoot) {
 export function outsideOps(files) {
   return files.filter((file) => !file.startsWith("apps/ops-console/"));
 }
+
+// Deployment scope is an explicit operation, not a property of every repository feature.
+export function assertOpsDeploymentScope({ workingFiles, branchFiles }) {
+  const working = outsideOps(workingFiles);
+  const branch = branchFiles === null ? null : outsideOps(branchFiles);
+  const problems = [];
+  if (working.length) problems.push(`tracked working-tree changes remain inside apps/ops-console: ${working.join(', ')}`);
+  if (branch === null) problems.push('branch comparison unavailable; fetch origin/main and full history before deployment');
+  else if (branch.length) problems.push(`branch commits change only apps/ops-console: ${branch.join(', ')}`);
+  if (problems.length) throw new Error(problems.join('\n'));
+}

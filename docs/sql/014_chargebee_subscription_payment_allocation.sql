@@ -650,6 +650,7 @@ BEGIN
       SELECT tree.id
       FROM public.trees1 AS tree
       WHERE tree.user_id IS NULL
+        AND COALESCE((to_jsonb(tree)->>'is_test')::boolean, false) = false
         AND tree.is_claimed IS NOT TRUE
         AND tree.purchase_date IS NULL
         AND tree.order_id IS NULL

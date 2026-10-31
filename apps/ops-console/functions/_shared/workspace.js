@@ -4,8 +4,8 @@ import { reportFailure } from './diagnostics.js';
 import { partners } from './partners.js';
 
 export const COUNT_QUERIES = Object.freeze({
-  trees: `select count(*)::text as count from public.trees1
-    where user_id is null
+  trees: `select count(*)::text as count from public.trees1 t where COALESCE((to_jsonb(t)->>'is_test')::boolean, false) = false
+    and user_id is null
     and nullif(trim(tree_name), '') is null
     and lat is not null and "long" is not null`,
   uploads: `select count(*)::text as count from public.photo_uploads_review
@@ -28,7 +28,7 @@ export const IMCD_CREDIT_QUERY = `with credit as (
   select a.region, a.user_id, count(t.id)::bigint as trees
   from public.ops_console_tree_credit_accounts a
   join credit c on c.customer_code = a.credit_code
-  left join public.trees1 t on t.user_id = a.user_id and t.claimed_at >= c.starts_at
+  left join public.trees1 t on t.user_id = a.user_id and COALESCE((to_jsonb(t)->>'is_test')::boolean, false) = false and t.claimed_at >= c.starts_at
   where a.credit_code = 'imcd_benelux'
   group by a.region, a.user_id
 ), usage_by_region as (

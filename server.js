@@ -617,6 +617,7 @@ app.get("/api/diag/heroes", async (req, res) => {
 
   const where = [
     "u.subscription_type IS NOT NULL",
+    "COALESCE((to_jsonb(t)->>'is_test')::boolean, false) = false",
     "t.lat IS NOT NULL",
     "t.long IS NOT NULL"
   ];

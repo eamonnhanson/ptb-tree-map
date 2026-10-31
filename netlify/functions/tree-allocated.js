@@ -155,7 +155,7 @@ export function createHandler({ env = process.env, getPool = () => db(env), getM
 
       const monitoredOrderIds = [...evidence.keys()];
       const values = [];
-      const where = ["t.order_id is not null", "btrim(t.order_id::text) <> ''"];
+      const where = ["COALESCE((to_jsonb(t)->>'is_test')::boolean, false) = false", "t.order_id is not null", "btrim(t.order_id::text) <> ''"];
       const allocationFilters = [];
       if (search) { values.push(`%${search}%`); allocationFilters.push(`(u.first_name ilike $${values.length} or u.last_name ilike $${values.length} or u.email ilike $${values.length} or t.order_id::text ilike $${values.length} or t.tree_code ilike $${values.length} or u.id::text ilike $${values.length})`); }
       if (from) { values.push(from); allocationFilters.push(`coalesce(t.claimed_at, t.updated_at, t.created_at)::date >= $${values.length}::date`); }

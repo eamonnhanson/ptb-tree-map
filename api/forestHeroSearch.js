@@ -19,7 +19,8 @@ export default async function forestHeroSearch(req, res) {
         t.tree_type,
         t.area,
         to_char(t.planted_date, 'YYYY-MM-DD') AS planted_date,
-        t.tree_code
+        t.tree_code,
+        COALESCE((to_jsonb(t)->>'is_test')::boolean, false) AS is_test
       FROM public.users1 u
       JOIN public.trees1 t
         ON t.user_id = u.id
@@ -44,6 +45,7 @@ export default async function forestHeroSearch(req, res) {
     const results = rows.map((row) => ({
       ...row,
       display_label: [
+        row.is_test ? "TEST TREE – not a real planted tree" : "",
         `${row.first_name || ""} ${row.last_name || ""}`.trim(),
         row.tree_type || "",
         row.area || "",

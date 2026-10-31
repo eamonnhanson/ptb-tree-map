@@ -3,23 +3,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { inspectIsolation, outsideOps } from "../scripts/isolation.mjs";
+import { assertOpsDeploymentScope } from "../scripts/isolation.mjs";
 
 const appRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const repoRoot = path.resolve(appRoot, "../..");
-
 test("tracked working-tree changes remain inside apps/ops-console", () => {
-  assert.deepEqual(outsideOps(inspectIsolation(repoRoot).workingFiles), []);
+  assert.doesNotThrow(() => assertOpsDeploymentScope({workingFiles: ['apps/ops-console/frontend/workspace.js'], branchFiles: []}));
+  assert.throws(() => assertOpsDeploymentScope({workingFiles: ['api/trees.js'], branchFiles: []}), /tracked working-tree changes.*api\/trees.js/);
 });
 
-test("branch commits change only apps/ops-console", (t) => {
-  const { branchFiles } = inspectIsolation(repoRoot);
-  if (branchFiles === null) {
-    t.skip("Shallow checkout lacks comparison history; review the full PR diff before deployment");
-    return;
-  }
-  // Zero commits ahead of main is valid; uncommitted edits are checked above.
-  assert.deepEqual(outsideOps(branchFiles), []);
+test("branch commits change only apps/ops-console", () => {
+  assert.doesNotThrow(() => assertOpsDeploymentScope({workingFiles: [], branchFiles: ['apps/ops-console/README.md']}));
+  assert.throws(() => assertOpsDeploymentScope({workingFiles: [], branchFiles: ['frontend/app.js']}), /branch commits.*frontend\/app.js/);
+  assert.throws(() => assertOpsDeploymentScope({workingFiles: [], branchFiles: null}), /comparison unavailable/);
 });
 
 test("independent Netlify directories cannot publish root applications", () => {

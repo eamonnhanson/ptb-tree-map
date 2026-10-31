@@ -1,3 +1,5 @@
+const testTreeWarning = 'TEST TREE – not a real planted tree';
+const isTestTree = r => r.is_test === true || /^TEST-WZDB-/.test(r.tree_code || '');
 const PUBLIC_MAP_DONATION_URL = 'https://www.planteenboom.nu/products/doneer';
 
 const PUBLIC_MAP_LOCALES = Object.freeze({
@@ -154,6 +156,11 @@ const treeIconSelected = L.icon({
 
 // 🔎 Fetch trees by email or user_id
 async function fetchTrees(query) {
+  if (/^TEST-WZDB-[0-9]+$/.test(query.trim())) {
+    const response = await fetch('https://ptb-tree-map.onrender.com/api/trees/by-codes?codes=' + encodeURIComponent(query.trim()));
+    if (!response.ok) throw new Error(text.serverError(response.status));
+    return (await response.json()).items;
+  }
   const baseUrl = "https://ptb-tree-map.onrender.com/api/trees";
   const url = new URL(baseUrl);
 
@@ -202,6 +209,7 @@ function renderTrees(rows) {
     const popup =
       `<div class="popup">
          <div class="popup-title">${code || text.treeFallback}</div>
+         ${isTestTree(r) ? '<strong class="test-tree-warning">' + testTreeWarning + '</strong>' : ''}
          ${nameRow}
          <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
          <div class="popup-meta">${planted}</div>
@@ -211,7 +219,8 @@ function renderTrees(rows) {
          </div>
        </div>`;
 
-    const m = L.marker([lat, lng], { icon: treeIcon }).bindPopup(popup);
+    const testIcon = isTestTree(r) ? L.divIcon({ className: 'test-tree-marker', html: 'TEST', iconSize: [44, 26] }) : null;
+    const m = L.marker([lat, lng], { icon: testIcon || treeIcon, testIcon }).bindPopup(popup);
     m.on('click', () => selectByMarker(m, code));
     markers.addLayer(m);
     bounds.push([lat, lng]);
@@ -221,7 +230,8 @@ function renderTrees(rows) {
 
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
 
-  msg.textContent = text.treeCount(rows.length);
+  const trainingCount = rows.filter(isTestTree).length;
+  msg.textContent = text.treeCount(rows.length - trainingCount) + (trainingCount ? ` · TEST TREE: ${trainingCount} training records` : '');
   renderTrees.rows = rows;
   renderCodeList(rows);
 }
@@ -229,7 +239,7 @@ function renderTrees(rows) {
 // 🧼 selectie wissen
 function clearSelection() {
   if (selectedMarker) {
-    selectedMarker.setIcon(treeIcon);
+    selectedMarker.setIcon(selectedMarker.options.testIcon || treeIcon);
     selectedMarker = null;
   }
   if (selectedItemEl) {
@@ -242,7 +252,7 @@ function clearSelection() {
 function selectByMarker(marker, codeText) {
   clearSelection();
   selectedMarker = marker;
-  marker.setIcon(treeIconSelected).openPopup();
+  marker.setIcon(marker.options.testIcon || treeIconSelected).openPopup();
   if (codeText) {
     const item = document.querySelector(
       `[data-tree-code="${cssEscape(codeText.toLowerCase())}"]`
@@ -263,7 +273,7 @@ function selectByCode(codeText) {
 
   clearSelection();
   selectedMarker = m;
-  m.setIcon(treeIconSelected).openPopup();
+  m.setIcon(m.options.testIcon || treeIconSelected).openPopup();
   map.panTo(m.getLatLng());
 
   const item = document.querySelector(`[data-tree-code="${cssEscape(key)}"]`);
@@ -352,7 +362,7 @@ function renderCodeList(rows) {
     seen.add(key);
 
     const name = (r.tree_name || '').trim();
-    items.push({ code, name });
+    items.push({ code, name: isTestTree(r) ? testTreeWarning : name });
   });
 
   if (!items.length) {
@@ -454,6 +464,7 @@ async function loadAllForestHeroes(limit = 500) {
       const popup =
         `<div class="popup">
            <div class="popup-title">${code || text.treeFallback}</div>
+           ${isTestTree(r) ? '<strong class="test-tree-warning">' + testTreeWarning + '</strong>' : ''}
            ${nameRow}
            <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
            <div class="popup-meta">${planted}</div>
@@ -463,7 +474,8 @@ async function loadAllForestHeroes(limit = 500) {
            </div>
          </div>`;
 
-      const m = L.marker([lat, lng], { icon: treeIcon }).bindPopup(popup);
+      const testIcon = isTestTree(r) ? L.divIcon({ className: 'test-tree-marker', html: 'TEST', iconSize: [44, 26] }) : null;
+      const m = L.marker([lat, lng], { icon: testIcon || treeIcon, testIcon }).bindPopup(popup);
       m.on('click', () => selectByMarker(m, code));
       markers.addLayer(m);
       bounds.push([lat, lng]);
@@ -472,7 +484,10 @@ async function loadAllForestHeroes(limit = 500) {
 
     allRows.push(...rows);
     total += rows.length;
-    if (msg) msg.textContent = text.treesLoaded(total);
+    if (msg) {
+      const trainingCount = allRows.filter(isTestTree).length;
+      msg.textContent = text.treesLoaded(total - trainingCount) + (trainingCount ? ` · TEST TREE: ${trainingCount} training records` : '');
+    }
 
     if (!next_after_id || rows.length < limit) break;
     after = next_after_id;
@@ -480,7 +495,8 @@ async function loadAllForestHeroes(limit = 500) {
 
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
   renderCodeList(allRows);
-  msg.textContent = text.treesTotal(allRows.length);
+  const trainingCount = allRows.filter(isTestTree).length;
+  msg.textContent = text.treesTotal(allRows.length - trainingCount) + (trainingCount ? ` · TEST TREE: ${trainingCount} training records` : '');
 }
 
 // 🔘 knop: toon forest heroes
