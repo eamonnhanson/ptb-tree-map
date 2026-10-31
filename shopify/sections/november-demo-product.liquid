@@ -1,0 +1,99 @@
+{% assign demo_variant = product.selected_or_first_available_variant %}
+{% if demo_variant.sku == 'test' and demo_variant.price == 0 %}
+<section class="pnb-demo">
+  <div class="pnb-demo__bar">NOVEMBER 2026 · DEMO SITE</div>
+
+  <div class="pnb-demo__hero">
+    <div>
+      <p class="pnb-demo__eyebrow">Plant N Boom demo</p>
+      <h1>Plant een boom.<br>Probeer het gratis.</h1>
+      <p class="pnb-demo__lead">
+        Test de volledige Plant N Boom-ervaring met een echte boom uit onze demopool.
+        Je betaalt niets. De boom wordt 24 uur tijdelijk aan jouw testbestelling gekoppeld.
+      </p>
+      <a class="pnb-demo__link" href="#demo-bestellen">Start de demo ↓</a>
+    </div>
+
+    <div class="pnb-demo__card">
+      <div class="pnb-demo__big">24 uur</div>
+      <p>zichtbaar als jouw demo-boom</p>
+      <div class="pnb-demo__divider"></div>
+      <p><strong>€0</strong> · geen betaling</p>
+      <p><strong>Echte boom</strong> · geen fictief record</p>
+      <p><strong>Automatisch vrij</strong> · na 24 uur</p>
+    </div>
+  </div>
+
+  <div class="pnb-demo__content">
+    <div class="pnb-demo__steps">
+      <div><span>1</span><strong>Kies hoeveel bomen</strong><p>Test met 1, 5 of 10 bomen.</p></div>
+      <div><span>2</span><strong>Plaats je testbestelling</strong><p>De checkout is €0.</p></div>
+      <div><span>3</span><strong>Bekijk je bomen</strong><p>Je echte demo-bomen verschijnen tijdelijk op onze bomenkaart.</p></div>
+      <div><span>4</span><strong>Na 24 uur</strong><p>De koppeling vervalt automatisch en de bomen zijn opnieuw beschikbaar voor een demo.</p></div>
+    </div>
+
+    <div id="demo-bestellen" class="pnb-demo__buy">
+      <div>
+        <p class="pnb-demo__eyebrow">Demo bestellen</p>
+        <h2>Hoeveel bomen wil je testen?</h2>
+        <p>Er wordt geen nieuwe boom verkocht of geplant. Je gebruikt tijdelijk bestaande bomen uit onze aparte demopool.</p>
+      </div>
+
+      {% form 'product', product, class: 'pnb-demo__form' %}
+        <input type="hidden" name="id" value="{{ demo_variant.id }}">
+        <div class="pnb-demo__choices">
+          <label><input type="radio" name="quantity" value="1" checked><span>1 boom</span></label>
+          <label><input type="radio" name="quantity" value="5"><span>5 bomen</span></label>
+          <label><input type="radio" name="quantity" value="10"><span>10 bomen</span></label>
+        </div>
+        <div class="pnb-demo__price">{{ demo_variant.price | money }}</div>
+        <button class="pnb-demo__button" type="submit">Start gratis demo</button>
+      {% endform %}
+    </div>
+
+    <div class="pnb-demo__note">
+      <strong>Dit is een demonstratie.</strong>
+      De bomen blijven eigendom van Plant N Boom en worden niet als nieuwe impact of nieuwe verkoop geteld.
+      De tijdelijke koppeling vervalt automatisch na 24 uur.
+    </div>
+  </div>
+</section>
+{% else %}
+<section style="padding:2rem;text-align:center">
+  <h1>Demo tijdelijk niet beschikbaar</h1>
+</section>
+{% endif %}
+
+<style>
+.pnb-demo{--green:#133e2d;--lime:#45b910;--cream:#f7f3e8;--ink:#16211a;background:var(--cream);color:var(--ink);font-family:inherit}
+.pnb-demo__bar{background:var(--green);color:#fff;text-align:center;padding:.65rem 1rem;font-weight:800;letter-spacing:.12em;font-size:.78rem}
+.pnb-demo__hero{max-width:1180px;margin:auto;padding:4.5rem 1.5rem;display:grid;grid-template-columns:1.4fr .7fr;gap:3rem;align-items:center}
+.pnb-demo__eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.8rem;font-weight:800;color:var(--green)}
+.pnb-demo h1{font-size:clamp(3.4rem,8vw,7.2rem);line-height:.92;letter-spacing:-.055em;margin:.4rem 0 1.5rem;color:var(--green)}
+.pnb-demo__lead{font-size:1.2rem;line-height:1.6;max-width:46rem}
+.pnb-demo__link{display:inline-block;margin-top:1rem;color:var(--green);font-weight:800}
+.pnb-demo__card{background:#fff;border-radius:24px;padding:2rem;box-shadow:0 18px 50px rgba(19,62,45,.12)}
+.pnb-demo__big{font-size:3rem;font-weight:900;color:var(--green)}
+.pnb-demo__divider{height:1px;background:#ddd;margin:1.4rem 0}
+.pnb-demo__content{max-width:1180px;margin:auto;padding:0 1.5rem 5rem}
+.pnb-demo__steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:4rem}
+.pnb-demo__steps>div{background:#fff;padding:1.5rem;border-radius:18px}
+.pnb-demo__steps span{display:flex;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;align-items:center;justify-content:center;font-weight:800;margin-bottom:1rem}
+.pnb-demo__steps strong{display:block;font-size:1.05rem}
+.pnb-demo__steps p{line-height:1.45}
+.pnb-demo__buy{background:#e4ebce;border-radius:28px;padding:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:center}
+.pnb-demo__buy h2{font-size:2.2rem;color:var(--green);margin:.3rem 0 1rem}
+.pnb-demo__choices{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}
+.pnb-demo__choices input{position:absolute;opacity:0}
+.pnb-demo__choices span{display:block;background:#fff;border:2px solid transparent;border-radius:14px;padding:1rem;text-align:center;font-weight:800;cursor:pointer}
+.pnb-demo__choices input:checked+span{border-color:var(--green);background:#f8fff4}
+.pnb-demo__price{font-size:2rem;font-weight:900;margin:1.2rem 0;color:var(--green)}
+.pnb-demo__button{width:100%;border:0;border-radius:999px;background:var(--green);color:#fff;padding:1rem 1.4rem;font:inherit;font-weight:900;font-size:1.05rem;cursor:pointer}
+.pnb-demo__note{margin-top:1.5rem;padding:1.1rem 1.3rem;border:1px solid #d6d1c4;border-radius:14px;line-height:1.5}
+@media(max-width:760px){.pnb-demo__hero,.pnb-demo__buy{grid-template-columns:1fr}.pnb-demo__steps{grid-template-columns:1fr 1fr}.pnb-demo__hero{padding-top:2.5rem}.pnb-demo h1{font-size:3.5rem}}
+@media(max-width:480px){.pnb-demo__steps{grid-template-columns:1fr}.pnb-demo__choices{grid-template-columns:1fr}}
+</style>
+
+{% schema %}
+{"name":"November demo product","settings":[],"presets":[{"name":"November demo product"}]}
+{% endschema %}
