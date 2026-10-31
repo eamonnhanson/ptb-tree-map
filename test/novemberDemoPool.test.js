@@ -293,7 +293,8 @@ test('November real-tree demo pool on isolated PostgreSQL', {
 
       await pool.query(`
         UPDATE demo_orders
-        SET reserved_until = now() - interval '1 minute'
+        SET reserved_at = now() - interval '25 hours',
+            reserved_until = now() - interval '1 hour'
         WHERE shopify_order_id='70000000001'
       `);
 
