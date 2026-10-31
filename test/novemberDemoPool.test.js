@@ -1,19 +1,39 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { PGlite } from '@electric-sql/pglite';
+import pg from 'pg';
 
-const migration = await readFile(
-  new URL('../docs/sql/027_november_demo_pool.sql', import.meta.url),
-  'utf8'
-);
+const { Pool } = pg;
+const migrationUrl = new URL('../docs/sql/027_november_demo_pool.sql', import.meta.url);
+const connectionString = process.env.PTB_NOVEMBER_DEMO_POSTGRES_URL;
 
-test('November real-tree demo pool migration and 24-hour reservations', async t => {
-  const db = new PGlite();
-  const q = (sql, args = []) => db.query(sql, args);
+function validatedLocalTestUrl(value) {
+  if (!value) return null;
+  const url = new URL(value);
+  const localHosts = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+  const database = decodeURIComponent(url.pathname.replace(/^\//, ''));
+
+  if (!localHosts.has(url.hostname)) {
+    throw new Error('PTB_NOVEMBER_DEMO_POSTGRES_URL must use localhost, 127.0.0.1 or ::1');
+  }
+  if (!/^ptb_november_demo_test(?:_[a-z0-9_]+)?$/i.test(database)) {
+    throw new Error('PTB_NOVEMBER_DEMO_POSTGRES_URL must target a dedicated ptb_november_demo_test database');
+  }
+  return url.toString();
+}
+
+const localUrl = validatedLocalTestUrl(connectionString);
+
+test('November real-tree demo pool on isolated PostgreSQL', {
+  skip: !localUrl && 'local isolated PostgreSQL prerequisite unavailable'
+}, async t => {
+  const pool = new Pool({ connectionString: localUrl, max: 8, ssl: false });
+  const migration = await readFile(migrationUrl, 'utf8');
 
   try {
-    await db.exec(`
+    await pool.query('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public');
+
+    await pool.query(`
       CREATE TABLE public.users1 (
         id serial PRIMARY KEY,
         email text UNIQUE NOT NULL,
@@ -42,13 +62,13 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       );
     `);
 
-    const user = (await q(
+    const user = (await pool.query(
       `INSERT INTO users1(email, created_at, updated_at)
        VALUES ('mark.kirkels@warchild.nl', now(), now())
        RETURNING id`
     )).rows[0];
 
-    await q(`
+    await pool.query(`
       INSERT INTO trees1(
         tree_code, tree_type, area, tree_name, lat, "long", planted_date,
         user_id, order_id, is_claimed, purchase_date, reserved_token,
@@ -74,10 +94,10 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       FROM generate_series(1, 600) n
     `, [user.id]);
 
-    await db.exec(migration);
+    await pool.query(migration);
 
     await t.test('migration alone does not alter existing allocations', async () => {
-      const row = (await q(`
+      const row = (await pool.query(`
         SELECT count(*)::int AS n,
                count(*) FILTER (WHERE demo_pool)::int AS demo
         FROM trees1
@@ -90,20 +110,20 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
 
     await t.test('wrong confirmation fails closed with no release', async () => {
       await assert.rejects(
-        q(`SELECT prepare_november_2026_demo_pool(
+        pool.query(`SELECT prepare_november_2026_demo_pool(
           'mark.kirkels@warchild.nl', 'NO'
         )`),
         /confirmation/
       );
 
       assert.equal(
-        (await q('SELECT count(*)::int AS n FROM trees1 WHERE user_id=$1', [user.id])).rows[0].n,
+        (await pool.query('SELECT count(*)::int AS n FROM trees1 WHERE user_id=$1', [user.id])).rows[0].n,
         600
       );
     });
 
     await t.test('releases exactly 600, with 100 demo and 500 sale trees', async () => {
-      const result = (await q(`
+      const result = (await pool.query(`
         SELECT prepare_november_2026_demo_pool(
           'mark.kirkels@warchild.nl',
           'RELEASE 600 WAR CHILD TREES FOR NOVEMBER DEMO'
@@ -115,7 +135,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       assert.equal(result.demo_count, 100);
       assert.equal(result.sale_count, 500);
 
-      const counts = (await q(`
+      const counts = (await pool.query(`
         SELECT
           count(*)::int AS total,
           count(*) FILTER (WHERE demo_pool)::int AS demo,
@@ -134,11 +154,11 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       });
 
       assert.equal(
-        (await q('SELECT count(*)::int AS n FROM tree_allocation_release_audit')).rows[0].n,
+        (await pool.query('SELECT count(*)::int AS n FROM tree_allocation_release_audit')).rows[0].n,
         600
       );
 
-      const audit = (await q(`
+      const audit = (await pool.query(`
         SELECT original_tree->>'user_id' AS user_id,
                original_tree->>'tree_name' AS tree_name,
                destination
@@ -151,7 +171,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       assert.match(audit.tree_name, /War Child tree/);
       assert.equal(audit.destination, 'demo_pool');
 
-      const cleared = (await q(`
+      const cleared = (await pool.query(`
         SELECT count(*)::int AS n
         FROM trees1
         WHERE purchase_date IS NOT NULL
@@ -167,7 +187,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
     });
 
     await t.test('pool preparation is idempotent and cannot release another 600', async () => {
-      const result = (await q(`
+      const result = (await pool.query(`
         SELECT prepare_november_2026_demo_pool(
           'mark.kirkels@warchild.nl',
           'RELEASE 600 WAR CHILD TREES FOR NOVEMBER DEMO'
@@ -176,7 +196,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
 
       assert.equal(result.status, 'already_prepared');
       assert.equal(
-        (await q('SELECT count(*)::int AS n FROM tree_allocation_release_audit')).rows[0].n,
+        (await pool.query('SELECT count(*)::int AS n FROM tree_allocation_release_audit')).rows[0].n,
         600
       );
     });
@@ -184,7 +204,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
     let firstAllocation;
 
     await t.test('SKU test reserves real demo trees without changing ownership fields', async () => {
-      firstAllocation = (await q(`
+      firstAllocation = (await pool.query(`
         SELECT allocate_demo_order(
           '70000000001',
           'test',
@@ -199,10 +219,10 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       assert.ok(firstAllocation.assigned_trees.every(tree => tree.is_demo === true));
 
       const ids = firstAllocation.assigned_trees.map(tree => tree.tree_id);
-      const rows = (await q(`
+      const rows = (await pool.query(`
         SELECT id, demo_pool, user_id, is_claimed, order_id
         FROM trees1
-        WHERE id = ANY($1)
+        WHERE id = ANY($1::int[])
         ORDER BY id
       `, [ids])).rows;
 
@@ -218,7 +238,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
     });
 
     await t.test('duplicate Shopify delivery returns the same demo trees', async () => {
-      const replay = (await q(`
+      const replay = (await pool.query(`
         SELECT allocate_demo_order(
           '70000000001',
           'test',
@@ -234,7 +254,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
         firstAllocation.assigned_trees.map(tree => tree.tree_id)
       );
       assert.equal(
-        (await q(`SELECT count(*)::int AS n
+        (await pool.query(`SELECT count(*)::int AS n
                   FROM demo_order_trees
                   WHERE shopify_order_id='70000000001'`)).rows[0].n,
         5
@@ -243,13 +263,13 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
 
     await t.test('wrong SKU and variant are rejected', async () => {
       await assert.rejects(
-        q(`SELECT allocate_demo_order(
+        pool.query(`SELECT allocate_demo_order(
           '70000000002','02','64172819480906','trainer@example.test',1
         )`),
         /SKU/
       );
       await assert.rejects(
-        q(`SELECT allocate_demo_order(
+        pool.query(`SELECT allocate_demo_order(
           '70000000002','test','999','trainer@example.test',1
         )`),
         /variant/
@@ -257,7 +277,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
     });
 
     await t.test('500 released non-demo trees remain eligible for normal sale inventory', async () => {
-      const n = (await q(`
+      const n = (await pool.query(`
         SELECT count(*)::int AS n
         FROM trees1
         WHERE user_id IS NULL
@@ -271,18 +291,18 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
     await t.test('expired reservations are released and reusable', async () => {
       const firstIds = firstAllocation.assigned_trees.map(tree => tree.tree_id);
 
-      await q(`
+      await pool.query(`
         UPDATE demo_orders
         SET reserved_until = now() - interval '1 minute'
         WHERE shopify_order_id='70000000001'
       `);
 
-      const released = (await q(
+      const released = (await pool.query(
         'SELECT release_expired_demo_reservations() AS n'
       )).rows[0].n;
       assert.equal(released, 5);
 
-      const next = (await q(`
+      const next = (await pool.query(`
         SELECT allocate_demo_order(
           '70000000003',
           'test',
@@ -298,7 +318,7 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
 
     await t.test('demo quantity is bounded to protect the 100-tree pool', async () => {
       await assert.rejects(
-        q(`SELECT allocate_demo_order(
+        pool.query(`SELECT allocate_demo_order(
           '70000000004',
           'test',
           '64172819480906',
@@ -309,7 +329,8 @@ test('November real-tree demo pool migration and 24-hour reservations', async t 
       );
     });
   } finally {
-    await db.close();
+    await pool.query('DROP SCHEMA IF EXISTS public CASCADE; CREATE SCHEMA public').catch(() => {});
+    await pool.end();
   }
 });
 
@@ -337,3 +358,5 @@ test('production subscription allocators exclude demo_pool trees', async () => {
   assert.match(shopify, /demo_pool/);
   assert.match(chargebee, /demo_pool/);
 });
+
+export { validatedLocalTestUrl };
