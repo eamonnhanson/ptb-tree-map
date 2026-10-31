@@ -103,7 +103,7 @@ LANGUAGE plpgsql
 SET search_path = pg_catalog, public
 AS $$
 DECLARE
-  v_batch constant text := 'november-2026-demo';
+  v_batch CONSTANT text := 'november-2026-demo';
   v_ids integer[];
   v_demo_ids integer[];
   v_count integer;
