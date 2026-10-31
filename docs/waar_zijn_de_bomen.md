@@ -31,7 +31,24 @@ A separate DRAFT one-variant product now exists, SKU `PNB-WAAR-ZIJN-DE-BOMEN-TES
 
 Use Shopify's **Unlisted** product status if supported by this store: direct URL only, omitted from native search, collections and sitemap. Remove all navigation/recommendation/manual-collection references and audit third-party search feeds. Set `seo.hidden=1` where applicable. If Unlisted or equivalent exclusion cannot be verified, keep the product unpublished and use a separate development store for checkout testing until a supported hidden checkout is configured. An unpublished product normally cannot be bought through the storefront; do not assume otherwise.
 
-**Liquid access checks are not checkout authorization.** A customer can submit a variant ID directly to cart. The connected store is on Shopify Basic. Shopify documentation states that stores on any plan can use public App Store apps containing Shopify Functions, but custom apps containing Shopify Function APIs require Shopify Plus. Therefore this Basic store cannot rely on a bespoke private/custom Cart and Checkout Validation Function for the TEST variant. Before enabling the €0 product, choose one of two supported routes: **(A)** use a separate Shopify development/staging store connected only to a staging database/Zap path, or **(B)** install a public Shopify App Store product-lock/checkout-validation app that can server-side require an authenticated `pnb-training` customer, prohibit mixed carts, and constrain quantity for this variant. Verify direct-cart and accelerated-checkout attempts as an untagged customer fail. Without one of these controls, keep the TEST product DRAFT and registry disabled. Do not create public zero-price discounts or zero-price production variants. Theme gating alone does not meet the requirement.
+**Liquid access checks are not checkout authorization.** A customer can submit a variant ID directly to cart. The connected store is on Shopify Basic. Shopify documentation states that stores on any plan can use public App Store apps containing Shopify Functions, but custom apps containing Shopify Function APIs require Shopify Plus.
+
+Chosen route: use the public Shopify App Store app **Cart Lock: Block Checkout Rules**. Its App Store listing states that it uses Shopify Functions for real-time validation and supports product/variant conditions, customer tags, quantity rules and checkout restrictions. The Essential plan allows up to five active rules, which is sufficient for this training product.
+
+Keep the TEST product DRAFT until Cart Lock is installed and configured. Then change the TEST product to **UNLISTED**, not generally listed/active, and use the direct training URL.
+
+Configure at least these server-side rules for variant `64172819480906`:
+
+1. **Authorised trainer only**  
+   If cart contains variant `64172819480906` AND logged-in customer does **not** have tag `pnb-training`, block checkout.
+
+2. **No mixed cart**  
+   If cart contains variant `64172819480906` AND any other product/variant is present, block checkout.
+
+3. **Training quantity limit**  
+   If cart contains variant `64172819480906` AND its quantity is outside the permitted training range (1–100; use a lower operational maximum if preferred), block checkout.
+
+The theme-level customer-tag check remains useful for hiding the training purchase UI but is not the security boundary. Verify direct variant-add URLs and accelerated checkout as an untagged customer fail. Without the Cart Lock rules, keep the TEST product DRAFT and registry disabled. Do not create public zero-price discounts or zero-price production variants.
 
 ## D. Shopify setup
 
@@ -67,6 +84,8 @@ AND t.is_test = false
 ```
 
 Do not rely on tree IDs, insertion order or the fact that TEST rows are normally newer. If production stock becomes low, an unguarded `ORDER BY t.id ASC` allocator can eventually reach TEST rows.
+
+Migration 027 also installs `guard_campaign_test_tree`, a fail-closed database trigger. If an unguarded legacy production allocator selects a TEST row and then tries to reserve/claim/assign it, the mutation is rejected unless there is a matching TEST campaign ledger entry. This prevents silent TEST-tree consumption, but the legacy Zap would still fail. Therefore explicit `is_test = false` predicates remain mandatory.
 
 **SKU 01 gift flows**
 
