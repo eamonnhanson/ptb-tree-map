@@ -25,3 +25,36 @@ jobs:
 
       - run: npm ci
       - run: npm test
+
+  november-demo-postgres:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ptb_november_demo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run November demo PostgreSQL integration test
+        env:
+          PTB_NOVEMBER_DEMO_POSTGRES_URL: postgres://postgres:postgres@127.0.0.1:5432/ptb_november_demo_test
+        run: node --test test/novemberDemoPool.test.js
