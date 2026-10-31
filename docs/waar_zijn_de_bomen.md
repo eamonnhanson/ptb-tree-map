@@ -39,6 +39,68 @@ Manual steps only after separate rollout approval: the connected store is confir
 
 ## E. Zapier changes
 
+### Live Zapier audit from 31 October 2026
+
+Screenshots of the connected Zapier account confirm the following Shopify-triggered Zaps are currently switched on:
+
+- `Shopify subscriptions → Tree allocation`
+- `SKU 01 - Gift Tree Claim - Zap C`
+- `DEV - Shopify → Tokenized Gift Tree Link - Multilingual`
+- `Zap C – Shopify naar PostgreSQL en Creator – SKU 02`
+
+`KETSO Academy | Existing student enrols in another course` is also on but is unrelated to tree allocation.
+
+Important: the word `DEV` in a Zap name is not an environment boundary. The `DEV - Shopify → Tokenized Gift Tree Link - Multilingual` Zap is visibly enabled and uses the live `planteenboom-nu` Shopify account.
+
+#### Existing flow findings
+
+**Subscriptions**
+
+The active subscription Zap triggers on `New Paid Order`, reloads the order, filters, then calls `public.process_shopify_subscription_payment(...)` in PostgreSQL. A screenshot shows live variant `53296965386570` being passed to that function. Before any TEST rows are inserted into `trees1`, the live stored function must be updated to the guarded version that explicitly selects `is_test = false`. The campaign migration 027 adds the `is_test` column but does not itself replace this legacy subscription function.
+
+**SKU 02**
+
+The live SKU 02 Zap has a PostgreSQL step named `Bomen atomair toewijzen`. The visible `available_trees` CTE currently filters on `t.is_claimed = false` but does not visibly include `t.is_test = false`. This is a release blocker. Add an explicit production predicate to every candidate SELECT and mutation in this Zap. At minimum the free-tree selector must contain:
+
+```sql
+AND t.is_test = false
+```
+
+Do not rely on tree IDs, insertion order or the fact that TEST rows are normally newer. If production stock becomes low, an unguarded `ORDER BY t.id ASC` allocator can eventually reach TEST rows.
+
+**SKU 01 gift flows**
+
+The multilingual gift Zap visibly filters `Line Item SKU = 01` before its PostgreSQL free-tree fetch. This prevents the campaign TEST SKU from entering that route under normal trigger data, but the database query must still use `is_test = false` as defense in depth. Audit both the enabled `SKU 01 - Gift Tree Claim - Zap C` and the enabled `DEV - Shopify → Tokenized Gift Tree Link - Multilingual` for free-tree SELECTs, reservation UPDATEs and claim writes.
+
+Because two enabled Zaps appear to handle SKU 01-related work, verify whether this duplication is intentional and idempotent before changing or disabling either one.
+
+### New campaign Zap
+
+Create one new dedicated Zap, for example:
+
+`WZDB – Shopify → Campaign Tree Allocation`
+
+Recommended flow:
+
+1. Shopify: `New Paid Order`
+2. Filter: line item SKU is exactly either:
+   - `PNB-WAAR-ZIJN-DE-BOMEN`
+   - `PNB-WAAR-ZIJN-DE-BOMEN-TEST`
+3. PostgreSQL: call only `public.allocate_campaign_order(...)`
+4. Pass Shopify order ID, SKU, product ID, variant ID, quantity, unit price, currency and customer email exactly as received
+5. Branch downstream customer evidence:
+   - PRODUCTION: normal customer certificate/map communication
+   - TEST: visibly labelled training evidence only
+
+Do not duplicate pool-selection logic in Zapier. The database registry and `allocate_campaign_order` are the authority for TEST versus PRODUCTION. A misrouted TEST SKU must fail rather than fall into SKU01/SKU02/subscription allocators.
+
+Before enabling this Zap, verify the existing Shopify filters are exact:
+- subscription Zap accepts only registered subscription variants;
+- SKU01 Zaps accept only SKU `01`;
+- SKU02 Zap accepts only SKU `02`.
+
+
+
 1. Export the **current live** Zaps and keep existing `01`/`02` filters. Verify their exact-match behavior; never globally replace them with “all orders”. Historical source is not proof of live status.
 2. Extend the existing owned-tree orchestration with a mutually exclusive campaign path matching either full campaign SKU. Preserve the old paths. Retrieve the full order using Shopify Get Order by ID and require exactly one campaign line and no other lines. Use its internal order ID, line SKU/product ID/variant ID/quantity, unit price, EUR currency and customer email. Normalize numeric GIDs to their numeric suffix. Reject mismatched identities before SQL. Do not let the campaign path also run legacy allocation.
 3. Verify a completed €0 order fires the current `New Paid Order` trigger. If not, use Shopify New Order for a **test-only** path requiring the exact configured test SKU/product/variant, total zero and completed/paid status; retrieve Get Order and call the same allocator. Keep production's paid-order trigger. Two triggers must not run duplicate downstream delivery; the function returns `duplicate` to filter replays.
