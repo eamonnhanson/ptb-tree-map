@@ -94,9 +94,9 @@ FROM public.trees1 WHERE is_test = TRUE ORDER BY id;
 
 Use synthetic customer email addresses and restrict ledger queries. Verify the production SKU uses the normal price and only real trees, test exhaustion produces `TEST_POOL_EMPTY`, unknown variant/price rejects before mutation, replay returns the same trees, and untagged direct-cart attempts cannot buy the test variant. No production trees should be consumed to test the implementation.
 
-Local release-blocking proof: a valid TEST order with **zero** free fake trees and free real rows raises `TEST_POOL_EMPTY`; tests compare all production row fields, users and order ledger before/after and inspect the structured error log. Production succeeds with both pools available and fails with only fake rows available. The existing Shopify and Chargebee functions are also executed against fake-first mixed pools and empty production pools. These are calls to the actual PostgreSQL allocation entrypoints; no separate HTTP allocator was added.
+Local release-blocking proof: a valid TEST order with **zero** free fake trees and free real rows raises `TEST_POOL_EMPTY`; tests compare all production row fields, users and order ledger before/after and inspect the structured error log. Production succeeds with both pools available and fails with only fake rows available. The existing Shopify and Chargebee functions are also executed against fake-first mixed pools and empty production pools. Native PostgreSQL 16 CI additionally verifies campaign concurrency with independent connections. These are calls to the actual PostgreSQL allocation entrypoints; no separate HTTP allocator was added.
 
-Repeat these acceptance scenarios in an isolated native PostgreSQL staging environment with simultaneous independent connections. PGlite executes PostgreSQL semantics but is not proof of multi-connection lock contention. Then verify real Shopify → Zapier → allocation → labelled customer evidence → map against the staging/test store, without consuming production trees.
+Native PostgreSQL concurrency is now also exercised automatically in CI against PostgreSQL 16 using independent connections. The campaign integration job verifies concurrent distinct TEST orders, concurrent duplicate idempotency, `SKIP LOCKED` behavior and TEST-pool exhaustion without crossing into production. Repeat the end-to-end acceptance in staging against the actual deployed schema/roles, then verify real Shopify → Zapier → allocation → labelled customer evidence → map against the staging/test store, without consuming production trees.
 
 ## I. Rollback procedure
 
@@ -123,7 +123,8 @@ All unchecked items remain rollout gates. Local automated proof does not tick of
 - [ ] Creator/Writer/email outputs exclude or visibly label TEST records
 - [ ] Shopify direct-cart and accelerated checkout eligibility enforced server-side
 - [ ] Verified live schema, backups, role grants, migration rerun and index-lock plan reviewed
-- [ ] Native PostgreSQL concurrency and staging checkout/claim/evidence/map acceptance completed
+- [x] Native PostgreSQL 16 concurrency CI passed
+- [ ] Staging checkout/claim/evidence/map acceptance completed
 - [ ] Rollback preserves pool guards, production filters and visible map labels
 - [ ] Separate approval obtained for any external rollout
 
