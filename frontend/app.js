@@ -1,4 +1,10 @@
 const PUBLIC_MAP_DONATION_URL = 'https://www.planteenboom.nu/products/doneer';
+const isDemoTree = row => row?.is_demo === true;
+const formatDemoExpiry = (row, locale) => {
+  if (!row?.demo_expires_at) return '';
+  const date = new Date(row.demo_expires_at);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString(locale);
+};
 
 const PUBLIC_MAP_LOCALES = Object.freeze({
   nl: Object.freeze({
@@ -25,7 +31,9 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     loadHeroesError: 'kan Forest Heroes niet laden',
     donate: 'doneren',
     donateUrl: PUBLIC_MAP_DONATION_URL,
-    homeUrl: 'https://www.planteenboom.nu/'
+    homeUrl: 'https://www.planteenboom.nu/',
+    demoNotice: expiry => `DEMO – tijdelijke koppeling${expiry ? ` tot ${expiry}` : ''}. Deze boom is niet verkocht.`,
+    demoList: expiry => `DEMO${expiry ? ` tot ${expiry}` : ''}`
   }),
   en: Object.freeze({
     intlLocale: 'en-GB',
@@ -51,7 +59,9 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     loadHeroesError: 'unable to load Forest Heroes',
     donate: 'donate',
     donateUrl: PUBLIC_MAP_DONATION_URL,
-    homeUrl: 'https://www.planteenboom.nu/'
+    homeUrl: 'https://www.planteenboom.nu/',
+    demoNotice: expiry => `DEMO – temporary allocation${expiry ? ` until ${expiry}` : ''}. This tree has not been sold.`,
+    demoList: expiry => `DEMO${expiry ? ` until ${expiry}` : ''}`
   }),
   fr: Object.freeze({
     intlLocale: 'fr-FR',
@@ -77,7 +87,9 @@ const PUBLIC_MAP_LOCALES = Object.freeze({
     loadHeroesError: 'impossible de charger les Forest Heroes',
     donate: 'faire un don',
     donateUrl: PUBLIC_MAP_DONATION_URL,
-    homeUrl: 'https://www.planteenboom.nu/'
+    homeUrl: 'https://www.planteenboom.nu/',
+    demoNotice: expiry => `DÉMO – attribution temporaire${expiry ? ` jusqu’au ${expiry}` : ''}. Cet arbre n’a pas été vendu.`,
+    demoList: expiry => `DÉMO${expiry ? ` jusqu’au ${expiry}` : ''}`
   })
 });
 
@@ -152,6 +164,14 @@ const treeIconSelected = L.icon({
   shadowSize: [41, 41]
 });
 
+const demoTreeIcon = L.divIcon({
+  className: 'demo-tree-marker',
+  html: '<span style="display:inline-flex;align-items:center;justify-content:center;background:#111;color:#fff;border-radius:999px;padding:5px 8px;font:700 11px/1 sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.35)">DEMO</span>',
+  iconSize: [48, 24],
+  iconAnchor: [24, 12],
+  popupAnchor: [0, -14]
+});
+
 // 🔎 Fetch trees by email or user_id
 async function fetchTrees(query) {
   const baseUrl = "https://ptb-tree-map.onrender.com/api/trees";
@@ -198,10 +218,15 @@ function renderTrees(rows) {
     const gmaps = `https://maps.google.com/?q=${lat},${lng}`;
 
     const nameRow = name ? `<div class="popup-line"><strong>${text.nameLabel}</strong> ${name}</div>` : '';
+    const demoExpiry = formatDemoExpiry(r, text.intlLocale);
+    const demoNotice = isDemoTree(r)
+      ? `<strong style="display:block;margin:.4rem 0;color:#8a4b00">${text.demoNotice(demoExpiry)}</strong>`
+      : '';
 
     const popup =
       `<div class="popup">
          <div class="popup-title">${code || text.treeFallback}</div>
+         ${demoNotice}
          ${nameRow}
          <div class="popup-sub">${type} ${area ? '• ' + area : ''}</div>
          <div class="popup-meta">${planted}</div>
@@ -211,7 +236,8 @@ function renderTrees(rows) {
          </div>
        </div>`;
 
-    const m = L.marker([lat, lng], { icon: treeIcon }).bindPopup(popup);
+    const baseIcon = isDemoTree(r) ? demoTreeIcon : treeIcon;
+    const m = L.marker([lat, lng], { icon: baseIcon, baseIcon }).bindPopup(popup);
     m.on('click', () => selectByMarker(m, code));
     markers.addLayer(m);
     bounds.push([lat, lng]);
@@ -221,7 +247,8 @@ function renderTrees(rows) {
 
   if (bounds.length) map.fitBounds(bounds, { padding: [20, 20] });
 
-  msg.textContent = text.treeCount(rows.length);
+  const demoCount = rows.filter(isDemoTree).length;
+  msg.textContent = text.treeCount(rows.length) + (demoCount ? ` · DEMO: ${demoCount}` : '');
   renderTrees.rows = rows;
   renderCodeList(rows);
 }
@@ -229,7 +256,7 @@ function renderTrees(rows) {
 // 🧼 selectie wissen
 function clearSelection() {
   if (selectedMarker) {
-    selectedMarker.setIcon(treeIcon);
+    selectedMarker.setIcon(selectedMarker.options.baseIcon || treeIcon);
     selectedMarker = null;
   }
   if (selectedItemEl) {
@@ -352,7 +379,11 @@ function renderCodeList(rows) {
     seen.add(key);
 
     const name = (r.tree_name || '').trim();
-    items.push({ code, name });
+    const demoExpiry = formatDemoExpiry(r, text.intlLocale);
+    items.push({
+      code,
+      name: isDemoTree(r) ? text.demoList(demoExpiry) : name
+    });
   });
 
   if (!items.length) {
